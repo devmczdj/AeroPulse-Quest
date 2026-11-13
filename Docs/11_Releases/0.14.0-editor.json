@@ -1,0 +1,30 @@
+{
+  "passed": [
+    "[AeroPulse Final] PASS cold/reloaded scene: one owner/window set, defaults, shared fresh route, text fit",
+    "[AeroPulse Hands] PASS: both hand rays open/close, held pinch, tracking loss, translated/rotated tracking space",
+    "[AeroPulse Map] PASS: both hands, 5 positions, next/current markers, completion/reset, fresh pinch, tracking recovery, hidden colliders, tabs and hide/reopen persistence",
+    "[AeroPulse HandBack] PASS: HUD/map regression, back-only tile, front-side fresh touch, hold/release, lost tracking/recovery, focus and state persistence",
+    "[AeroPulse ViewOptions] PASS: real ray settings, distance/height/reset, data/map return, empty-card and pinch follow recovery, button pause/escape, quick/fixed/recenter",
+    "[AeroPulse Sky] PASS: real-ray sky/detail/recall/hide, shared state, 5 positions, transparency, world-fixed pose and reopening",
+    "[AeroPulse Compact] PASS: real-ray left/right/hidden, shared next state, head/world separation, focus, fallback open and default reset",
+    "[AeroPulse Layout] PASS: explicit edit, hold threshold, true-ray preview/release, world/view/hand, undo/reset, ownership, lost tracking/focus, recovery, sky placement persistence",
+    "[AeroPulse Shortcuts] PASS: selectable DATA/SKY/RECALL, closed-state rays, labels, recovery held-pinch gate, edit suppression and single-entry reset",
+    "[AeroPulse Glass] PASS: dead zone, delay, bounded movement, interaction freeze, release delay, convergence, translation, roll and glass resources",
+    "[AeroPulse Final] PASS 20 native-ray journeys: MAP/SKY/ADVANCE/DETAIL/HIDE/reopen and shared route",
+    "[AeroPulse Final] PASS cold/reloaded scene: one owner/window set, defaults, shared fresh route, text fit",
+    "[AeroPulse Final] PASS 20 native-ray journeys: MAP/SKY/ADVANCE/DETAIL/HIDE/reopen and shared route",
+    "[AeroPulse Final] PASS cold/reloaded scene: one owner/window set, defaults, shared fresh route, text fit"
+  ],
+  "groundTruth": {
+    "sampledUtc": "2026-11-13T19:33:38.802191Z",
+    "ageMs": 34,
+    "compilationFailed": false,
+    "compiling": false,
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "consoleLogs": 514,
+    "seeded": true
+  },
+  "scope": "production ProcessInput with injected native aim/joints in Unity Editor; 2 runtime scene reloads; 40 repeated journeys",
+  "headsetTest": "deferred; adb no connected device"
+}
