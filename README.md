@@ -2,12 +2,13 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前v0.10.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.10.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前v0.11.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.11.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![设置页编辑器相机预览，非Quest实机截图](Docs/07_设置编辑器预览.png)
 
 ## 功能
 
+- 小型视野读数左/右/隐藏、独立锚定与可选OPEN HUD备用入口。
 - 天空透明区域地图与前方细看共用路线/位置，支持推进、召回、收起与重开。
 - 左手手背HUD/HIDE片，右食指先离开再轻触打开/收起；失追踪恢复不自动触发。
 - 固定模拟心率/配速/距离、数据与5站示意地图切换，当前位置/下一站、ADVANCE/RESET、关闭重开保持会话状态。
@@ -48,3 +49,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [自动迭代账本](Docs/10_自动迭代计划.md) · [本地构建后的发布工具](Tools/01_publish_release.py)
 
 [天空总览编辑器预览](Docs/11_Releases/0.10.0-sky.png) · [前方细看预览](Docs/11_Releases/0.10.0-detail.png) · [0.10.0自动验证](Docs/11_Releases/0.10.0-editor.json)
+
+[左侧小读数预览](Docs/11_Releases/0.11.0-left.png) · [右侧预览](Docs/11_Releases/0.11.0-right.png) · [0.11.0自动验证](Docs/11_Releases/0.11.0-editor.json)

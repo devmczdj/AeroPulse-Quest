@@ -313,3 +313,10 @@ Inter，SIL Open Font License 1.1。
 独立透明SkyMapLayer，无大底板；地形等高轮廓、水系与支流为自编示意地理图，少量站名与当前/下一站标记，当前路线优先。保留原全景材质/颜色，放在头显前上方天空空白；打开时按当前朝向放置，此后保持会话世界位置。DETAIL回前方细看，RECALL按当前朝向召回，HIDE收起；与前方地图共用AeroRouteDemo，同步位置/终点/重置，不复制状态。
 
 站点与地理轮廓为虚构示例，常显SCHEMATIC REGION / SIMULATED POSITION，无经纬度/道路/山峰配准声明。实际视野面积和可读性待最终Quest验收；Editor相机预览仅作实现证据。
+
+
+## v0.11.0 独立视野提示和布局设置（2026-11-14）
+
+可选小读数：HIDDEN/LEFT/RIGHT，默认隐藏；142BPM/5:20和下一站共用原演示状态，常显SIM DATA。仅小读数跟头显，详细面板仍按SOFT/QUICK/FIXED，天空仍为会话世界固定。小读数不带交互碰撞体，避免阻断远处射线。
+
+SETTINGS顶部LAYOUT/BASIC切两页，布局页提供SMALL HUD和HAND ENTRY；HAND BACK默认手背，FRONT BUTTON为视野下方矩形OPEN HUD备用，仍用自由射线/新捏合，不恢复旧光球。默认复位恢复隐藏读数与手背入口；失焦隐藏/恢复保留会话选择。

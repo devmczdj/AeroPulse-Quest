@@ -57,20 +57,30 @@ public class AeroHudView : MonoBehaviour
     public void BindControls(PinchHudExperiment hud)
     {
         SettingsView.Bind(hud);
-        SkyButton.onClick.AddListener(hud.ShowSkyMap);
+        SkyButton.onClick.AddListener(()=>
+        {
+            if(IsSettingsOpen) { SettingsView.TogglePage();RefreshSettingsHeader(); }
+            else hud.ShowSkyMap();
+        });
+    }
+    void RefreshSettingsHeader()
+    {
+        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=SettingsView.LayoutPage?"BASIC":"LAYOUT";
+        subline.text=SettingsView.LayoutPage?"LAYOUT OPTIONS":"VIEW OPTIONS";
     }
     public void ToggleSettings()
     {
         if (IsSettingsOpen) { ShowMap(mapMode); return; }
         dataBody.gameObject.SetActive(false); MapView.gameObject.SetActive(false);
         SettingsView.gameObject.SetActive(true); SettingsView.Refresh();
-        sourceLabel.text = "DEMO SETTINGS"; subline.text = "VIEW OPTIONS"; settingsLabel.text = "DONE";
+        sourceLabel.text = "DEMO SETTINGS"; settingsLabel.text = "DONE";RefreshSettingsHeader();
         Physics.SyncTransforms();
     }
 
     public void ShowMap(bool show)
     {
         mapMode = show;
+        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text="SKY MAP";
         SettingsView.gameObject.SetActive(false);
         settingsLabel.text = "SETTINGS";
         dataBody.gameObject.SetActive(!show);

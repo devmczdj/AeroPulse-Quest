@@ -40,6 +40,12 @@ def main():
             'source_files_at_build':sources,'scope':'Editor/automated validation; final user headset acceptance pending'}
     docs=root/'Docs/11_Releases';docs.mkdir(exist_ok=True)
     exists=subprocess.run(['git','-C',str(root),'rev-parse','--verify','refs/tags/v'+args.version],capture_output=True).returncode==0
+    if not exists:
+        previous=[]
+        for metadata in docs.glob('0.*.json'):
+            item=json.loads(metadata.read_text())
+            if item.get('version')!=args.version and 'versionCode' in item:previous.append(item['versionCode'])
+        assert code>max(previous,default=0),'Android versionCode must increase'
     if exists:
         old=json.loads(run(['git','-C',str(root),'show',f'v{args.version}:Docs/11_Releases/{args.version}.json'],text=True).stdout)
         assert old['sha256']==sha,'Published tag differs; bump version instead of overwriting'

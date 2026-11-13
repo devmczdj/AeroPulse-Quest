@@ -1,0 +1,20 @@
+{
+  "version": "0.11.0",
+  "result": "PASS",
+  "playmode_frames": [
+    4103,
+    70609
+  ],
+  "console_errors": 0,
+  "checks": [
+    "旧HUD/地图/手背/设置/天空回归",
+    "MetaAim实际射线布局导航和左/右/隐藏",
+    "小读数跟头显，天空保持世界位置",
+    "共享下一站状态与无文字溢出",
+    "失焦/恢复保持读数选择",
+    "手背关闭后的前方按钮重新打开，不显示旧球",
+    "默认复位隐藏读数并恢复手背"
+  ],
+  "headset": "deferred to final user acceptance",
+  "reference": "Unity Object.DestroyImmediate官方文档核对Editor预览清理，运行时保持Destroy。"
+}

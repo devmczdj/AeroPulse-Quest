@@ -70,7 +70,7 @@ public static class AeroUiPreview
         }
     }
 
-    public static void Capture(bool map = false, bool settings = false, bool sky = false)
+    public static void Capture(bool map = false, bool settings = false, bool sky = false, int compact = 0)
     {
         EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
         var camera = Camera.main;
@@ -96,6 +96,13 @@ public static class AeroUiPreview
             skyView = AeroSkyMap.Build(camera,card.GetComponent<AeroHudView>().Route,()=>{},()=>{},()=>{});
             skyView.Show();card.SetActive(false);
         }
+        AeroCompactHud compactView = null;
+        if(compact!=0)
+        {
+            compactView=AeroCompactHud.Build(camera,card.GetComponent<AeroHudView>().Route,()=>{});
+            compactView.SetPlacement((AeroCompactHud.Placement)compact);
+            if(!sky)card.SetActive(false);
+        }
         Canvas.ForceUpdateCanvases();
 
         var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
@@ -108,7 +115,7 @@ public static class AeroUiPreview
             RenderTexture.active = target;
             texture.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
             texture.Apply();
-            string path = Path.Combine(Path.GetTempPath(), "aeropulse_v0100_" + (sky ? "sky" : settings ? "settings" : map ? "map" : "data") + ".png");
+            string path = Path.Combine(Path.GetTempPath(), "aeropulse_v0110_" + (compact==1 ? "compactleft" : compact==2 ? "compactright" : sky ? "sky" : settings ? "settings" : map ? "map" : "data") + ".png");
             File.WriteAllBytes(path, texture.EncodeToPNG());
             Debug.Log("[AeroUI] Preview written to " + path);
         }
@@ -119,6 +126,7 @@ public static class AeroUiPreview
             UnityEngine.Object.DestroyImmediate(texture);
             target.Release();
             UnityEngine.Object.DestroyImmediate(target);
+            if (compactView != null) UnityEngine.Object.DestroyImmediate(compactView.gameObject);
             if (skyView != null) UnityEngine.Object.DestroyImmediate(skyView.gameObject);
             UnityEngine.Object.DestroyImmediate(card);
         }
