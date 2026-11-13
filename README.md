@@ -2,7 +2,7 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前v0.12.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.12.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前v0.13.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.13.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![设置页编辑器相机预览，非Quest实机截图](Docs/07_设置编辑器预览.png)
 
@@ -53,3 +53,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [天空总览编辑器预览](Docs/11_Releases/0.10.0-sky.png) · [前方细看预览](Docs/11_Releases/0.10.0-detail.png) · [0.10.0自动验证](Docs/11_Releases/0.10.0-editor.json)
 
 [左侧小读数预览](Docs/11_Releases/0.11.0-left.png) · [右侧预览](Docs/11_Releases/0.11.0-right.png) · [0.11.0自动验证](Docs/11_Releases/0.11.0-editor.json)
+
+[演示旅程](Docs/13_Demo/01_演示旅程与分镜.md) · [能力证据](Docs/13_Demo/02_证据与能力映射.md) · [商业假设与问答](Docs/13_Demo/03_商业假设与问答.md) · [路演PPT](Docs/13_Demo/04_路演演示.pptx) · [模拟众筹长图](Docs/13_Demo/05_模拟众筹长图.png) · [HUD序列GIF](Docs/13_Demo/06_HUD流程.gif)
