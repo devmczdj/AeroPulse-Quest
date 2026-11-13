@@ -24,12 +24,12 @@ public static class AeroHandRayChecks
         {
             Set(left, false, false, Vector3.zero, Quaternion.identity);
             Set(right, false, false, Vector3.zero, Quaternion.identity);
-            hud.SendMessage("Update");
+            hud.ProcessInput();
             var target = GameObject.Find("Hotspot-SPORTS-HUD");
             Vector3 origin = new Vector3(hand == left ? -0.25f : 0.25f, 1.3f, 0.2f);
             Quaternion aim = Quaternion.LookRotation(target.transform.position - origin);
-            Frame(hand, origin, aim, false, camera.transform.parent); hud.SendMessage("Update");
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(hud.IsCardOpen, "Hand ray failed to open " + target.name);
             var card = GameObject.Find("PinchHudCard");
             Require(card.transform.Find("DataSource").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("SIMULATED DATA"),
@@ -41,34 +41,34 @@ public static class AeroHandRayChecks
                 foreach (var c in text.GetParsedText())
                     Require(char.IsWhiteSpace(c) || text.font.HasCharacter(c, true), "Missing font glyph: " + c);
             }
-            hud.SendMessage("Update");
+            hud.ProcessInput();
             Require(hud.IsCardOpen, "Held pinch repeated");
             aim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(hud.IsCardOpen, "Held pinch clicked Close");
-            Frame(hand, origin, aim, false, camera.transform.parent); hud.SendMessage("Update");
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(!hud.IsCardOpen, "Hand ray failed to click Close");
-            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.SendMessage("Update");
+            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.ProcessInput();
             Require(!GameObject.Find(hand == left ? "LeftHandRay" : "RightHandRay").GetComponent<LineRenderer>().enabled,
                     "Tracking loss left a visible beam");
             Require(target.activeInHierarchy && target.transform.Find("HudEntryLabel").gameObject.activeInHierarchy,
                     "HUD entry disappeared after closing");
             aim = Quaternion.LookRotation(target.transform.position - origin);
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(!hud.IsCardOpen, "Tracking recovery while pinching reopened HUD");
-            Frame(hand, origin, aim, false, camera.transform.parent); hud.SendMessage("Update");
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(hud.IsCardOpen, "Cannot reopen HUD after hiding");
             Require(GameObject.Find("HeartRate").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("142") &&
                     GameObject.Find("Pace").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("5:20") &&
                     GameObject.Find("Distance").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("3.20"),
                     "Reopening changed fixed demo data");
             aim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
-            Frame(hand, origin, aim, false, camera.transform.parent); hud.SendMessage("Update");
-            Frame(hand, origin, aim, true, camera.transform.parent); hud.SendMessage("Update");
+            Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
+            Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(!hud.IsCardOpen, "Cannot hide reopened HUD");
-            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.SendMessage("Update");
+            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.ProcessInput();
         }
         foreach (bool inside in new[] { true, false })
         {
@@ -76,7 +76,7 @@ public static class AeroHandRayChecks
             var target = GameObject.Find("Hotspot-SPORTS-HUD");
             var direct = Quaternion.LookRotation(target.transform.position - origin);
             var aim = Quaternion.AngleAxis(inside ? 2f : 20f, Vector3.up) * direct;
-            Frame(left, origin, aim, false, camera.transform.parent); hud.SendMessage("Update");
+            Frame(left, origin, aim, false, camera.transform.parent); hud.ProcessInput();
             var line = GameObject.Find("LeftHandRay").GetComponent<LineRenderer>();
             Require(Vector3.Dot((line.GetPosition(1)-line.GetPosition(0)).normalized, aim * Vector3.forward) > 0.99999f,
                     "Hand ray snapped away from actual hand aim");
@@ -84,13 +84,13 @@ public static class AeroHandRayChecks
                     "Cursor visibility does not match real hit");
             if (!inside) Require(Mathf.Abs(Vector3.Distance(line.GetPosition(0), line.GetPosition(1)) - 30f) < 0.01f,
                                  "Miss beam still ends at an arbitrary near depth");
-            Frame(left, origin, aim, false, camera.transform.parent, 0.7f); hud.SendMessage("Update");
+            Frame(left, origin, aim, false, camera.transform.parent, 0.7f); hud.ProcessInput();
             Require(hud.IsCardOpen == inside, inside ? "Expanded collider did not accept near-edge aim" : "Out-of-range pinch incorrectly retained an old target");
             if (inside)
             {
                 var closeAim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
-                Frame(left, origin, closeAim, false, camera.transform.parent); hud.SendMessage("Update");
-                Frame(left, origin, closeAim, true, camera.transform.parent); hud.SendMessage("Update");
+                Frame(left, origin, closeAim, false, camera.transform.parent); hud.ProcessInput();
+                Frame(left, origin, closeAim, true, camera.transform.parent); hud.ProcessInput();
                 Require(!hud.IsCardOpen, "Close after expanded-collider selection failed");
             }
         }
@@ -99,7 +99,7 @@ public static class AeroHandRayChecks
         foreach (float roll in new[] { -90f, 0f, 90f })
         {
             Frame(left, rollOrigin, rollAim * Quaternion.Euler(0, 0, roll), false, camera.transform.parent);
-            hud.SendMessage("Update");
+            hud.ProcessInput();
             var line = GameObject.Find("LeftHandRay").GetComponent<LineRenderer>();
             Require(Vector3.Dot((line.GetPosition(1)-line.GetPosition(0)).normalized, rollAim * Vector3.forward) > 0.99999f,
                     "Ray math changed forward direction on roll");
@@ -121,7 +121,7 @@ public static class AeroHandRayChecks
         {
             Set(MetaAimHand.left, false, false, Vector3.zero, Quaternion.identity);
             Set(MetaAimHand.right, false, false, Vector3.zero, Quaternion.identity);
-            hud.SendMessage("Update");
+            hud.ProcessInput();
             while (view.Route.CurrentIndex != 0) view.Route.Advance();
             view.ShowMap(false);
             Vector3 origin = new Vector3(hand == MetaAimHand.left ? -0.25f : 0.25f, 1.3f, 0.2f);
@@ -129,7 +129,7 @@ public static class AeroHandRayChecks
             {
                 var aim = Quaternion.LookRotation(target.transform.position - origin);
                 Frame(hand, origin, aim, pressed, camera.transform.parent);
-                hud.SendMessage("Update");
+                hud.ProcessInput();
             }
             void Click(GameObject target) { Point(target, false); Point(target, true); }
             Click(GameObject.Find("Hotspot-SPORTS-HUD"));
@@ -174,7 +174,7 @@ public static class AeroHandRayChecks
             Require(view.Route.CurrentIndex == 1, "Hidden map button remains clickable");
             Click(view.MapButton.gameObject);
             Require(view.IsMapOpen && view.Route.CurrentIndex == 1, "Tab switch reset demo state");
-            Set(hand, false, true, Vector3.zero, Quaternion.identity); hud.SendMessage("Update");
+            Set(hand, false, true, Vector3.zero, Quaternion.identity); hud.ProcessInput();
             Point(advance, true);
             Require(view.Route.CurrentIndex == 1, "Tracking recovery auto-clicked Advance");
             Click(advance);
@@ -186,7 +186,7 @@ public static class AeroHandRayChecks
                     "Reopening map lost mode or position");
             view.ShowMap(false);
             Click(view.CloseButton.gameObject);
-            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.SendMessage("Update");
+            Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.ProcessInput();
         }
         Debug.Log("[AeroPulse Map] PASS: both hands, 5 positions, next/current markers, completion/reset, fresh pinch, tracking recovery, hidden colliders, tabs and hide/reopen persistence");
     }
@@ -194,7 +194,7 @@ public static class AeroHandRayChecks
     public static void Frame(MetaAimHand hand, Vector3 position, Quaternion rotation, bool pressed, Transform space, float strength = 0f)
         => Set(hand, true, pressed, space.InverseTransformPoint(position), Quaternion.Inverse(space.rotation) * rotation, strength);
 
-    static void Set(MetaAimHand hand, bool valid, bool pressed, Vector3 position, Quaternion rotation, float strength = 0f)
+    public static void Set(MetaAimHand hand, bool valid, bool pressed, Vector3 position, Quaternion rotation, float strength = 0f)
     {
         using (StateEvent.From(hand, out var e))
         {

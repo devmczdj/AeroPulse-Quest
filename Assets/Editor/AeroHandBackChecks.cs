@@ -92,14 +92,14 @@ public static class AeroHandBackChecks
                 InputState.Change(hand,e,InputUpdateType.Editor);
             }
         }
-        RightAim(false); hud.SendMessage("Update");
+        RightAim(false); hud.ProcessInput();
         Sample(far);
         RightAim(true);
         for(int i=0;i<4;i++) Sample(near);
-        hud.SendMessage("Update");
+        hud.ProcessInput();
         Require(hud.IsCardOpen,"Hand opening also clicked HIDE on the same pinch");
-        RightAim(false); hud.SendMessage("Update");
-        RightAim(true); hud.SendMessage("Update");
+        RightAim(false); hud.ProcessInput();
+        RightAim(true); hud.ProcessInput();
         Require(!hud.IsCardOpen,"Fresh pinch cannot click HIDE after hand opening");
         RightAim(false);
         entry.enabled = true;

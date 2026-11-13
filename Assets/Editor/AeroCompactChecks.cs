@@ -15,8 +15,8 @@ public static class AeroCompactChecks
         {
             var origin=camera.transform.position+new Vector3(0.25f,-0.3f,0.2f);
             var aim=Quaternion.LookRotation(button.transform.position-origin);
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,false,camera.transform.parent);hud.SendMessage("Update");
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,true,camera.transform.parent);hud.SendMessage("Update");
+            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,false,camera.transform.parent);hud.ProcessInput();
+            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,true,camera.transform.parent);hud.ProcessInput();
         }
         Click(view.SettingsButton);Click(view.SkyButton);
         Require(view.SettingsView.LayoutPage,"Layout settings navigation failed");
@@ -40,10 +40,10 @@ public static class AeroCompactChecks
         compact.SetPlacement(AeroCompactHud.Placement.Left);
         hud.SendMessage("OnApplicationFocus",false);Require(!compact.gameObject.activeSelf,"Unfocused readout visible");
         hud.SendMessage("OnApplicationFocus",true);Require(compact.gameObject.activeSelf,"Focus recovery lost compact preference");
-        Click(view.SettingsView.EntryButton);Require(!hud.HandEntry.EnabledForEntry,"Entry setting did not switch");
-        Click(view.CloseButton);hud.SendMessage("Update");
+        Click(view.SettingsView.EntryButton);Require(hud.HandEntry.ShortcutsEnabled,"Shortcut entry cycle failed");Click(view.SettingsView.EntryButton);Require(!hud.HandEntry.EnabledForEntry,"Entry setting did not switch");
+        Click(view.CloseButton);hud.ProcessInput();
         Require(!hud.IsCardOpen&&compact.FallbackVisible&&GameObject.Find("Hotspot-SPORTS-HUD")==null,"Fallback missing or old orb restored");
-        Click(compact.OpenButton);hud.SendMessage("Update");
+        Click(compact.OpenButton);hud.ProcessInput();
         Require(hud.IsCardOpen&&!compact.FallbackVisible,"Fallback cannot open or remains blocking UI");
         if(!view.IsSettingsOpen)Click(view.SettingsButton);Click(view.SettingsView.EntryButton);Require(hud.HandEntry.EnabledForEntry,"Hand entry cannot restore");
         Click(view.SettingsView.ResetButton);

@@ -2,11 +2,13 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前v0.11.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.11.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前v0.12.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.12.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![设置页编辑器相机预览，非Quest实机截图](Docs/07_设置编辑器预览.png)
 
 ## 功能
+
+- [编辑布局与手部快捷](Docs/12_布局与手部快捷.md)：显式拖拽把手、WORLD/VIEW/HAND停靠、撤销/复位与丢手召回。
 
 - 小型视野读数左/右/隐藏、独立锚定与可选OPEN HUD备用入口。
 - 天空透明区域地图与前方细看共用路线/位置，支持推进、召回、收起与重开。

@@ -7,6 +7,7 @@ public class HudSoftFollow : MonoBehaviour
     public FollowMode Mode { get; private set; }
     public float Distance { get; private set; } = 1.8f;
     public string ModeLabel => Mode == FollowMode.Soft ? "SOFT FOLLOW" : Mode == FollowMode.Quick ? "QUICK FOLLOW" : "FIXED HERE";
+    public void SetMode(FollowMode value) { Mode=value;outsideTime=0;moving=false; }
     public void CycleMode() { Mode = (FollowMode)(((int)Mode + 1) % 3); outsideTime = 0; moving = false; }
     public void CycleDistance() { Distance = Distance < 1.6f ? 1.8f : Distance < 2f ? 2.2f : 1.4f; }
     public void ResetOptions() { Mode = FollowMode.Soft; Distance = 1.8f; SnapToView(); }

@@ -4,9 +4,16 @@ using UnityEngine;
 using UnityEngine.XR.Hands;
 
 // Joint poses are in tracking-origin space. Unity XR Hands defines palm as root -Y.
+[DefaultExecutionOrder(-20)]
 public class HandBackHudEntry : MonoBehaviour
 {
     public bool EnabledForEntry = true;
+    public bool ShortcutsEnabled;
+    public Transform ShortcutRoot { get; private set; }
+    public bool ShortcutsVisible => ShortcutRoot!=null&&ShortcutRoot.gameObject.activeInHierarchy;
+    public UnityEngine.UI.Button DataShortcut, SkyShortcut, RecallShortcut;
+    UnityEngine.UI.Button[] shortcutButtons;
+    public bool AnchorTracked { get; private set; }
     public bool Visible => tile != null && tile.activeSelf;
     public Pose Surface { get; private set; }
     public Pose ContactSurface { get; private set; }
@@ -36,6 +43,13 @@ public class HandBackHudEntry : MonoBehaviour
             Vector2.zero, new Vector2(58, 38), AeroUiTokens.ButtonFill);
         caption = AeroHudView.Text(tile.transform, "HandHUDLabel", "HUD", Vector2.zero, new Vector2(54, 34),
             18, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Center, 0, 0, true);
+        ShortcutRoot=AeroHudView.NewRect("HandShortcuts",tile.transform,Vector2.zero,new Vector2(280,180));
+        DataShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandData","DATA",new Vector2(92,48),new Vector2(96,38),new Vector3(100,44,8));
+        SkyShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandSky","SKY",new Vector2(92,0),new Vector2(96,38),new Vector3(100,44,8));
+        RecallShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandRecall","RECALL",new Vector2(92,-48),new Vector2(96,38),new Vector3(100,44,8));
+        shortcutButtons=new[]{DataShortcut,SkyShortcut,RecallShortcut};
+        DataShortcut.onClick.AddListener(hud.OpenDataFromShortcut);SkyShortcut.onClick.AddListener(hud.ShowSkyMap);RecallShortcut.onClick.AddListener(hud.OpenOrRecall);
+        ShortcutRoot.gameObject.SetActive(false);
         tile.SetActive(false);
     }
 
@@ -80,15 +94,19 @@ public class HandBackHudEntry : MonoBehaviour
         ContactSurface = new Pose(center, Quaternion.LookRotation(-normal, rootRotation * Vector3.forward));
         Surface = new Pose(palm + normal * HeightOffset, ContactSurface.rotation);
         float distance = Vector3.Distance(eye.transform.position, center);
-        bool show = EnabledForEntry && focused && hud.isActiveAndEnabled && leftValid &&
+        AnchorTracked = focused && hud.isActiveAndEnabled && leftValid &&
                     distance >= 0.20f && distance <= 1.0f &&
                     Vector3.Dot(normal, (eye.transform.position - center).normalized) >= 0.2f;
+        bool show=EnabledForEntry&&AnchorTracked;
+        bool wasShortcuts=ShortcutsVisible;
         tile.SetActive(show);
+        ShortcutRoot.gameObject.SetActive(show&&ShortcutsEnabled&&(hud.Layout==null||!hud.Layout.Editing));
+        if(wasShortcuts&&!ShortcutsVisible)hud.ClearPresses();
         if (show) tile.transform.SetPositionAndRotation(Surface.position, Surface.rotation);
         Vector3 local = Quaternion.Inverse(ContactSurface.rotation) * (tip - center);
         float height = Vector3.Dot(tip - center, normal);
         bool inside = Mathf.Abs(local.x) <= 0.029f && Mathf.Abs(local.y) <= 0.019f;
-        bool touch = gate.Step(show && rightValid, inside, height, dt);
+        bool touch = gate.Step(show && rightValid && (hud.Layout==null || !hud.Layout.Dragging), inside, height, dt);
         fill.color = show && rightValid && inside && height >= -0.006f && height <= 0.035f
             ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
         if (touch)
@@ -97,10 +115,17 @@ public class HandBackHudEntry : MonoBehaviour
             hud.ToggleFromHand();
         }
         caption.text = hud.IsCardOpen ? "HIDE" : "HUD";
+        if(ShortcutsVisible)Physics.SyncTransforms();
     }
 
-    void OnApplicationFocus(bool value) { focused = value; gate = default; if (!value && tile != null) tile.SetActive(false); }
-    void OnDisable() { gate = default; if (tile != null) tile.SetActive(false); }
+    public void SetShortcutHover(UnityEngine.UI.Button left,UnityEngine.UI.Button right)
+    {
+        foreach(var button in shortcutButtons)
+            button.GetComponent<UnityEngine.UI.Image>().color=button==left||button==right?AeroUiTokens.ButtonHover:AeroUiTokens.ButtonFill;
+    }
+
+    void OnApplicationFocus(bool value) { focused = value; gate = default; if(!value)AnchorTracked=false; if (!value && tile != null) tile.SetActive(false); }
+    void OnDisable() { AnchorTracked=false;gate = default; if (tile != null) tile.SetActive(false); }
     void OnDestroy() { if (tile != null) Destroy(tile); }
 }
 

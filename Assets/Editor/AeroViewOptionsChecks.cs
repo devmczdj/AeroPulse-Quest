@@ -19,8 +19,8 @@ public static class AeroViewOptionsChecks
         {
             var origin = camera.transform.position+new Vector3(0.25f,-0.3f,0.2f);
             var aim = Quaternion.LookRotation(button.transform.position-origin);
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,false,camera.transform.parent); hud.SendMessage("Update");
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,true,camera.transform.parent); hud.SendMessage("Update");
+            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,false,camera.transform.parent); hud.ProcessInput();
+            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,true,camera.transform.parent); hud.ProcessInput();
         }
         Click(view.SettingsButton);
         Require(view.IsSettingsOpen,"Settings entry ray failed");

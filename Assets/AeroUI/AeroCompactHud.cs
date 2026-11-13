@@ -45,5 +45,5 @@ public class AeroCompactHud : MonoBehaviour
         transform.localRotation=Quaternion.identity;gameObject.SetActive(side!=Placement.Hidden&&!paused);
     }
     public void SetPaused(bool value) { paused=value;SetPlacement(Side);SetFallbackVisible(fallbackRequested); }
-    public void SetFallbackVisible(bool value) { fallbackRequested=value;fallback.SetActive(value&&!paused); }
+    public void SetFallbackVisible(bool value,bool recall=false) { fallbackRequested=value;fallback.SetActive(value&&!paused);OpenButton.GetComponentInChildren<TextMeshProUGUI>().text=recall?"RECALL HUD":"OPEN HUD"; }
 }
