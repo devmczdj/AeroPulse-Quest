@@ -1,0 +1,108 @@
+using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.XR.Hands;
+
+public static class AeroHandBackChecks
+{
+    static void Require(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    public static void Run()
+    {
+        var hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
+        hud.LegacyEntryForChecks(true);
+        try { AeroHandRayChecks.Run(); AeroHandRayChecks.RunMap(); }
+        finally { hud.LegacyEntryForChecks(false); }
+        var entry = hud.HandEntry;
+        // Disable the live reader while injecting samples into the same processing method.
+        entry.enabled = false;
+        var eye = Camera.main;
+        eye.transform.SetPositionAndRotation(new Vector3(0,1.6f,0), Quaternion.identity);
+        var root = Quaternion.Euler(-90,0,0); // Back +Y faces the eye (-Z).
+        var palm = new Vector3(-0.15f,1.3f,0.45f);
+        void Sample(Vector3 tip, bool left = true, bool right = true)
+            => entry.Sample(left, palm, root, right, tip, 0.02f);
+        Sample(Vector3.zero, true, false);
+        Require(entry.Visible, "Hand-back tile missing");
+        Require(GameObject.Find("Hotspot-SPORTS-HUD") == null, "Old orb still visible");
+        Vector3 center = entry.ContactSurface.position, normal = root * Vector3.up;
+        Vector3 far = center + normal * 0.05f, near = center + normal * 0.005f;
+        for (int i=0;i<6;i++) Sample(near);
+        Require(!hud.IsCardOpen, "Initial overlapping finger auto-opened");
+        Sample(far);
+        for (int i=0;i<4;i++) Sample(center - normal * 0.03f);
+        Require(!hud.IsCardOpen, "Backside contact opened");
+        Sample(far);
+        for (int i=0;i<4;i++) Sample(near + Vector3.right * 0.1f);
+        Require(!hud.IsCardOpen, "Outside tile opened");
+        Sample(far);
+        for(int i=0;i<4;i++) Sample(near);
+        Require(hud.IsCardOpen && entry.Visible, "Fresh touch failed or toggle tile hidden");
+        for(int i=0;i<6;i++) Sample(near);
+        Require(hud.IsCardOpen,"Held contact closed newly opened HUD");
+        Sample(far);for(int i=0;i<4;i++) Sample(near);
+        Require(!hud.IsCardOpen && entry.Visible,"Second touch cannot hide HUD");
+        for(int i=0;i<6;i++) Sample(near);
+        Require(!hud.IsCardOpen,"Held contact reopened after toggle");
+        Sample(far);for(int i=0;i<4;i++) Sample(near);
+        Require(hud.IsCardOpen,"Third fresh touch cannot reopen HUD");
+        var view = GameObject.Find("PinchHudCard").GetComponent<AeroHudView>();
+        view.ShowMap(true); view.Route.Advance();
+        view.CloseButton.onClick.Invoke();
+        for(int i=0;i<6;i++) Sample(near);
+        Require(!hud.IsCardOpen, "Held contact reopened after HIDE");
+        Sample(far); Sample(near, false);
+        Require(!entry.Visible, "Lost left tracking did not hide tile");
+        for(int i=0;i<6;i++) Sample(near);
+        Require(!hud.IsCardOpen, "Tracking recovery contact auto-opened");
+        Sample(far);
+        Sample(near, true, false);
+        for(int i=0;i<6;i++) Sample(near);
+        Require(!hud.IsCardOpen, "Lost right tracking remained armed");
+        Sample(far); for(int i=0;i<4;i++) Sample(near);
+        Require(hud.IsCardOpen && view.IsMapOpen, "Map state lost on hand reopen");
+        view.CloseButton.onClick.Invoke();
+        entry.Sample(true,palm,Quaternion.Euler(90,0,0),true,far,0.02f);
+        Require(!entry.Visible, "Palm-side tile visible");
+        entry.SendMessage("OnApplicationFocus",false); Sample(far);
+        Require(!entry.Visible, "Unfocused tile visible");
+        entry.SendMessage("OnApplicationFocus",true);
+        // Exercise the production tracking-space conversion, not only world-space samples.
+        var space = eye.transform.parent;
+        var localPalm = space.InverseTransformPoint(palm);
+        var localRoot = Quaternion.Inverse(space.rotation) * root;
+        entry.SampleTracking(true, localPalm, localRoot, false, Vector3.zero, space, 0.02f);
+        Require(Vector3.Distance(entry.ContactSurface.position, center)<0.001f, "Tracking translation wrong");
+        Require(Quaternion.Angle(entry.Surface.rotation, Quaternion.LookRotation(-normal,root*Vector3.forward))<0.01f,
+                "Tracking rotation wrong");
+        // A held pinch may not click HIDE in the same frame as hand-touch opening.
+        Vector3 origin = new Vector3(0.25f,1.3f,0.2f);
+        Quaternion aim = Quaternion.LookRotation(view.CloseButton.transform.position-origin);
+        void RightAim(bool pressed)
+        {
+            var hand = MetaAimHand.right;
+            using (StateEvent.From(hand,out var e))
+            {
+                hand.isTracked.WriteValueIntoEvent(1f,e);
+                hand.aimFlags.WriteValueIntoEvent((int)(MetaAimFlags.Valid|MetaAimFlags.Computed),e);
+                hand.indexPressed.WriteValueIntoEvent(pressed?1f:0f,e);
+                hand.pinchStrengthIndex.WriteValueIntoEvent(pressed?1f:0f,e);
+                hand.devicePosition.WriteValueIntoEvent(space.InverseTransformPoint(origin),e);
+                hand.deviceRotation.WriteValueIntoEvent(Quaternion.Inverse(space.rotation)*aim,e);
+                InputState.Change(hand,e,InputUpdateType.Editor);
+            }
+        }
+        RightAim(false); hud.SendMessage("Update");
+        Sample(far);
+        RightAim(true);
+        for(int i=0;i<4;i++) Sample(near);
+        hud.SendMessage("Update");
+        Require(hud.IsCardOpen,"Hand opening also clicked HIDE on the same pinch");
+        RightAim(false); hud.SendMessage("Update");
+        RightAim(true); hud.SendMessage("Update");
+        Require(!hud.IsCardOpen,"Fresh pinch cannot click HIDE after hand opening");
+        RightAim(false);
+        entry.enabled = true;
+        Debug.Log("[AeroPulse HandBack] PASS: HUD/map regression, back-only tile, front-side fresh touch, hold/release, lost tracking/recovery, focus and state persistence");
+    }
+}

@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-14",
+  "version": "0.9.1",
+  "result": "PASS",
+  "playmode_frames": [
+    4182,
+    8071
+  ],
+  "playerLoopTicking": true,
+  "checks": [
+    "原HUD/地图/手背门控回归",
+    "手背入口打开后保留；轻触打开/收起/再打开，保持不重复",
+    "三档显示偏移25/35/45mm；接触代理仍固定Palm+14mm",
+    "SETTINGS/DONE/MAP页面返回与地图状态保持",
+    "真实MetaAim射线点选模式/距离/高度/恢复默认",
+    "空白面板/未指向按钮的捏合不阻断跟随",
+    "实际按钮指向暂停；看开35度以上不被旧目标锁住",
+    "柔和/快速跟随收敛；固定模式保持世界位置；回面前复位",
+    "设置文字无溢出；旧跟随确定性回归"
+  ],
+  "console_before_build": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "unchanged_sha256": {
+    "Assets/AeroUI/AeroMapView.cs": "9bdb673f3b118c06cb9cf8458cd2b2820c7716b1699654bd6fad26c93ce4ff1d",
+    "Assets/AeroUI/AeroRouteDemo.cs": "454b3f67837be6c1e14a5bac64cbab284a642f6c2f1a824a404eae1647477fd5",
+    "Assets/Resources/JetStyle/AeroGlass.shader": "e1404f589c77fd20717e42d54f051c213656799a62d3e136daf055cba1ed4de5",
+    "Assets/Scenes/SampleScene.unity": "e64aca8f659d79984a4c147ef2dfa05515e90a312361696d77f191f9df6d9e0f",
+    "Assets/Settings/Mobile_RPAsset.asset": "a6f6b4597eb1b39190401e2236c4ec4cbec3d947979fab13bf135014064bf63a",
+    "Packages/manifest.json": "ae8e351cf654025c489abe9790f3a0b1363a04f290a7eb376811833593b41415"
+  },
+  "headset_scope": "显示是否真正不再嵌入手模、轻触手感与跟随舒适度待Quest试戴",
+  "console_after_build": {
+    "errors": 0,
+    "warnings": 7
+  }
+}

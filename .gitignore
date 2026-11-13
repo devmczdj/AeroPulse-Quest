@@ -1,0 +1,26 @@
+/Library/
+/Temp/
+/Obj/
+/Logs/
+/UserSettings/
+/Builds/
+/.utmp/
+/.vs/
+*.csproj
+*.sln
+*.slnx
+.DS_Store
+
+# Additional build outputs and local credentials
+/build/
+/Build/
+*.apk
+*.aab
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key

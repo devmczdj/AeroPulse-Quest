@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-14",
+  "version": "0.9.1",
+  "versionCode": 7,
+  "installed": false,
+  "adb_devices": [],
+  "reason": "编辑器验证结束时ADB未检测到设备",
+  "headset_test": "pending",
+  "next_step": "接回Quest后安装，比较默认抬高和高度档位、手背开关、SOFT/QUICK/FIXED与召回。"
+}

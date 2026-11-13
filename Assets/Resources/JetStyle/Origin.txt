@@ -1,0 +1,4 @@
+JetStyle Vision UI visual subset
+https://github.com/jetstyle/Apple-Vision-Pro-UI-Kit
+Commit 3de4dfbb6390c0279ac519c29ffec74ade1bd178
+Original MIT license retained. Selected sprites and original shader retained; no Apple fonts/icons or XRI scripts imported. AeroGlass shader is an adaptation with world-space/stereo direction fix and cubemap mip sampling.
