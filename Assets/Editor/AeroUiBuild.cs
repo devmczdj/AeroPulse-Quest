@@ -33,9 +33,14 @@ public static class AeroUiBuild
         if (summary.result != BuildResult.Succeeded)
             throw new InvalidOperationException("APK build failed");
 
-        string archive = "/Users/devmczdj/Documents/创新创业/18_手背开关与跟随设置_20261114/03_Builds/AeroPulse-GlassLab-v0.9.1.apk";
-        Directory.CreateDirectory(Path.GetDirectoryName(archive));
-        File.Copy(output, archive, true);
-        Debug.Log("[AeroUI] ARCHIVED " + archive);
+        string archiveDirectory = Environment.GetEnvironmentVariable("AEROPULSE_ARCHIVE_DIR");
+        if (!string.IsNullOrWhiteSpace(archiveDirectory))
+        {
+            string archive = Path.Combine(Path.GetFullPath(archiveDirectory), Path.GetFileName(output));
+            Directory.CreateDirectory(Path.GetDirectoryName(archive));
+            if (!string.Equals(Path.GetFullPath(output), archive, StringComparison.Ordinal))
+                File.Copy(output, archive, true);
+            Debug.Log("[AeroUI] ARCHIVED " + archive);
+        }
     }
 }
