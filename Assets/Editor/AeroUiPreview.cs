@@ -70,13 +70,13 @@ public static class AeroUiPreview
         }
     }
 
-    public static void Capture(bool map = false, bool settings = false)
+    public static void Capture(bool map = false, bool settings = false, bool sky = false)
     {
         EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
         var camera = Camera.main;
         if (camera == null) throw new InvalidOperationException("Main Camera missing");
         camera.transform.SetPositionAndRotation(new Vector3(0f, 1.6f, 0f), Quaternion.identity);
-        camera.fieldOfView = 60f;
+        camera.fieldOfView = sky ? 80f : 60f;
         camera.clearFlags = CameraClearFlags.Skybox;
 
         // The live app hides the entry orb while the card is open; mirror that in the still.
@@ -90,6 +90,12 @@ public static class AeroUiPreview
         if (settings) card.GetComponent<AeroHudView>().ToggleSettings();
         card.transform.position = camera.transform.position + camera.transform.forward * 1.8f;
         card.transform.rotation = camera.transform.rotation;
+        AeroSkyMap skyView = null;
+        if (sky)
+        {
+            skyView = AeroSkyMap.Build(camera,card.GetComponent<AeroHudView>().Route,()=>{},()=>{},()=>{});
+            skyView.Show();card.SetActive(false);
+        }
         Canvas.ForceUpdateCanvases();
 
         var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
@@ -102,7 +108,7 @@ public static class AeroUiPreview
             RenderTexture.active = target;
             texture.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
             texture.Apply();
-            string path = Path.Combine(Path.GetTempPath(), "aeropulse_v091_" + (settings ? "settings" : map ? "map" : "data") + ".png");
+            string path = Path.Combine(Path.GetTempPath(), "aeropulse_v0100_" + (sky ? "sky" : settings ? "settings" : map ? "map" : "data") + ".png");
             File.WriteAllBytes(path, texture.EncodeToPNG());
             Debug.Log("[AeroUI] Preview written to " + path);
         }
@@ -113,6 +119,7 @@ public static class AeroUiPreview
             UnityEngine.Object.DestroyImmediate(texture);
             target.Release();
             UnityEngine.Object.DestroyImmediate(target);
+            if (skyView != null) UnityEngine.Object.DestroyImmediate(skyView.gameObject);
             UnityEngine.Object.DestroyImmediate(card);
         }
     }

@@ -1,0 +1,18 @@
+{
+  "version": "0.10.0",
+  "result": "PASS",
+  "playmode_frames": [
+    1995,
+    7313
+  ],
+  "console_errors": 0,
+  "checks": [
+    "旧HUD/地图/手背/设置回归",
+    "真实射线天空/detail/推进/召回/收起",
+    "5状态同步、同一个Route实例",
+    "无根背景板",
+    "转头天空保持原世界位置",
+    "手背重开保留Sky模式/位置"
+  ],
+  "headset": "deferred to final user acceptance"
+}

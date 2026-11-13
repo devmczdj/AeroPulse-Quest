@@ -9,7 +9,9 @@ using UnityEngine.XR.Hands;
 public class PinchHudExperiment : MonoBehaviour
 {
     public bool HasTrackedHand { get; private set; }
-    public bool IsCardOpen => card != null && card.activeSelf;
+    public bool IsCardOpen => card != null && (card.activeSelf || (Sky != null && Sky.Visible));
+    public AeroSkyMap Sky { get; private set; }
+    bool lastSky;
     public HandBackHudEntry HandEntry { get; private set; }
     public HudSoftFollow Follow => follow;
     Camera view;
@@ -51,6 +53,7 @@ public class PinchHudExperiment : MonoBehaviour
         entry.gameObject.SetActive(false);
         HandEntry = gameObject.AddComponent<HandBackHudEntry>();
         HandEntry.Initialize(view, this);
+        Sky = AeroSkyMap.Build(view,hudView.Route,ShowMapDetail,Recenter,CloseCard);
         hudView.BindControls(this);
         leftPointer = BuildPointer("LeftHandRay");
         rightPointer = BuildPointer("RightHandRay");
@@ -81,13 +84,14 @@ public class PinchHudExperiment : MonoBehaviour
         if (leftPointer.target != null) leftPointer.target.SetGazed(true);
         if (rightPointer.target != null) rightPointer.target.SetGazed(true);
         if (hudView != null) hudView.SetHover(leftPointer.button, rightPointer.button);
+        if (Sky != null) Sky.SetHover(leftPointer.button,rightPointer.button);
         if (leftSelect) Select(leftPointer, "left");
         else if (rightSelect) Select(rightPointer, "right");
     }
 
     void LateUpdate()
     {
-        if (IsCardOpen && focused)
+        if (card != null && card.activeSelf && focused)
             follow.Tick(Time.unscaledDeltaTime, FollowPaused);
     }
 
@@ -95,7 +99,7 @@ public class PinchHudExperiment : MonoBehaviour
         Vector3.Angle(view.transform.forward, card.transform.position - view.transform.position) < 35f &&
         (leftPointer.button != null || rightPointer.button != null);
 
-    public void Recenter() { follow.SnapToView(); Physics.SyncTransforms(); }
+    public void Recenter() { if(Sky != null && Sky.Visible)Sky.Recall();else follow.SnapToView(); Physics.SyncTransforms(); }
     public void ResetViewOptions() { HandEntry.ResetHeight(); follow.ResetOptions(); Physics.SyncTransforms(); }
     public void ToggleFromHand() { if (IsCardOpen) CloseCard(); else OpenFromHand(); }
 
@@ -155,7 +159,7 @@ public class PinchHudExperiment : MonoBehaviour
         if (hitSomething)
         {
             if (!IsCardOpen) pointer.target = hit.collider.GetComponent<GazeHotspot>();
-            pointer.overCard = IsCardOpen && hit.collider.transform.IsChildOf(card.transform);
+            pointer.overCard = IsCardOpen && (hit.collider.transform.IsChildOf(card.transform) || (Sky != null && hit.collider.transform.IsChildOf(Sky.transform)));
             if (pointer.overCard)
             {
                 var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
@@ -220,6 +224,22 @@ public class PinchHudExperiment : MonoBehaviour
         return new HandPointer { line = line, tip = tip.transform, tipRenderer = tip.GetComponent<Renderer>() };
     }
 
+    void ResetPresses()
+    {
+        if(leftPointer!=null)leftPointer.gate=default;
+        if(rightPointer!=null)rightPointer.gate=default;
+    }
+    public void ShowSkyMap()
+    {
+        lastSky=true; entry.gameObject.SetActive(false); HandEntry.RequireRelease(); hudView.ShowMap(true); card.SetActive(false); Sky.Show();
+        ResetPresses(); Physics.SyncTransforms();
+    }
+    public void ShowMapDetail()
+    {
+        lastSky=false; entry.gameObject.SetActive(false); HandEntry.RequireRelease(); Sky.Hide(); hudView.ShowMap(true);card.SetActive(true);
+        follow.SnapToView();hudView.PlayReveal();ResetPresses();Physics.SyncTransforms();
+    }
+
     public void OpenFromHand()
     {
         if (IsCardOpen) return;
@@ -240,6 +260,7 @@ public class PinchHudExperiment : MonoBehaviour
 
     void OpenCard(GazeHotspot target)
     {
+        if(lastSky) { ShowSkyMap(); return; }
         follow.SnapToView();
         card.SetActive(true);
         if (hudView != null) hudView.PlayReveal();
@@ -252,6 +273,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         if (HandEntry != null) HandEntry.RequireRelease();
         card.SetActive(false);
+        if(Sky != null)Sky.Hide();
         var forward = Vector3.ProjectOnPlane(view.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
         entry.transform.position = view.transform.position + forward * 3f - Vector3.up * 0.2f;
@@ -279,12 +301,14 @@ public class PinchHudExperiment : MonoBehaviour
         foreach (var pointer in new[] { leftPointer, rightPointer })
             if (pointer != null) { pointer.line.enabled = false; pointer.tip.gameObject.SetActive(false); }
         if (card != null) card.SetActive(false);
+        if (Sky != null) Sky.Hide();
         if (entry != null) entry.gameObject.SetActive(false);
     }
 
     void OnDestroy()
     {
         if (card != null) Destroy(card);
+        if (Sky != null) Destroy(Sky.gameObject);
     }
 
     void BuildCard()

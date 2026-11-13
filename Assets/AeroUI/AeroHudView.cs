@@ -10,6 +10,7 @@ public class AeroHudView : MonoBehaviour
     public Button MapButton { get; private set; }
     public AeroRouteDemo Route { get; private set; }
     public AeroMapView MapView { get; private set; }
+    public Button SkyButton { get; private set; }
     public Button SettingsButton { get; private set; }
     public AeroHudSettingsView SettingsView { get; private set; }
     public bool IsSettingsOpen => SettingsView != null && SettingsView.gameObject.activeSelf;
@@ -50,9 +51,14 @@ public class AeroHudView : MonoBehaviour
         SettingsButton.GetComponent<Image>().color = settingsHover ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
         settingsLabel.color = settingsHover ? AeroUiTokens.Mint : AeroUiTokens.Ink;
         SettingsView.SetHover(left,right);
+        SkyButton.GetComponent<Image>().color = left == SkyButton || right == SkyButton ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
     }
 
-    public void BindControls(PinchHudExperiment hud) => SettingsView.Bind(hud);
+    public void BindControls(PinchHudExperiment hud)
+    {
+        SettingsView.Bind(hud);
+        SkyButton.onClick.AddListener(hud.ShowSkyMap);
+    }
     public void ToggleSettings()
     {
         if (IsSettingsOpen) { ShowMap(mapMode); return; }
@@ -126,6 +132,8 @@ public class AeroHudView : MonoBehaviour
         sourceLabel = Text(card.transform, "DataSource", "SIMULATED DATA", new Vector2(258f, 169f),
              new Vector2(190f, 30f), 16f, AeroUiFonts.Medium,
              new Color(0.75f, 0.92f, 0.87f, 0.96f), TextAlignmentOptions.Center, 2f, 0f, true);
+
+        SkyButton = ActionButton(card.transform,"OpenSkyMap","SKY MAP",new Vector2(18,155),new Vector2(156,44),new Vector3(160,52,8));
 
         Hairline(content, "HeaderDivider", new Vector2(0f, 122f), 688f);
 

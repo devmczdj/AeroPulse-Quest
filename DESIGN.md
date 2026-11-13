@@ -306,3 +306,10 @@ Inter，SIL Open Font License 1.1。
 旧LateUpdate对任意overCard或pressed都会暂停跟随，容易因射线停在卡片空白或自然捏合一直不动。新规则只在实际Button被指向、且卡片仍在视线35度内时暂停；看开超过35度不被旧按钮目标锁住。
 
 页脚SETTINGS进入同卡设置页，DONE回上一个数据/地图页面。FOLLOW MODE依次SOFT FOLLOW（18度/0.45s）、QUICK FOLLOW（10度/0.15s）、FIXED HERE（当前场景位置固定）；PANEL DISTANCE循环1.8/2.2/1.4m，改变后回到当前前方；HAND PAD HEIGHT循环NORMAL35/HIGH45/LOW25mm。RECENTER回面前，RESET DEFAULTS恢复SOFT/1.8m/35mm。所有值为会话内设置，重启恢复默认，不使用跨启动持久化。透明底板、字体、主地图状态与射线新捏合门控不变。
+
+
+## v0.10.0 天空区域总览（2026-11-14）
+
+独立透明SkyMapLayer，无大底板；地形等高轮廓、水系与支流为自编示意地理图，少量站名与当前/下一站标记，当前路线优先。保留原全景材质/颜色，放在头显前上方天空空白；打开时按当前朝向放置，此后保持会话世界位置。DETAIL回前方细看，RECALL按当前朝向召回，HIDE收起；与前方地图共用AeroRouteDemo，同步位置/终点/重置，不复制状态。
+
+站点与地理轮廓为虚构示例，常显SCHEMATIC REGION / SIMULATED POSITION，无经纬度/道路/山峰配准声明。实际视野面积和可读性待最终Quest验收；Editor相机预览仅作实现证据。
