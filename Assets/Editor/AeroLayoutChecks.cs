@@ -26,7 +26,7 @@ public static class AeroLayoutChecks
         void Hold(AeroDockZone zone) {for(int i=0;i<9;i++)Point(zone.transform,true);}
         var card=view.transform;
         Click(view.MapButton);Require(!layout.Dragging,"Normal map click starts dragging");Click(view.MapButton);
-        Click(view.SettingsButton);if(!view.SettingsView.LayoutPage)Click(view.SkyButton);Click(view.SettingsView.EditCardButton);
+        Click(view.SettingsButton);Click(view.SettingsView.TabButtons[(int)AeroHudSettingsView.SettingsTab.Layout]);Click(view.SettingsView.EditCardButton);
         Require(layout.Editing&&layout.CardHandle.gameObject.activeInHierarchy&&layout.SkyHandle==null,"Explicit edit UI missing");
         var start=card.position;Click(view.MapButton);Require(!view.IsMapOpen&&!layout.Dragging,"Layout mode still clicks content");
         Grab(layout.CardHandle);Require(layout.Dragging&&layout.DragOwner=="right","Handle press did not own selection");Point(layout.CardHandle.transform,false);

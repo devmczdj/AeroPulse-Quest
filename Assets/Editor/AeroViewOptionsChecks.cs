@@ -25,11 +25,13 @@ public static class AeroViewOptionsChecks
         Click(view.SettingsButton);
         Require(view.IsSettingsOpen,"Settings entry ray failed");
         var settings = view.SettingsView;
-        Click(settings.ModeButton);
+        Click(settings.TabButtons[(int)AeroHudSettingsView.SettingsTab.Layout]);
+        Click(settings.ModeOptions[1]);
         Require(hud.Follow.Mode==HudSoftFollow.FollowMode.Quick,"Follow setting not bound");
-        Click(settings.DistanceButton);
+        Click(settings.DistanceOptions[2]);
         Require(Mathf.Approximately(hud.Follow.Distance,2.2f),"Distance setting not bound");
-        Click(settings.HeightButton);
+        Click(settings.TabButtons[(int)AeroHudSettingsView.SettingsTab.Input]);
+        Click(settings.HeightOptions[2]);
         Require(Mathf.Approximately(hud.HandEntry.HeightOffset,0.045f),"Height setting not bound");
         var palm = new Vector3(-0.15f,1.3f,0.45f);
         var root = Quaternion.Euler(-90,0,0);
@@ -42,11 +44,11 @@ public static class AeroViewOptionsChecks
                     "Visual height moved physical touch proxy");
         }
         CheckHeight(0.045f);
-        Click(settings.HeightButton); CheckHeight(0.025f);
-        Click(settings.HeightButton); CheckHeight(0.035f);
+        Click(settings.HeightOptions[0]); CheckHeight(0.025f);
+        Click(settings.HeightOptions[1]); CheckHeight(0.035f);
         foreach(var text in view.GetComponentsInChildren<TextMeshProUGUI>())
         { text.ForceMeshUpdate(); Require(!text.isTextOverflowing,"Settings text overflow: "+text.name); }
-        Click(settings.ResetButton);
+        Click(settings.ResetButton);Click(settings.ConfirmResetButton);
         Require(hud.Follow.Mode==HudSoftFollow.FollowMode.Soft && Mathf.Approximately(hud.Follow.Distance,1.8f) &&
                 Mathf.Approximately(hud.HandEntry.HeightOffset,0.035f),"Reset defaults failed");
         Click(view.SettingsButton);

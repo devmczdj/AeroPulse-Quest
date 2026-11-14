@@ -15,7 +15,7 @@ public class AeroHudView : MonoBehaviour
     public AeroHudSettingsView SettingsView { get; private set; }
     public bool IsSettingsOpen => SettingsView != null && SettingsView.gameObject.activeSelf;
     public bool IsMapOpen => !IsSettingsOpen && mapMode;
-    bool mapMode,skyVisible;
+    bool mapMode,skyVisible,layoutEditing;
     Button lastLeft,lastRight;bool hoverInitialized;
     TextMeshProUGUI settingsLabel;
     RectTransform dataBody;
@@ -43,6 +43,7 @@ public class AeroHudView : MonoBehaviour
 
     public void SetHover(Button left, Button right)
     {
+        if(layoutEditing)return;
         if(hoverInitialized&&left==lastLeft&&right==lastRight)return;hoverInitialized=true;lastLeft=left;lastRight=right;
         SetCloseHover(left == CloseButton || right == CloseButton);
         bool hover = left == MapButton || right == MapButton;
@@ -59,38 +60,42 @@ public class AeroHudView : MonoBehaviour
     public void BindControls(PinchHudExperiment hud)
     {
         SettingsView.Bind(hud);RefreshSkyButton(hud.Sky.Visible);
-        SkyButton.onClick.AddListener(()=>
-        {
-            if(IsSettingsOpen) { SettingsView.TogglePage();RefreshSettingsHeader(); }
-            else hud.ToggleSkyMap();
-        });
+        SkyButton.onClick.AddListener(hud.ToggleSkyMap);
     }
-    public void RefreshSkyButton(bool visible) { skyVisible=visible;if(!IsSettingsOpen)SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=visible?"HIDE SKY":"SHOW SKY"; }
-    void RefreshSettingsHeader()
+    public void RefreshSkyButton(bool visible)
     {
-        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=SettingsView.LayoutPage?"BASIC":"LAYOUT";
-        subline.text=SettingsView.LayoutPage?"LAYOUT OPTIONS":"VIEW OPTIONS";
+        skyVisible=visible;SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=visible?"关闭天空":"开启天空";
+    }
+    public void SetLayoutEditing(bool editing)
+    {
+        layoutEditing=editing;hoverInitialized=false;
+        foreach(var button in new[]{CloseButton,MapButton,SettingsButton,SkyButton})
+        {
+            button.interactable=!editing;
+            var group=button.GetComponent<CanvasGroup>();if(group==null)group=button.gameObject.AddComponent<CanvasGroup>();group.alpha=editing?.25f:1;
+        }
     }
     public void ToggleSettings()
     {
         if (IsSettingsOpen) { ShowMap(mapMode); return; }
         dataBody.gameObject.SetActive(false); MapView.gameObject.SetActive(false);
         SettingsView.gameObject.SetActive(true); SettingsView.Refresh();
-        sourceLabel.text = "DEMO SETTINGS"; settingsLabel.text = "DONE";RefreshSettingsHeader();
+        sourceLabel.text = "DEMO SETTINGS"; settingsLabel.text = "返回主卡";subline.text="界面设置";
+        SkyButton.gameObject.SetActive(false);MapButton.gameObject.SetActive(false);hoverInitialized=false;
         Physics.SyncTransforms();
     }
 
     public void ShowMap(bool show)
     {
         mapMode = show;
-        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=skyVisible?"HIDE SKY":"SHOW SKY";
+        RefreshSkyButton(skyVisible);SkyButton.gameObject.SetActive(true);MapButton.gameObject.SetActive(true);hoverInitialized=false;
         SettingsView.gameObject.SetActive(false);
-        settingsLabel.text = "SETTINGS";
+        settingsLabel.text = "设置";
         dataBody.gameObject.SetActive(!show);
         MapView.gameObject.SetActive(show);
         sourceLabel.text = show ? "SIMULATED MAP" : "SIMULATED DATA";
         subline.text = show ? "ROUTE OVERVIEW" : "RUN OVERVIEW";
-        mapButtonLabel.text = show ? "DATA" : "MAP";
+        mapButtonLabel.text = show ? "数据" : "路线";
         Physics.SyncTransforms();
     }
 
@@ -133,7 +138,7 @@ public class AeroHudView : MonoBehaviour
         Text(content, "Wordmark", "AEROPULSE", new Vector2(-310f, 169f), new Vector2(300f, 32f),
              22f, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Left, 12f, 0f);
         subline = Text(content, "Subline", "RUN OVERVIEW", new Vector2(-310f, 145f), new Vector2(300f, 22f),
-             16f, AeroUiFonts.Medium, AeroUiTokens.Secondary,
+             16f, AeroUiFonts.Interface, AeroUiTokens.Secondary,
              TextAlignmentOptions.Left, 4f, 0f);
 
         AddPanelImage(content, "ChipBorder", AeroUiSprites.PillStroke, new Vector2(244f, 169f),
@@ -219,6 +224,8 @@ public class AeroHudView : MonoBehaviour
         SettingsButton = ActionButton(card.transform,"ToggleSettings","SETTINGS",new Vector2(-232,-172),
                                       new Vector2(224,64),new Vector3(224,82,8));
         settingsLabel = SettingsButton.GetComponentInChildren<TextMeshProUGUI>();
+        foreach(var text in new[]{settingsLabel,mapButtonLabel,closeLabel,SkyButton.GetComponentInChildren<TextMeshProUGUI>()}){text.font=AeroUiFonts.Interface;text.characterSpacing=0;}
+        closeLabel.text="收起HUD";
         SettingsButton.onClick.AddListener(ToggleSettings);
         MapButton.onClick.AddListener(() => ShowMap(!mapMode));
         ShowMap(false);

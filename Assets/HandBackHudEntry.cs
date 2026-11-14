@@ -23,6 +23,7 @@ public class HandBackHudEntry : MonoBehaviour
     public float HeightOffset { get; private set; } = 0.035f;
     TextMeshProUGUI caption;
     public void RequireRelease() => gate = default;
+    public void SetHeight(float value) { HeightOffset=Mathf.Clamp(value,.025f,.045f);RequireRelease(); }
     public void CycleHeight() { HeightOffset = HeightOffset < 0.03f ? 0.035f : HeightOffset < 0.04f ? 0.045f : 0.025f; RequireRelease(); }
     public void ResetHeight() { HeightOffset = 0.035f; RequireRelease(); }
     Camera eye;

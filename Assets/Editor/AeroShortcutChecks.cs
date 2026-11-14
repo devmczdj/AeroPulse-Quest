@@ -21,7 +21,7 @@ public static class AeroShortcutChecks
             AeroHandRayChecks.Frame(MetaAimHand.right,origin,Quaternion.LookRotation(target.position-origin),pressed,camera.transform.parent);hud.ProcessInput();
         }
         void Click(UnityEngine.UI.Button b){Point(b.transform,false);Point(b.transform,true);}
-        Click(view.SettingsButton);if(!view.SettingsView.LayoutPage)Click(view.SkyButton);Click(view.SettingsView.EntryButton);Track();
+        Click(view.SettingsButton);Click(view.SettingsView.TabButtons[1]);Click(view.SettingsView.EntryOptions[1]);Track();
         Require(reader.EnabledForEntry&&reader.ShortcutsEnabled&&reader.ShortcutsVisible,"Shortcut mode not visible");
         foreach(var text in reader.ShortcutRoot.GetComponentsInChildren<TextMeshProUGUI>())
         {text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Hand shortcut label overflow: "+text.name);}

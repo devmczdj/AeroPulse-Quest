@@ -2,11 +2,14 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前v0.15.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.15.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前v0.16.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.16.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
-![设置页编辑器相机预览，非Quest实机截图](Docs/07_设置编辑器预览.png)
+![设置页编辑器相机预览，非Quest实机截图](Docs/11_Releases/0.16.0-display.png)
 
 ## 功能
+
+- 固定中文“显示/交互/布局”设置，显式选项/选中态/禁用原因，作用范围明确的复位与返回。
+- 操作确认闪烁、可选轻提示音、首次帮助/追踪恢复指引，以及分阶段显示的拖拽目标。
 
 - [编辑布局与手部快捷](Docs/12_布局与手部快捷.md)：显式拖拽把手、WORLD/VIEW/HAND停靠、撤销/复位与丢手召回。
 
@@ -45,7 +48,7 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 | [04_发布校验](Docs/04_v091_发布校验.json) | APK与原始构建源码哈希 |
 | [05_Editor验证](Docs/05_v091_编辑器验证.json) | v0.9.1电脑端检查证据 |
 | [06_Quest状态](Docs/06_v091_Quest待测记录.json) | 未实机验证的范围与下一次试戴 |
-| [07_设置预览](Docs/07_设置编辑器预览.png) | 编辑器相机预览，非头显截图 |
+| [07_设置预览](Docs/11_Releases/0.16.0-display.png) | 编辑器相机预览，非头显截图 |
 | [08_迭代记录](Docs/08_迭代记录.md) | Git接入和后续每轮记录入口 |
 | [09_XR Hands许可](Docs/09_XRHands_LICENSE.md) | 原依赖包LICENSE副本 |
 
@@ -64,3 +67,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [Product Design交互审查与待办（待实施）](Docs/16_交互优化待办.md)
 
 [固定分类导航与成熟控件方案（待实施）](Docs/17_设置导航方案.md)
+
+[0.16固定设置与反馈操作](Docs/18_固定设置与反馈操作.md) · [交互页预览](Docs/11_Releases/0.16.0-input.png) · [布局页预览](Docs/11_Releases/0.16.0-layout.png)

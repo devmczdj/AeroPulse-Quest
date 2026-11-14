@@ -51,18 +51,19 @@ public class AeroWindowLayout : MonoBehaviour
     {
         owner=hud;eye=camera;card=detail;sky=skyLayer;
         CardHandle=Handle(card,false,252);SkyHandle=null;
-        WorldZone=Zone("WorldDock",AeroWindowAnchor.World,"PIN WORLD / FIXED HERE");
-        ViewZone=Zone("ViewDock",AeroWindowAnchor.View,"PIN VIEW / FOLLOWS HEAD");
-        HandZone=Zone("HandDock",AeroWindowAnchor.Hand,"PIN HAND / FOLLOWS LEFT");
+        WorldZone=Zone("WorldDock",AeroWindowAnchor.World,"固定在环境");
+        ViewZone=Zone("ViewDock",AeroWindowAnchor.View,"跟随视野");
+        HandZone=Zone("HandDock",AeroWindowAnchor.Hand,"跟随左手");
         toolbar=new GameObject("LayoutToolbar",typeof(RectTransform),typeof(Canvas),typeof(UnityEngine.UI.GraphicRaycaster));
         toolbar.transform.SetParent(camera.transform,false);toolbar.transform.localPosition=new Vector3(0,-0.43f,1.35f);toolbar.transform.localScale=Vector3.one*0.001f;
         ((RectTransform)toolbar.transform).sizeDelta=new Vector2(660,126);
         var canvas=toolbar.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
-        status=AeroHudView.Text(toolbar.transform,"LayoutStatus","",new Vector2(-320,44),new Vector2(640,42),18,AeroUiFonts.SemiBold,AeroUiTokens.Ink,TextAlignmentOptions.Left,0,0);
-        DoneButton=AeroHudView.ActionButton(toolbar.transform,"LayoutDone","DONE",new Vector2(-230,-4),new Vector2(200,56),new Vector3(210,72,8));
-        UndoButton=AeroHudView.ActionButton(toolbar.transform,"LayoutUndo","UNDO",new Vector2(0,-4),new Vector2(200,56),new Vector3(210,72,8));
-        ResetButton=AeroHudView.ActionButton(toolbar.transform,"LayoutReset","RESET",new Vector2(230,-4),new Vector2(200,56),new Vector3(210,72,8));
+        status=AeroHudView.Text(toolbar.transform,"LayoutStatus","",new Vector2(-320,44),new Vector2(640,42),18,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Left,0,0);
+        DoneButton=AeroHudView.ActionButton(toolbar.transform,"LayoutDone","退出编辑",new Vector2(-230,-4),new Vector2(200,56),new Vector3(210,72,8));
+        UndoButton=AeroHudView.ActionButton(toolbar.transform,"LayoutUndo","撤销放置",new Vector2(0,-4),new Vector2(200,56),new Vector3(210,72,8));
+        ResetButton=AeroHudView.ActionButton(toolbar.transform,"LayoutReset","复位主卡",new Vector2(230,-4),new Vector2(200,56),new Vector3(210,72,8));
         buttons=new[]{DoneButton,UndoButton,ResetButton};
+        foreach(var b in buttons){var label=b.GetComponentInChildren<TextMeshProUGUI>();label.font=AeroUiFonts.Interface;label.characterSpacing=0;}
         DoneButton.onClick.AddListener(EndEdit);UndoButton.onClick.AddListener(Undo);ResetButton.onClick.AddListener(ResetAll);
         SetEditUI(false);
     }
@@ -70,7 +71,7 @@ public class AeroWindowLayout : MonoBehaviour
     {
         var image=AeroHudView.AddPanelImage(parent,isSky?"SkyGrabHandle":"CardGrabHandle",AeroUiSprites.Pill,new Vector2(0,y),new Vector2(260,44),AeroUiTokens.ButtonFill);
         image.gameObject.AddComponent<BoxCollider>().size=new Vector3(270,58,10);
-        AeroHudView.Text(image.transform,"GrabLabel","GRAB + HOLD",Vector2.zero,new Vector2(248,40),22,AeroUiFonts.SemiBold,AeroUiTokens.Mint,TextAlignmentOptions.Center,0,0,true);
+        AeroHudView.Text(image.transform,"GrabLabel","捏住把手移动",Vector2.zero,new Vector2(248,40),22,AeroUiFonts.Interface,AeroUiTokens.Mint,TextAlignmentOptions.Center,0,0,true);
         var handle=image.gameObject.AddComponent<AeroDragHandle>();handle.Sky=isSky;image.gameObject.SetActive(false);return handle;
     }
     AeroDockZone Zone(string name,AeroWindowAnchor anchor,string label)
@@ -82,7 +83,7 @@ public class AeroWindowLayout : MonoBehaviour
         line.SetPositions(new[]{new Vector3(-0.25f,-0.17f,0),new Vector3(-0.25f,0.17f,0),new Vector3(0.25f,0.17f,0),new Vector3(0.25f,-0.17f,0),new Vector3(-0.25f,-0.17f,0)});
         var text=new GameObject("DockLabel",typeof(RectTransform),typeof(Canvas));text.transform.SetParent(go.transform,false);text.transform.localPosition=new Vector3(0,0.23f,0);text.transform.localScale=Vector3.one*0.001f;
         var canvas=text.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=eye;
-        AeroHudView.Text(text.transform,"Caption",label,Vector2.zero,new Vector2(600,70),26,AeroUiFonts.SemiBold,AeroUiTokens.Ink,TextAlignmentOptions.Center,0,0,true);
+        AeroHudView.Text(text.transform,"Caption",label,Vector2.zero,new Vector2(600,70),26,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Center,0,0,true);
         var zone=go.AddComponent<AeroDockZone>();zone.Anchor=anchor;go.SetActive(false);return zone;
     }
     public void BeginEdit(bool isSky)
@@ -91,14 +92,24 @@ public class AeroWindowLayout : MonoBehaviour
         if(Dragging)CancelDrag("CANCELLED");
         owner.ShowDetailForLayout();
         editingSky=isSky;Editing=true;if(hasUndo&&undo.Sky!=isSky)hasUndo=false;SetEditUI(true);
-        PlaceZones();status.text="LAYOUT: HOLD HANDLE, RELEASE ON A ZONE";owner.ClearPresses();
+        PlaceZones();status.text="布局编辑：捏住把手开始，松手即放置";owner.ClearPresses();
     }
-    public void EndEdit() { if(Dragging)CancelDrag("CANCELLED");Editing=false;SetEditUI(false);owner.ClearPresses(); }
+    public void EndEdit() { if(Dragging)CancelDrag("已取消本次拖动");Editing=false;SetEditUI(false);owner.ClearPresses();owner.RefreshSettings("已退出布局编辑"); }
     void SetEditUI(bool show)
     {
         CardHandle.gameObject.SetActive(show&&!editingSky);if(SkyHandle!=null)SkyHandle.gameObject.SetActive(false);
-        toolbar.SetActive(show);WorldZone.gameObject.SetActive(show);ViewZone.gameObject.SetActive(show);
+        toolbar.SetActive(show);SetDockTargets(show&&DragActive);
+        card.GetComponent<AeroHudView>().SetLayoutEditing(show);
+    }
+    void SetDockTargets(bool show)
+    {
+        WorldZone.gameObject.SetActive(show);ViewZone.gameObject.SetActive(show);
         HandZone.gameObject.SetActive(show&&!editingSky&&owner.HandEntry.AnchorTracked);
+    }
+    void HighlightDock(AeroDockZone selected)
+    {
+        foreach(var zone in new[]{WorldZone,ViewZone,HandZone})
+        {var line=zone.GetComponent<LineRenderer>();var tint=AeroUiTokens.Mint;tint.a=selected==null||zone==selected?1f:.25f;line.startColor=line.endColor=tint;}
     }
     Pose ViewPose(bool isSky)
     {
@@ -123,7 +134,7 @@ public class AeroWindowLayout : MonoBehaviour
     void UpdateHandZone()
     {
         if(!Editing)return;
-        bool valid=!editingSky&&owner.HandEntry.AnchorTracked;HandZone.gameObject.SetActive(valid);
+        bool valid=DragActive&&!editingSky&&owner.HandEntry.AnchorTracked;HandZone.gameObject.SetActive(valid);
         if(valid){var h=HandPose();HandZone.transform.SetPositionAndRotation(h.position,h.rotation);}
     }
     State Capture(bool isSky)
@@ -143,7 +154,7 @@ public class AeroWindowLayout : MonoBehaviour
     {
         if(!Editing||Dragging||handle.Sky!=editingSky)return;
         before=Capture(editingSky);dragOwner=hand;holdTime=0;holdDistance=Mathf.Clamp(distance,0.35f,4.5f);
-        grabOffset=EditedWindow.position-ray.GetPoint(distance);candidate=null;status.text="HOLD TO MOVE";
+        grabOffset=EditedWindow.position-ray.GetPoint(distance);candidate=null;status.text="继续捏住，准备移动";
     }
     public bool Raycast(Ray ray,float distance,out RaycastHit hit)
     {
@@ -163,24 +174,25 @@ public class AeroWindowLayout : MonoBehaviour
             if(holdTime<0.15f){CancelDrag("TAP IGNORED - HOLD TO MOVE");return;}
             undo=before;hasUndo=true;
             var anchor=candidate!=null?candidate.Anchor:AeroWindowAnchor.World;
-            Commit(anchor);dragOwner=null;candidate=null;status.text="PLACED: "+anchor.ToString().ToUpperInvariant();return;
+            Commit(anchor);dragOwner=null;candidate=null;SetDockTargets(false);status.text="已放置，可继续调整或退出";owner.RefreshSettings();return;
         }
 #if UNITY_EDITOR
         if(DeltaForChecks>0)dt=DeltaForChecks;
 #endif
-        holdTime+=Mathf.Clamp(dt,0,0.05f);if(holdTime<0.15f)return;
+        holdTime+=Mathf.Clamp(dt,0,0.05f);if(holdTime<0.15f)return;SetDockTargets(true);UpdateHandZone();
         candidate=zone!=null&&zone.gameObject.activeInHierarchy?zone:null;
+        HighlightDock(candidate);
         var target=EditedWindow;
         if(candidate!=null)
         {
             target.SetPositionAndRotation(candidate.transform.position,candidate.transform.rotation);
             target.localScale=Vector3.one*(candidate.Anchor==AeroWindowAnchor.Hand?0.00055f:editingSky?0.0026f:0.0015f);
-            status.text="PREVIEW: "+candidate.Anchor.ToString().ToUpperInvariant()+" - RELEASE TO PIN";
+            status.text="松手放置："+(candidate.Anchor==AeroWindowAnchor.Hand?"跟随左手":candidate.Anchor==AeroWindowAnchor.View?"跟随视野":"固定在环境");
         }
         else
         {
             target.SetPositionAndRotation(ray.GetPoint(holdDistance)+grabOffset,before.Pose.rotation);
-            target.localScale=before.Scale;status.text="PREVIEW: FREE WORLD - RELEASE TO PLACE";
+            target.localScale=before.Scale;status.text="松手固定在此处";
         }
         Physics.SyncTransforms();
     }
@@ -194,20 +206,20 @@ public class AeroWindowLayout : MonoBehaviour
     public void CancelDrag(string reason)
     {
         if(!Dragging)return;
-        dragOwner=null;candidate=null;Restore(before);status.text=reason;
+        dragOwner=null;candidate=null;Restore(before);SetDockTargets(false);status.text="本次拖动已取消，原位置保留";
     }
     public void Undo()
     {
         if(Dragging)CancelDrag("CANCELLED");
-        if(!hasUndo){status.text="NO PLACEMENT TO UNDO";return;}
-        Restore(undo);hasUndo=false;status.text="UNDONE";
+        if(!hasUndo){status.text="暂无可撤销的放置";return;}
+        Restore(undo);hasUndo=false;status.text="已撤销最近一次放置";owner.RefreshSettings();
     }
     public void ResetAll()
     {
         if(Dragging)CancelDrag("CANCELLED");
         MainAnchor=AeroWindowAnchor.Follow;SkyAnchor=AeroWindowAnchor.World;HasSkyPlacement=false;card.localScale=Vector3.one*0.0015f;
         SetHandRendering(true);owner.Follow.ResetOptions();hasUndo=false;
-        if(Editing){PlaceZones();status.text="DEFAULT LAYOUT RESTORED";}Physics.SyncTransforms();
+        if(Editing){PlaceZones();status.text="主卡布局已复位";}Physics.SyncTransforms();
     }
     Canvas cardCanvas;Collider[] cardColliders;bool? handRendering;
     void SetHandRendering(bool visible)

@@ -16,6 +16,8 @@ public class PinchHudExperiment : MonoBehaviour
     public AeroCompactHud Compact { get; private set; }
     public HandBackHudEntry HandEntry { get; private set; }
     public HudSoftFollow Follow => follow;
+    public AeroInteractionFeedback Feedback { get; private set; }
+    public bool FeedbackSoundEnabled => Feedback!=null&&Feedback.SoundEnabled;
     Camera view;
     float maxDistance;
     GameObject card;
@@ -66,6 +68,7 @@ public class PinchHudExperiment : MonoBehaviour
         Compact = AeroCompactHud.Build(view,hudView.Route,OpenOrRecall);
         Layout = gameObject.AddComponent<AeroWindowLayout>();
         Layout.Initialize(this,view,card.transform,Sky.transform);
+        Feedback=AeroInteractionFeedback.Build(view);
         hudView.BindControls(this);
         leftPointer = BuildPointer("LeftHandRay");
         rightPointer = BuildPointer("RightHandRay");
@@ -111,10 +114,19 @@ public class PinchHudExperiment : MonoBehaviour
             var held=Layout.DragOwner=="left"?leftPointer:rightPointer;
             bool valid=Layout.DragOwner=="left"?leftValid:rightValid;
             Layout.StepDrag(valid,held.pressed,held.ray,held.zone,Time.unscaledDeltaTime);
+            TickFeedback();
             return;
         }
         if (leftSelect) Select(leftPointer, "left");
         else if (rightSelect) Select(rightPointer, "right");
+        TickFeedback();
+    }
+
+    void TickFeedback()
+    {
+        Feedback.HandEntryEnabled=HandEntry.EnabledForEntry;
+        Feedback.RecoveryControlVisible=Compact.FallbackVisible;
+        Feedback.Tick(IsCardOpen,HandEntry.AnchorTracked,HasTrackedHand,focused,Time.unscaledDeltaTime);
     }
 
     void LateUpdate()
@@ -141,14 +153,14 @@ public class PinchHudExperiment : MonoBehaviour
     {
         if(Layout!=null&&Layout.Dragging)Layout.CancelDrag("RECENTERED");
         if(Layout!=null&&(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View))Layout.ReleaseToFollow();
-        follow.SnapToView();Physics.SyncTransforms();
+        follow.SnapToView();Physics.SyncTransforms();RefreshSettings("主卡已移到面前");
     }
-    public void RecenterSky() { if(Sky!=null)Sky.Recall(); }
-    public void ToggleSkyMap() { if(Sky.Visible)Sky.Hide();else Sky.Show();hudView.RefreshSkyButton(Sky.Visible); }
+    public void RecenterSky() { if(Sky!=null)Sky.Recall();RefreshSettings("天空地图已回到前上方"); }
+    public void ToggleSkyMap() => SetSkyVisible(!Sky.Visible);
     public void ResetViewOptions()
     {
         HandEntry.ResetHeight();HandEntry.EnabledForEntry=true;HandEntry.ShortcutsEnabled=false;legacyEntry=false;entry.gameObject.SetActive(false);
-        Compact.SetPlacement(AeroCompactHud.Placement.Hidden);Layout.ResetAll();Physics.SyncTransforms();
+        Compact.SetPlacement(AeroCompactHud.Placement.Hidden);Layout.ResetAll();if(Feedback!=null)Feedback.SoundEnabled=false;Physics.SyncTransforms();RefreshSettings("HUD默认设置已恢复，天空状态保持");
     }
     public void ShowDetailForLayout()
     {
@@ -162,6 +174,39 @@ public class PinchHudExperiment : MonoBehaviour
         else{HandEntry.EnabledForEntry=false;HandEntry.ShortcutsEnabled=false;}
         HandEntry.RequireRelease();ResetPresses();
     }
+    public void RefreshSettings(string message=null)
+    {
+        if(hudView!=null&&hudView.SettingsView!=null)hudView.SettingsView.Refresh();
+        if(message!=null&&Feedback!=null)Feedback.Notify(message);
+    }
+    public void SetSkyVisible(bool visible)
+    {
+        if(Sky.Visible!=visible){if(visible)Sky.Show();else Sky.Hide();}
+        hudView.RefreshSkyButton(Sky.Visible);RefreshSettings(visible?"天空地图已开启":"天空地图已关闭");
+    }
+    public void SetCompactPlacement(AeroCompactHud.Placement side) { Compact.SetPlacement(side);RefreshSettings("小型读数位置已更新"); }
+    public void SetHandEntryMode(int mode)
+    {
+        HandEntry.EnabledForEntry=mode!=2;HandEntry.ShortcutsEnabled=mode==1;legacyEntry=false;entry.gameObject.SetActive(false);
+        HandEntry.RequireRelease();ResetPresses();RefreshSettings("入口方式已更新");
+    }
+    public void SetHandHeight(float height){HandEntry.SetHeight(height);RefreshSettings("手背按钮高度已更新");}
+    public void SetFollowMode(HudSoftFollow.FollowMode mode)
+    {
+        bool detached=Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View;
+        if(!detached&&follow.Mode==mode){RefreshSettings();return;}
+        if(detached)Layout.ReleaseToFollow();follow.SetMode(mode);Layout.SetAnchorFromFollowMode();if(detached)follow.SnapToView();
+        RefreshSettings(mode==HudSoftFollow.FollowMode.Fixed?"主卡已固定在环境中":"主卡跟随方式已更新");
+    }
+    public bool SetPanelDistance(float distance)
+    {
+        if(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View){RefreshSettings("移回面前后可调距离");return false;}
+        if(Mathf.Approximately(follow.Distance,distance)){RefreshSettings();return true;}
+        follow.SetDistance(distance);follow.SnapToView();Physics.SyncTransforms();RefreshSettings("面板距离已更新");return true;
+    }
+    public void ShowHelp(){if(Feedback!=null)Feedback.ShowHelp();}
+    public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SoundEnabled=enabled;RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
+
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 
     public void ToggleFromHand() { if (IsCardOpen) CloseCard(); else OpenFromHand(); }
@@ -271,6 +316,7 @@ public class PinchHudExperiment : MonoBehaviour
         else if (pointer.button != null) pointer.button.onClick.Invoke();
         else if (pointer.target != null) OpenCard(pointer.target);
         ResetPresses();
+        if(Feedback!=null&&pointer.button!=null)Feedback.Confirm(pointer.button);
     }
 
     static void ClearHover(HandPointer pointer)
@@ -319,6 +365,7 @@ public class PinchHudExperiment : MonoBehaviour
         ResetPresses();
         HandEntry.RequireRelease();
         OpenCard(null);
+        if(Feedback!=null)Feedback.Notify("主卡已打开；指向按钮后捏合确认");
     }
 
 #if UNITY_EDITOR
@@ -353,6 +400,7 @@ public class PinchHudExperiment : MonoBehaviour
         entry.transform.Find("HudEntryLabel").rotation = Quaternion.LookRotation(forward);
         entry.gameObject.SetActive(legacyEntry);
         Physics.SyncTransforms();
+        if(Feedback!=null)Feedback.Notify("HUD已收起，天空状态保持");
         Debug.Log("[AeroPulse Hands] CLOSE");
     }
 
@@ -362,6 +410,7 @@ public class PinchHudExperiment : MonoBehaviour
         if(!hasFocus&&Layout!=null&&Layout.Dragging)Layout.CancelDrag("APP PAUSED - RESTORED");
         if(Compact!=null)Compact.SetPaused(!hasFocus);
         if(Sky!=null)Sky.SetPaused(!hasFocus);
+        if(!hasFocus&&Feedback!=null)Feedback.Tick(IsCardOpen,false,false,false,0);
         if (leftPointer != null) { leftPointer.gate = default; leftPointer.pinch = default;leftPointer.pendingPress=false; }
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
     }
@@ -372,6 +421,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         if(Layout!=null&&Layout.Editing)Layout.EndEdit();
         if(Compact!=null)Compact.SetPaused(true);
+        if(Feedback!=null)Feedback.Tick(false,false,false,false,0);
         if (leftPointer != null) { leftPointer.gate = default; leftPointer.pinch = default;leftPointer.pendingPress=false; }
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
         HasTrackedHand = false;
@@ -389,6 +439,7 @@ public class PinchHudExperiment : MonoBehaviour
         if (card != null) Destroy(card);
         if (Sky != null) Destroy(Sky.gameObject);
         if (Compact != null) Destroy(Compact.gameObject);
+        if (Feedback != null) Destroy(Feedback.gameObject);
     }
 
     void BuildCard()

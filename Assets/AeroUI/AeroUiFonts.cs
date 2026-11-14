@@ -3,6 +3,8 @@ using UnityEngine;
 
 public static class AeroUiFonts
 {
+    static TMP_FontAsset interfaceFont;
+    public static TMP_FontAsset Interface => interfaceFont != null ? interfaceFont : interfaceFont = Load("AeroPulseSC_SDF");
     static TMP_FontAsset regular;
     static TMP_FontAsset medium;
     static TMP_FontAsset semibold;
