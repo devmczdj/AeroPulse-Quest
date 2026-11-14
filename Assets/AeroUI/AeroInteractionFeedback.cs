@@ -15,9 +15,9 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
     const float FlashDuration = 0.14f;
     const float LostDelay = 1.2f;
     static readonly Color PressColor = new Color(0.10f, 0.42f, 0.33f, 1f);
-    const string TouchIntro = "抬起左手，手背朝向自己\n右食指轻触 HUD；面板按钮用射线捏合";
+    const string TouchIntro = "抬起左手，手背朝向自己\n右食指轻触 HUD；近处按钮直接点";
     const string FrontIntro = "用手射线指向前方入口\n松开手指后，再捏合打开 HUD";
-    const string HelpText = "轻触手背打开或收起 HUD\n指向面板后捏合；恢复追踪后先松开手指";
+    const string HelpText = "轻触手背打开或收起 HUD\n近处食指点按，远处射线捏合；恢复后先抬指";
 
     struct Flash
     {
@@ -156,7 +156,7 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
             {
                 if (lossNoticeShown)
                 {
-                    recovery = "已重新识别到手\n先松开手指，再捏合确认";
+                    recovery = "已重新识别到手\n先松开并移开手指，再点按或捏合";
                     recoveryRemaining = 2.5f;
                 }
                 lossAnnounced = lossNoticeShown = false;
@@ -173,7 +173,7 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
                 {
                     recovery = !hudOpen && HandEntryEnabled
                         ? "将左手移入视野，手背朝向自己\n右食指轻触手背的 HUD 入口"
-                        : "将双手移回视野，等待追踪恢复\n松开手指后，再捏合确认";
+                        : "将双手移回视野，等待追踪恢复\n先松开并移开手指，再点按或捏合";
                     recoveryRemaining = 4.5f;
                     lossNoticeShown = true;
                     nextLossNotice = clock + 10f;

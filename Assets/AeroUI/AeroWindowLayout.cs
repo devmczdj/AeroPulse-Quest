@@ -113,7 +113,7 @@ public class AeroWindowLayout : MonoBehaviour
     }
     Pose ViewPose(bool isSky)
     {
-        Vector3 p=eye.transform.TransformPoint(isSky?new Vector3(-0.9f,1.55f,3.6f):new Vector3(-0.9f,0.15f,owner.Follow.Distance));
+        Vector3 p=eye.transform.TransformPoint(isSky?new Vector3(-0.9f,1.55f,3.6f):new Vector3(-owner.Follow.Distance*.5f,owner.Follow.Distance/12f,owner.Follow.Distance));
         return new Pose(p,Quaternion.LookRotation(p-eye.transform.position,eye.transform.up));
     }
     Pose HandPose()
@@ -126,9 +126,10 @@ public class AeroWindowLayout : MonoBehaviour
         var forward=Vector3.ProjectOnPlane(eye.transform.forward,Vector3.up).normalized;
         if(forward.sqrMagnitude<0.01f)forward=Vector3.forward;
         var right=Vector3.Cross(Vector3.up,forward);
-        var p=eye.transform.position+forward*(editingSky?3.6f:owner.Follow.Distance)+right*0.9f+Vector3.up*(editingSky?1.55f:0.15f);
+        var p=eye.transform.position+forward*(editingSky?3.6f:owner.Follow.Distance)+right*(editingSky?.9f:owner.Follow.Distance*.5f)+Vector3.up*(editingSky?1.55f:owner.Follow.Distance/12f);
         WorldZone.transform.SetPositionAndRotation(p,Quaternion.LookRotation(p-eye.transform.position,Vector3.up));
         var v=ViewPose(editingSky);ViewZone.transform.SetPositionAndRotation(v.position,v.rotation);
+        WorldZone.transform.localScale=ViewZone.transform.localScale=Vector3.one*(editingSky?1:owner.Follow.Distance/1.8f);
         UpdateHandZone();Physics.SyncTransforms();
     }
     void UpdateHandZone()
@@ -186,7 +187,7 @@ public class AeroWindowLayout : MonoBehaviour
         if(candidate!=null)
         {
             target.SetPositionAndRotation(candidate.transform.position,candidate.transform.rotation);
-            target.localScale=Vector3.one*(candidate.Anchor==AeroWindowAnchor.Hand?0.00055f:editingSky?0.0026f:0.0015f);
+            target.localScale=Vector3.one*(candidate.Anchor==AeroWindowAnchor.Hand?0.00055f:editingSky?0.0026f:0.0015f*owner.Follow.Distance/1.8f);
             status.text="松手放置："+(candidate.Anchor==AeroWindowAnchor.Hand?"跟随左手":candidate.Anchor==AeroWindowAnchor.View?"跟随视野":"固定在环境");
         }
         else

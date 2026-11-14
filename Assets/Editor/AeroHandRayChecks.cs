@@ -32,7 +32,7 @@ public static class AeroHandRayChecks
             Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(hud.IsCardOpen, "Hand ray failed to open " + target.name);
             var card = GameObject.Find("PinchHudCard");
-            Require(card.transform.Find("DataSource").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("SIMULATED DATA"),
+            Require(card.transform.Find("DataSource").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("模拟数据"),
                     "Demo data disclosure missing");
             foreach (var text in card.GetComponentsInChildren<TMPro.TextMeshProUGUI>())
             {
@@ -136,7 +136,7 @@ public static class AeroHandRayChecks
             Require(hud.IsCardOpen, "Map flow cannot open HUD");
             Click(view.MapButton.gameObject);
             Require(view.IsMapOpen && !GameObject.Find("HeartRate"), "Map/data visibility conflicts");
-            Require(view.transform.Find("DataSource").GetComponent<TMPro.TextMeshProUGUI>().text == "SIMULATED MAP",
+            Require(view.transform.Find("DataSource").GetComponent<TMPro.TextMeshProUGUI>().text == "示意路线",
                     "Map simulation label missing");
             var advance = view.MapView.AdvanceButton.gameObject;
             for (int i = 0; i < expected.Length; i++)
@@ -152,7 +152,7 @@ public static class AeroHandRayChecks
                 if (view.Route.NextIndex >= 0)
                     Require(Vector2.Distance(view.MapView.NextMarker.anchoredPosition,
                             view.Route.StopAt(view.Route.NextIndex).Position) < 0.01f, "Next marker stale");
-                Require(advance.GetComponentInChildren<TMPro.TextMeshProUGUI>().text == (i == 4 ? "RESET" : "ADVANCE"),
+                Require(advance.GetComponentInChildren<TMPro.TextMeshProUGUI>().text == (i == 4 ? "重新开始" : "下一站"),
                         "Advance/Reset action mislabeled");
                 foreach (var text in view.GetComponentsInChildren<TMPro.TextMeshProUGUI>())
                 {

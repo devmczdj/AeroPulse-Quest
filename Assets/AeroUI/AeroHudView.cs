@@ -78,9 +78,10 @@ public class AeroHudView : MonoBehaviour
     public void ToggleSettings()
     {
         if (IsSettingsOpen) { ShowMap(mapMode); return; }
+        transform.Find("Content/Wordmark").GetComponent<TextMeshProUGUI>().text="设置";
         dataBody.gameObject.SetActive(false); MapView.gameObject.SetActive(false);
         SettingsView.gameObject.SetActive(true); SettingsView.Refresh();
-        sourceLabel.text = "DEMO SETTINGS"; settingsLabel.text = "返回主卡";subline.text="界面设置";
+        sourceLabel.text = "本次设置"; settingsLabel.text = "返回主卡";subline.text="界面设置";
         SkyButton.gameObject.SetActive(false);MapButton.gameObject.SetActive(false);hoverInitialized=false;
         Physics.SyncTransforms();
     }
@@ -88,12 +89,13 @@ public class AeroHudView : MonoBehaviour
     public void ShowMap(bool show)
     {
         mapMode = show;
+        transform.Find("Content/Wordmark").GetComponent<TextMeshProUGUI>().text=show?"路线":"运动数据";
         RefreshSkyButton(skyVisible);SkyButton.gameObject.SetActive(true);MapButton.gameObject.SetActive(true);hoverInitialized=false;
         SettingsView.gameObject.SetActive(false);
         settingsLabel.text = "设置";
         dataBody.gameObject.SetActive(!show);
         MapView.gameObject.SetActive(show);
-        sourceLabel.text = show ? "SIMULATED MAP" : "SIMULATED DATA";
+        sourceLabel.text = show ? "示意路线" : "模拟数据";
         subline.text = show ? "ROUTE OVERVIEW" : "RUN OVERVIEW";
         mapButtonLabel.text = show ? "数据" : "路线";
         Physics.SyncTransforms();
@@ -116,44 +118,27 @@ public class AeroHudView : MonoBehaviour
         group.blocksRaycasts = true;
         reveal = card.AddComponent<HudReveal>();
 
-        AddPanelImage(card.transform, "Shadow", AeroUiSprites.Shadow, new Vector2(0f, -8f),
-                      new Vector2(840f, 510f), new Color(1f, 1f, 1f, 0.78f));
         var glass = AddPanelImage(card.transform, "GlassBase", LoadGlassSprite(), Vector2.zero,
                                   new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight), new Color(1f, 1f, 1f, 0.85f));
         glass.type = Image.Type.Sliced;
         glass.pixelsPerUnitMultiplier = 4f;
-        glass.material = Resources.Load<Material>("AeroGlassBackground");
-        AddPanelImage(card.transform, "Tint", AeroUiSprites.Tint, Vector2.zero,
-                      new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight), new Color(1f, 1f, 1f, 0.5f));
-        AddPanelImage(card.transform, "Sheen", AeroUiSprites.Sheen, Vector2.zero,
-                      new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight), Color.white);
-        AddPanelImage(card.transform, "Stroke", AeroUiSprites.Stroke, Vector2.zero,
-                      new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight), Color.white);
+        glass.material = null;
         var content = NewRect("Content", card.transform, Vector2.zero,
                               new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight));
         content.SetAsLastSibling();
 
-        AddPanelImage(content, "Logo", AeroUiSprites.Logo, new Vector2(-344f, 168f),
-                      new Vector2(24f, 24f), Color.white);
-        Text(content, "Wordmark", "AEROPULSE", new Vector2(-310f, 169f), new Vector2(300f, 32f),
+        Text(content, "Wordmark", "AEROPULSE", new Vector2(-310f, 169f), new Vector2(300f, 44f),
              22f, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Left, 12f, 0f);
         subline = Text(content, "Subline", "RUN OVERVIEW", new Vector2(-310f, 145f), new Vector2(300f, 22f),
              16f, AeroUiFonts.Interface, AeroUiTokens.Secondary,
              TextAlignmentOptions.Left, 4f, 0f);
 
-        AddPanelImage(content, "ChipBorder", AeroUiSprites.PillStroke, new Vector2(244f, 169f),
-                      new Vector2(222f, 44f), AeroUiTokens.ChipStroke);
-        AddPill(content, "ChipFill", new Vector2(244f, 169f), new Vector2(218f, 40f),
-                AeroUiTokens.ChipFill);
-        AddPanelImage(content, "ChipDot", AeroUiSprites.Dot, new Vector2(150f, 169f),
-                      new Vector2(7f, 7f), AeroUiTokens.Mint);
         sourceLabel = Text(card.transform, "DataSource", "SIMULATED DATA", new Vector2(258f, 169f),
              new Vector2(190f, 30f), 16f, AeroUiFonts.Medium,
              new Color(0.75f, 0.92f, 0.87f, 0.96f), TextAlignmentOptions.Center, 2f, 0f, true);
 
         SkyButton = ActionButton(card.transform,"OpenSkyMap","SKY MAP",new Vector2(18,155),new Vector2(156,44),new Vector3(160,52,8));
 
-        Hairline(content, "HeaderDivider", new Vector2(0f, 122f), 688f);
 
         dataBody = NewRect("DataContent", content, Vector2.zero,
                            new Vector2(AeroUiTokens.PanelWidth, AeroUiTokens.PanelHeight));
@@ -161,30 +146,16 @@ public class AeroHudView : MonoBehaviour
              18f, AeroUiFonts.SemiBold, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 13f, 0f);
         Text(dataBody, "HeartRate", "142", new Vector2(-344f, 15f), new Vector2(300f, 130f),
              95f, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Left, -2f, 0f);
-        Text(dataBody, "HeartUnit", "BPM", new Vector2(-160f, -7f), new Vector2(80f, 30f),
+        Text(dataBody, "HeartUnit", "BPM", new Vector2(-245f, 2f), new Vector2(80f, 30f),
              18f, AeroUiFonts.Medium, new Color(0.76f, 0.82f, 0.82f, 0.94f),
              TextAlignmentOptions.Left, 10f, 0f);
 
-        Text(dataBody, "EffortLabel", "EFFORT", new Vector2(-344f, -62f), new Vector2(80f, 20f),
-             16f, AeroUiFonts.Medium, AeroUiTokens.Tertiary, TextAlignmentOptions.Left, 12f, 0f);
-        for (int i = 0; i < 5; i++)
-        {
-            AddPanelImage(dataBody, "Effort" + i, AeroUiSprites.Pill,
-                          new Vector2(-242f + i * 20f, -62f), new Vector2(14f, 6f),
-                          i < 3 ? AeroUiTokens.Mint : new Color(1f, 1f, 1f, 0.14f));
-        }
-        Text(dataBody, "EffortValue", "STEADY", new Vector2(-125f, -62f), new Vector2(100f, 20f),
-             16f, AeroUiFonts.Medium, new Color(0.84f, 0.89f, 0.89f, 0.96f),
-             TextAlignmentOptions.Left, 6f, 0f);
-
-        Hairline(dataBody, "ColumnDivider", new Vector2(44f, 3f), 2.5f, 194f);
         Text(dataBody, "PaceLabel", "PACE", new Vector2(96f, 76f), new Vector2(140f, 20f),
              18f, AeroUiFonts.SemiBold, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 11f, 0f);
         Text(dataBody, "Pace", "5:20", new Vector2(96f, 20f), new Vector2(140f, 60f),
              42f, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Left, -2f, 0f);
         Text(dataBody, "PaceUnit", "/KM", new Vector2(208f, 11f), new Vector2(60f, 24f),
              16f, AeroUiFonts.Medium, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 10f, 0f);
-        Hairline(dataBody, "RowDivider", new Vector2(220f, -16f), 248f);
         Text(dataBody, "DistanceLabel", "DISTANCE", new Vector2(96f, -44f), new Vector2(180f, 20f),
              18f, AeroUiFonts.SemiBold, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 11f, 0f);
         Text(dataBody, "Distance", "3.20", new Vector2(96f, -100f), new Vector2(150f, 60f),
@@ -192,18 +163,14 @@ public class AeroHudView : MonoBehaviour
         Text(dataBody, "DistanceUnit", "KM", new Vector2(208f, -109f), new Vector2(60f, 24f),
              16f, AeroUiFonts.Medium, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 10f, 0f);
 
-        Hairline(content, "FooterDivider", new Vector2(0f, -134f), 688f);
-        AddPanelImage(card.transform, "CloseBorder", AeroUiSprites.PillStroke, new Vector2(266f, -172f),
-                      new Vector2(180f, 68f), new Color(1f, 1f, 1f, 0.16f));
-
         var close = new GameObject("Close", typeof(RectTransform), typeof(Image), typeof(Button), typeof(BoxCollider));
         close.transform.SetParent(card.transform, false);
         var closeRect = (RectTransform)close.transform;
         closeRect.sizeDelta = new Vector2(176f, 64f);
         closeRect.anchoredPosition = new Vector2(266f, -172f);
         closeFill = close.GetComponent<Image>();
-        closeFill.sprite = AeroUiSprites.Pill;
-        closeFill.type = Image.Type.Simple;
+        closeFill.sprite = LoadGlassSprite();closeFill.pixelsPerUnitMultiplier=12f;
+        closeFill.type = Image.Type.Sliced;
         closeFill.color = AeroUiTokens.ButtonFill;
         closeFill.raycastTarget = true;
         var collider = close.GetComponent<BoxCollider>();
@@ -228,6 +195,15 @@ public class AeroHudView : MonoBehaviour
         closeLabel.text="收起HUD";
         SettingsButton.onClick.AddListener(ToggleSettings);
         MapButton.onClick.AddListener(() => ShowMap(!mapMode));
+        foreach(var name in new[]{"Shadow","Tint","Sheen","Stroke","CloseBorder"}){var decorative=card.transform.Find(name);if(decorative!=null)decorative.gameObject.SetActive(false);}
+        foreach(var name in new[]{"Logo","ChipBorder","ChipFill","ChipDot","HeaderDivider","FooterDivider"}){var decorative=content.Find(name);if(decorative!=null)decorative.gameObject.SetActive(false);}
+        glass.material=null;glass.color=new Color(.04f,.065f,.07f,.94f);
+        var word=content.Find("Wordmark").GetComponent<TextMeshProUGUI>();word.text="运动数据";word.font=AeroUiFonts.Interface;word.fontSize=26;word.characterSpacing=0;
+        subline.gameObject.SetActive(false);sourceLabel.text="模拟数据";sourceLabel.font=AeroUiFonts.Interface;sourceLabel.characterSpacing=0;
+        foreach(var t in dataBody.GetComponentsInChildren<TextMeshProUGUI>()){t.characterSpacing=0;if(t.fontSize>30)t.fontSize=48;else t.fontSize=22;var rt=(RectTransform)t.transform;rt.sizeDelta=new Vector2(rt.sizeDelta.x,Mathf.Max(rt.sizeDelta.y,t.fontSize>30?64:36));}
+        foreach(var name in new[]{"ColumnDivider","RowDivider","EffortLabel","EffortValue","Effort0","Effort1","Effort2","Effort3","Effort4"}){var obj=dataBody.Find(name);if(obj!=null)obj.gameObject.SetActive(false);}
+        foreach(var pair in new[]{new[]{"HeartLabel","心率"},new[]{"PaceLabel","配速"},new[]{"DistanceLabel","距离"}}){var t=dataBody.Find(pair[0]).GetComponent<TextMeshProUGUI>();t.text=pair[1];t.font=AeroUiFonts.Interface;}
+        sourceLabel.fontSize=18;closeLabel.fontSize=22;
         ShowMap(false);
     }
 
@@ -239,6 +215,7 @@ public class AeroHudView : MonoBehaviour
         var button = image.gameObject.AddComponent<Button>();
         button.targetGraphic = image;
         button.transition = Selectable.Transition.None;
+        image.sprite=Resources.Load<Sprite>("JetStyle/RoundedRect");image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=12f;
         image.gameObject.AddComponent<BoxCollider>().size = hitSize;
         Text(image.transform, name + "Label", label, Vector2.zero, size - new Vector2(12, 8), 22,
              AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Center, 2, 0, true);

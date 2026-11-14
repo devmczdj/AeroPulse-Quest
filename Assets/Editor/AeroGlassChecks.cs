@@ -32,10 +32,10 @@ public static class AeroGlassChecks
             for (int i = 0; i < 15; i++) follow.Tick(0.02f, false);
             Require(Vector3.Distance(held, panel.transform.position) < 0.001f, "Release skipped fresh delay");
             for (int i = 0; i < 400; i++) follow.Tick(0.02f, false);
-            Require(Vector3.Distance(panel.transform.position, eye.transform.forward * 1.8f) < 0.015f, "Follow did not converge");
+            Require(Vector3.Distance(panel.transform.position, eye.transform.forward * follow.Distance) < 0.015f, "Follow did not converge");
             eye.transform.position = new Vector3(2, 0, 0);
             for (int i = 0; i < 400; i++) follow.Tick(0.02f, false);
-            Require(Vector3.Distance(panel.transform.position, eye.transform.position + eye.transform.forward * 1.8f) < 0.015f,
+            Require(Vector3.Distance(panel.transform.position, eye.transform.position + eye.transform.forward * follow.Distance) < 0.015f,
                     "Panel did not recover after translation");
             eye.transform.rotation = Quaternion.Euler(0, 70, 40);
             follow.SnapToView();

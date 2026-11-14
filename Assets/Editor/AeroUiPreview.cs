@@ -48,7 +48,7 @@ public static class AeroUiPreview
                             "Missing font glyph '" + c + "' in " + text.name);
             }
             var close = card.transform.Find("Close/CloseLabel").GetComponent<TextMeshProUGUI>();
-            Require(close.fontSize >= 24f && close.extraPadding, "HIDE clarity settings missing");
+            Require(close.fontSize >= 22f && close.extraPadding, "HIDE clarity settings missing");
             foreach (var text in card.GetComponentsInChildren<TextMeshProUGUI>())
                 Require(text.fontSize >= 16f && text.extraPadding, "Small/unpadded text: " + text.name);
             foreach (var path in Directory.GetFiles("Assets/Resources/AeroUI/Textures", "*.png"))

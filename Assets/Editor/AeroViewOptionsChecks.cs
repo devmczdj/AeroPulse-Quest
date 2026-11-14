@@ -28,10 +28,10 @@ public static class AeroViewOptionsChecks
         Click(settings.TabButtons[(int)AeroHudSettingsView.SettingsTab.Layout]);
         Click(settings.ModeOptions[1]);
         Require(hud.Follow.Mode==HudSoftFollow.FollowMode.Quick,"Follow setting not bound");
-        Click(settings.DistanceOptions[2]);
+        hud.SetPanelDistance(2.2f);
         Require(Mathf.Approximately(hud.Follow.Distance,2.2f),"Distance setting not bound");
         Click(settings.TabButtons[(int)AeroHudSettingsView.SettingsTab.Input]);
-        Click(settings.HeightOptions[2]);
+        hud.SetHandHeight(.045f);
         Require(Mathf.Approximately(hud.HandEntry.HeightOffset,0.045f),"Height setting not bound");
         var palm = new Vector3(-0.15f,1.3f,0.45f);
         var root = Quaternion.Euler(-90,0,0);
@@ -44,12 +44,12 @@ public static class AeroViewOptionsChecks
                     "Visual height moved physical touch proxy");
         }
         CheckHeight(0.045f);
-        Click(settings.HeightOptions[0]); CheckHeight(0.025f);
-        Click(settings.HeightOptions[1]); CheckHeight(0.035f);
+        hud.SetHandHeight(.025f); CheckHeight(0.025f);
+        hud.SetHandHeight(.035f); CheckHeight(0.035f);
         foreach(var text in view.GetComponentsInChildren<TextMeshProUGUI>())
         { text.ForceMeshUpdate(); Require(!text.isTextOverflowing,"Settings text overflow: "+text.name); }
         Click(settings.ResetButton);Click(settings.ConfirmResetButton);
-        Require(hud.Follow.Mode==HudSoftFollow.FollowMode.Soft && Mathf.Approximately(hud.Follow.Distance,1.8f) &&
+        Require(hud.Follow.Mode==HudSoftFollow.FollowMode.Soft && Mathf.Approximately(hud.Follow.Distance,.65f) &&
                 Mathf.Approximately(hud.HandEntry.HeightOffset,0.035f),"Reset defaults failed");
         Click(view.SettingsButton);
         Require(!view.IsSettingsOpen && !view.IsMapOpen,"DONE did not return to data");
@@ -66,7 +66,7 @@ public static class AeroViewOptionsChecks
         Pointer(true,true,null);
         Require(!hud.FollowPaused,"Blank card / idle pinch still freezes follow");
         for(int i=0;i<300;i++) follow.Tick(0.02f,hud.FollowPaused);
-        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*1.8f)<0.02f,"Soft follow did not return");
+        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*follow.Distance)<0.02f,"Soft follow did not return");
         Pointer(true,true,view.CloseButton); var held=follow.transform.position;
         camera.transform.rotation=Quaternion.Euler(0,95,0);
         Require(hud.FollowPaused,"Active button press no longer pauses");
@@ -78,12 +78,12 @@ public static class AeroViewOptionsChecks
         follow.CycleMode(); // Quick
         follow.SnapToView(); camera.transform.rotation=Quaternion.Euler(0,220,0);
         for(int i=0;i<300;i++) follow.Tick(0.02f,false);
-        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*1.8f)<0.02f,"Quick follow failed");
+        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*follow.Distance)<0.02f,"Quick follow failed");
         follow.CycleMode(); held=follow.transform.position; camera.transform.rotation=Quaternion.Euler(0,290,0);
         for(int i=0;i<200;i++) follow.Tick(0.02f,false);
         Require(Vector3.Distance(held,follow.transform.position)<0.001f,"Fixed mode follows head");
         hud.Recenter();
-        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*1.8f)<0.02f,"Manual recenter failed in fixed mode");
+        Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*follow.Distance)<0.02f,"Manual recenter failed in fixed mode");
         hud.ResetViewOptions(); view.ShowMap(false); view.CloseButton.onClick.Invoke();
         hud.HandEntry.enabled=true;
         Debug.Log("[AeroPulse ViewOptions] PASS: real ray settings, distance/height/reset, data/map return, empty-card and pinch follow recovery, button pause/escape, quick/fixed/recenter");

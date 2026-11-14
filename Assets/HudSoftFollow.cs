@@ -5,13 +5,13 @@ public class HudSoftFollow : MonoBehaviour
 {
     public enum FollowMode { Soft, Quick, Fixed }
     public FollowMode Mode { get; private set; }
-    public float Distance { get; private set; } = 1.8f;
+    public float Distance { get; private set; } = 0.65f;
     public string ModeLabel => Mode == FollowMode.Soft ? "SOFT FOLLOW" : Mode == FollowMode.Quick ? "QUICK FOLLOW" : "FIXED HERE";
     public void SetMode(FollowMode value) { Mode=value;outsideTime=0;moving=false;pressFreezeTime=0;if(view!=null)previousViewPosition=view.position; }
     public void CycleMode() => SetMode((FollowMode)(((int)Mode + 1) % 3));
-    public void SetDistance(float value) { Distance=Mathf.Clamp(value,1.4f,2.2f); }
+    public void SetDistance(float value) { Distance=Mathf.Clamp(value,0.55f,2.2f); }
     public void CycleDistance() { Distance = Distance < 1.6f ? 1.8f : Distance < 2f ? 2.2f : 1.4f; }
-    public void ResetOptions() { Mode = FollowMode.Soft; Distance = 1.8f; SnapToView(); }
+    public void ResetOptions() { Mode = FollowMode.Soft; Distance = 0.65f; SnapToView(); }
     Transform view;
     Vector3 previousViewPosition;
     float outsideTime,pressFreezeTime;
@@ -28,6 +28,7 @@ public class HudSoftFollow : MonoBehaviour
 
     public void SnapToView()
     {
+        transform.localScale=Vector3.one*(0.0015f*Distance/1.8f);
         var rotation = ViewRotation();
         transform.SetPositionAndRotation(view.position + rotation * Vector3.forward * Distance, rotation);
         previousViewPosition = view.position;

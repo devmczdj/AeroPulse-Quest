@@ -19,29 +19,29 @@ typography:
   display:
     fontFamily: Inter
     fontWeight: 600
-    fontSize: 95
+    fontSize: 48
     letterSpacing: -0.02em
     lineHeight: 1.05
   metric:
     fontFamily: Inter
     fontWeight: 600
-    fontSize: 42
+    fontSize: 48
     letterSpacing: -0.02em
     lineHeight: 1.05
   wordmark:
     fontFamily: Inter
     fontWeight: 600
-    fontSize: 19.5
+    fontSize: 26
     letterSpacing: 0.12em
   label:
     fontFamily: Inter
     fontWeight: 500
-    fontSize: 13.5
+    fontSize: 22
     letterSpacing: 0.12em
   micro:
     fontFamily: Inter
     fontWeight: 500
-    fontSize: 12
+    fontSize: 18
     letterSpacing: 0.1em
 rounded:
   panel: 36
@@ -57,7 +57,7 @@ components:
     width: 760
     height: 430
     radius: 36
-    layers: [shadow, glass-base, graphite-tint, sheen, stroke]
+    layers: [single-translucent-surface]
     background: "static panorama cubemap, blurred by mip level; not live blur"
   status-chip:
     height: 34
@@ -320,3 +320,9 @@ Inter，SIL Open Font License 1.1。
 可选小读数：HIDDEN/LEFT/RIGHT，默认隐藏；142BPM/5:20和下一站共用原演示状态，常显SIM DATA。仅小读数跟头显，详细面板仍按SOFT/QUICK/FIXED，天空仍为会话世界固定。小读数不带交互碰撞体，避免阻断远处射线。
 
 SETTINGS顶部LAYOUT/BASIC切两页，布局页提供SMALL HUD和HAND ENTRY；HAND BACK默认手背，FRONT BUTTON为视野下方矩形OPEN HUD备用，仍用自由射线/新捏合，不恢复旧光球。默认复位恢复隐藏读数与手背入口；失焦隐藏/恢复保留会话选择。
+
+## v0.17 当前界面约束（2026-11-15，优先于历史外观）
+
+设置为操作型界面，右侧固定分类、左侧控件；分类用中性选中背景与字重，值选项用简洁状态色。高度/距离为连续滑块，名称和当前值可见。主卡删除品牌眉标/芯片装饰/多层阴影/描边/反光叠层和装饰性图表，主要字号18/22/26/48设计单位；场景地图标注另按空间可读性处理，不能当网页px。
+
+近处食指触碰优先，远处保持自由射线捏合；主卡默认0.65m，范围0.55–2.20m，随距离按比例缩放以保持视觉大小。滑块预览时固定交互面，释放提交；丢追踪/失焦/切页取消。手背入口按可见显示表面判定，先离开再点击，无60ms停留要求。天空仍独立，不增加按钮或窗口停靠。

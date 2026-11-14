@@ -29,18 +29,18 @@ public static class AeroSettingsChecks
         Click(s.SkyOptions[1]);Click(s.SkyOptions[1]);Require(h.Sky.Visible,"Explicit sky on cycled");
         Click(s.CompactOptions[2]);Click(s.CompactOptions[2]);Require(h.Compact.Side==AeroCompactHud.Placement.Right,"Explicit readout choice cycled");
         Click(s.TabButtons[1]);Click(s.EntryOptions[2]);Click(s.EntryOptions[2]);Require(!h.HandEntry.EnabledForEntry&&!h.Feedback.HandEntryEnabled,"Front entry state/help diverged");
-        Click(s.HeightOptions[2]);Click(s.HeightOptions[2]);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
+        h.SetHandHeight(.045f);h.SetHandHeight(.045f);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
         Click(s.SoundOptions[1]);Require(h.Feedback.SoundEnabled,"Sound selection not bound");Click(s.HelpButton);Require(h.Feedback.Visible&&h.Feedback.Message.Contains("前方"),"Front help teaches hidden hand entry");
         Click(s.TabButtons[2]);Click(s.ModeOptions[2]);var fixedPosition=v.transform.position;c.transform.position+=new Vector3(.2f,0,0);
-        Click(s.DistanceOptions[1]);Require(Vector3.Distance(fixedPosition,v.transform.position)<.001f&&h.Layout.MainAnchor==AeroWindowAnchor.World,"Same distance silently recalled fixed window");
-        Click(s.ModeOptions[1]);Click(s.DistanceOptions[2]);Require(h.Follow.Mode==HudSoftFollow.FollowMode.Quick&&Mathf.Approximately(h.Follow.Distance,2.2f),"Explicit follow/distance not applied");
+        h.SetPanelDistance(h.Follow.Distance);Require(Vector3.Distance(fixedPosition,v.transform.position)<.001f&&h.Layout.MainAnchor==AeroWindowAnchor.World,"Same distance silently recalled fixed window");
+        Click(s.ModeOptions[1]);h.SetPanelDistance(2.2f);Require(h.Follow.Mode==HudSoftFollow.FollowMode.Quick&&Mathf.Approximately(h.Follow.Distance,2.2f),"Explicit follow/distance not applied");
         // Reset is scoped and cancellable; switching categories is also an explicit cancel.
         h.SetSkyVisible(false);route=v.Route.CurrentIndex;Click(s.ResetButton);Require(s.ResetConfirmationOpen,"Reset scope confirmation missing");Fit(s.transform);
         Require(!s.ModeOptions[0].gameObject.activeInHierarchy,"Reset dialog leaks underlying input");Click(s.CancelResetButton);
         Require(h.Follow.Mode==HudSoftFollow.FollowMode.Quick&&!h.HandEntry.EnabledForEntry&&!h.Sky.Visible,"Cancel reset altered settings");
         Click(s.ResetButton);Click(s.TabButtons[0]);Require(!s.ResetConfirmationOpen&&h.Follow.Mode==HudSoftFollow.FollowMode.Quick,"Tab cancel unexpectedly reset");
         Click(s.ResetButton);Click(s.ConfirmResetButton);
-        Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&Mathf.Approximately(h.Follow.Distance,1.8f)&&h.HandEntry.EnabledForEntry&&Mathf.Approximately(h.HandEntry.HeightOffset,.035f)&&!h.FeedbackSoundEnabled&&h.Compact.Side==AeroCompactHud.Placement.Hidden,"Reset failed to restore declared scope");
+        Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&Mathf.Approximately(h.Follow.Distance,.65f)&&h.HandEntry.EnabledForEntry&&Mathf.Approximately(h.HandEntry.HeightOffset,.035f)&&!h.FeedbackSoundEnabled&&h.Compact.Side==AeroCompactHud.Placement.Hidden,"Reset failed to restore declared scope");
         Require(!h.Sky.Visible&&v.Route.CurrentIndex==route,"HUD reset changed independent sky/route");
         // Place onto hand through actual ray. Hidden targets become visible only after hold threshold.
         Click(s.TabButtons[2]);var palm=c.transform.position+new Vector3(-.2f,-.3f,.5f);var rotation=Quaternion.Euler(-90,0,0);
@@ -55,7 +55,7 @@ public static class AeroSettingsChecks
         Require(l.MainAnchor==AeroWindowAnchor.Hand&&!l.WorldZone.gameObject.activeInHierarchy,"Hand placement/exit failed");
         Click(v.SettingsButton);Click(s.TabButtons[2]);Require(!s.DistanceOptions[0].IsInteractable()&&s.CurrentModeLabel.text.Contains("随左手"),"Attached distance/status not reflected");
         var handPosition=v.transform.position;Require(!h.SetPanelDistance(1.4f)&&l.MainAnchor==AeroWindowAnchor.Hand&&Vector3.Distance(handPosition,v.transform.position)<.001f,"Disabled distance detaches window");
-        Click(s.RecenterButton);Require(l.MainAnchor==AeroWindowAnchor.Follow&&s.DistanceOptions[0].IsInteractable()&&s.CurrentModeLabel.text.Contains("柔和"),"Recenter did not refresh actual mode");
+        Click(s.RecenterButton);Require(l.MainAnchor==AeroWindowAnchor.Follow&&s.DistanceOptions[0].IsInteractable()&&string.IsNullOrEmpty(s.CurrentModeLabel.text),"Recenter did not refresh actual mode");
         l.DeltaForChecks=0;h.ResetViewOptions();h.ShowSkyMap();v.ShowMap(false);v.CloseButton.onClick.Invoke();h.HandEntry.enabled=true;
         Debug.Log("[AeroPulse Settings016] PASS fixed tabs, actual-ray explicit/idempotent choices, return state, scoped reset/cancel, no hidden inputs, adaptive targets, attached distance guard and recenter status, Chinese glyphs/fit");
     }

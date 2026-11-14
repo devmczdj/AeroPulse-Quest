@@ -110,8 +110,9 @@ public class HandBackHudEntry : MonoBehaviour
         if(ShortcutRoot.gameObject.activeSelf!=showShortcuts)ShortcutRoot.gameObject.SetActive(showShortcuts);
         if(wasShortcuts&&!ShortcutsVisible)hud.ClearPresses();
         if (show) tile.transform.SetPositionAndRotation(Surface.position, Surface.rotation);
-        Vector3 local = Quaternion.Inverse(ContactSurface.rotation) * (tip - center);
-        float height = Vector3.Dot(tip - center, normal);
+        Vector3 touchCenter=Surface.position;
+        Vector3 local = Quaternion.Inverse(Surface.rotation) * (tip - touchCenter);
+        float height = Vector3.Dot(tip - touchCenter, normal);
         bool inside = Mathf.Abs(local.x) <= 0.029f && Mathf.Abs(local.y) <= 0.019f;
         bool touch = gate.Step(show && rightValid && (hud.Layout==null || !hud.Layout.Dragging), inside, height, dt);
         fill.color = show && rightValid && inside && height >= -0.006f && height <= 0.035f
@@ -141,14 +142,12 @@ public class HandBackHudEntry : MonoBehaviour
 public struct HandBackTouchGate
 {
     bool armed;
-    float contact;
     public bool Step(bool valid, bool inside, float height, float dt)
     {
-        if (!valid) { armed = false; contact = 0; return false; }
-        if (height > 0.028f) { armed = true; contact = 0; return false; }
-        if (!armed || !inside || height < -0.006f || height > 0.014f) { contact = 0; return false; }
-        contact += Mathf.Clamp(dt, 0, 0.04f);
-        if (contact < 0.06f) return false;
-        armed = false; contact = 0; return true;
+        if (!valid) { armed = false; return false; }
+        if (height > 0.018f) { armed = true; return false; }
+        if (!armed || !inside || height < -0.03f || height > 0.003f) { return false; }
+        // Fresh front contact confirms immediately; holding cannot repeat.
+        armed = false; return true;
     }
 }
