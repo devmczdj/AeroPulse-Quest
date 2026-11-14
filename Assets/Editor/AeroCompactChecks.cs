@@ -28,7 +28,7 @@ public static class AeroCompactChecks
         Require(Vector3.Distance(local,compact.transform.localPosition)<0.001f&&Vector3.Distance(world,compact.transform.position)>0.05f,"Small HUD is not view-relative");
         hud.ShowSkyMap();var skyPosition=hud.Sky.transform.position;camera.transform.rotation*=Quaternion.Euler(0,30,0);
         Require(Vector3.Distance(skyPosition,hud.Sky.transform.position)<0.001f,"Compact choice made sky follow head");
-        Click(hud.Sky.AdvanceButton);
+        view.Route.Advance();
         Require(compact.NextLabel.text.Contains(view.Route.NextName),"Compact next stop stale");
         foreach(var text in compact.GetComponentsInChildren<TextMeshProUGUI>())
         {text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Compact text overflow: "+text.name);}

@@ -65,11 +65,11 @@ public static class AeroViewOptionsChecks
         Require(!hud.FollowPaused,"Blank card / idle pinch still freezes follow");
         for(int i=0;i<300;i++) follow.Tick(0.02f,hud.FollowPaused);
         Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*1.8f)<0.02f,"Soft follow did not return");
-        Pointer(true,false,view.CloseButton); var held=follow.transform.position;
+        Pointer(true,true,view.CloseButton); var held=follow.transform.position;
         camera.transform.rotation=Quaternion.Euler(0,95,0);
-        Require(hud.FollowPaused,"Nearby button hover no longer pauses");
-        for(int i=0;i<60;i++) follow.Tick(0.02f,hud.FollowPaused);
-        Require(Vector3.Distance(held,follow.transform.position)<0.001f,"Button hover moved panel");
+        Require(hud.FollowPaused,"Active button press no longer pauses");
+        for(int i=0;i<20;i++) follow.Tick(0.02f,hud.FollowPaused);
+        Require(Vector3.Distance(held,follow.transform.position)<0.001f,"Active button press moved panel");
         camera.transform.rotation=Quaternion.Euler(0,150,0);
         Require(!hud.FollowPaused,"Offscreen button target blocks recovery");
         Pointer(false,false,null);

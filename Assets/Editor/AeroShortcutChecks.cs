@@ -8,7 +8,7 @@ public static class AeroShortcutChecks
     public static void Run()
     {
         var hud=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();var camera=Camera.main;
-        camera.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);hud.ResetViewOptions();hud.OpenDataFromShortcut();
+        camera.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);hud.ResetViewOptions();hud.Sky.Hide();hud.OpenDataFromShortcut();
         var view=UnityEngine.Object.FindObjectsByType<AeroHudView>(FindObjectsInactive.Include)[0];var reader=hud.HandEntry;reader.enabled=false;
         void Track(bool valid=true)
         {
@@ -26,12 +26,12 @@ public static class AeroShortcutChecks
         foreach(var text in reader.ShortcutRoot.GetComponentsInChildren<TextMeshProUGUI>())
         {text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Hand shortcut label overflow: "+text.name);}
         view.CloseButton.onClick.Invoke();Track();Click(reader.SkyShortcut);
-        Require(hud.Sky.Visible&&hud.IsCardOpen,"Hand SKY cannot open from closed state");
-        Click(reader.DataShortcut);Require(view.gameObject.activeSelf&&!view.IsMapOpen&&!hud.Sky.Visible,"Hand DATA does not return to metrics");
+        Require(hud.Sky.Visible&&!hud.IsCardOpen,"Hand SKY cannot open from closed state");
+        Click(reader.DataShortcut);Require(view.gameObject.activeSelf&&!view.IsMapOpen&&hud.Sky.Visible,"Hand DATA does not return to metrics");
         hud.Follow.SetMode(HudSoftFollow.FollowMode.Fixed);hud.Layout.SetAnchorFromFollowMode();
         var prior=view.transform.position;camera.transform.rotation=Quaternion.Euler(0,100,0);Track();Click(reader.RecallShortcut);
         Require(Vector3.Distance(prior,view.transform.position)>0.1f&&Vector3.Angle(camera.transform.forward,view.transform.position-camera.transform.position)<2,"Hand RECALL did not use current view");
-        view.CloseButton.onClick.Invoke();Track(false);Require(!reader.ShortcutsVisible,"Lost hand leaves shortcuts active");
+        view.CloseButton.onClick.Invoke();hud.Sky.Hide();Track(false);Require(!reader.ShortcutsVisible,"Lost hand leaves shortcuts active");
         // Recover while holding a pinch aimed at SKY; clear gates must prevent an automatic click.
         Track();Point(reader.SkyShortcut.transform,false);Track(false);Point(reader.SkyShortcut.transform,true);Track();Point(reader.SkyShortcut.transform,true);
         Require(!hud.IsCardOpen,"Shortcut recovery while pinching opened UI");Click(reader.SkyShortcut);Require(hud.Sky.Visible,"Fresh shortcut after recovery fails");

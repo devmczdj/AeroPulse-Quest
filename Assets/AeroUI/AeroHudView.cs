@@ -15,7 +15,8 @@ public class AeroHudView : MonoBehaviour
     public AeroHudSettingsView SettingsView { get; private set; }
     public bool IsSettingsOpen => SettingsView != null && SettingsView.gameObject.activeSelf;
     public bool IsMapOpen => !IsSettingsOpen && mapMode;
-    bool mapMode;
+    bool mapMode,skyVisible;
+    Button lastLeft,lastRight;bool hoverInitialized;
     TextMeshProUGUI settingsLabel;
     RectTransform dataBody;
     TextMeshProUGUI sourceLabel, subline, mapButtonLabel;
@@ -42,6 +43,7 @@ public class AeroHudView : MonoBehaviour
 
     public void SetHover(Button left, Button right)
     {
+        if(hoverInitialized&&left==lastLeft&&right==lastRight)return;hoverInitialized=true;lastLeft=left;lastRight=right;
         SetCloseHover(left == CloseButton || right == CloseButton);
         bool hover = left == MapButton || right == MapButton;
         MapButton.GetComponent<Image>().color = hover ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
@@ -56,13 +58,14 @@ public class AeroHudView : MonoBehaviour
 
     public void BindControls(PinchHudExperiment hud)
     {
-        SettingsView.Bind(hud);
+        SettingsView.Bind(hud);RefreshSkyButton(hud.Sky.Visible);
         SkyButton.onClick.AddListener(()=>
         {
             if(IsSettingsOpen) { SettingsView.TogglePage();RefreshSettingsHeader(); }
-            else hud.ShowSkyMap();
+            else hud.ToggleSkyMap();
         });
     }
+    public void RefreshSkyButton(bool visible) { skyVisible=visible;if(!IsSettingsOpen)SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=visible?"HIDE SKY":"SHOW SKY"; }
     void RefreshSettingsHeader()
     {
         SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=SettingsView.LayoutPage?"BASIC":"LAYOUT";
@@ -80,7 +83,7 @@ public class AeroHudView : MonoBehaviour
     public void ShowMap(bool show)
     {
         mapMode = show;
-        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text="SKY MAP";
+        SkyButton.GetComponentInChildren<TextMeshProUGUI>().text=skyVisible?"HIDE SKY":"SHOW SKY";
         SettingsView.gameObject.SetActive(false);
         settingsLabel.text = "SETTINGS";
         dataBody.gameObject.SetActive(!show);

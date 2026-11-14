@@ -27,7 +27,7 @@ public static class AeroLayoutChecks
         var card=view.transform;
         Click(view.MapButton);Require(!layout.Dragging,"Normal map click starts dragging");Click(view.MapButton);
         Click(view.SettingsButton);if(!view.SettingsView.LayoutPage)Click(view.SkyButton);Click(view.SettingsView.EditCardButton);
-        Require(layout.Editing&&layout.CardHandle.gameObject.activeInHierarchy&&!layout.SkyHandle.gameObject.activeInHierarchy,"Explicit edit UI missing");
+        Require(layout.Editing&&layout.CardHandle.gameObject.activeInHierarchy&&layout.SkyHandle==null,"Explicit edit UI missing");
         var start=card.position;Click(view.MapButton);Require(!view.IsMapOpen&&!layout.Dragging,"Layout mode still clicks content");
         Grab(layout.CardHandle);Require(layout.Dragging&&layout.DragOwner=="right","Handle press did not own selection");Point(layout.CardHandle.transform,false);
         Require(!layout.Dragging&&layout.MainAnchor==AeroWindowAnchor.Follow&&Vector3.Distance(start,card.position)<0.001f,"Short handle tap changed placement");
@@ -66,17 +66,13 @@ public static class AeroLayoutChecks
         layout.BeginEdit(false);Track();Grab(layout.CardHandle);Hold(layout.HandZone);Point(layout.HandZone.transform,false);Click(layout.DoneButton);Track(false);hud.ProcessInput();
         Require(hud.Compact.FallbackVisible,"Lost hand dock has no recovery control");Click(hud.Compact.OpenButton);
         Require(layout.MainAnchor==AeroWindowAnchor.Follow&&card.GetComponent<Canvas>().enabled,"Hand recall did not recover visible front window");
-        Track();layout.BeginEdit(true);Require(!layout.HandZone.gameObject.activeInHierarchy,"Sky exposes unsupported hand dock");
-        Grab(layout.SkyHandle);Hold(layout.WorldZone);Point(layout.WorldZone.transform,false);
-        Require(layout.SkyAnchor==AeroWindowAnchor.World&&layout.HasSkyPlacement,"Sky placement not recorded");
-        var skyPosition=hud.Sky.transform.position;Click(layout.DoneButton);Click(hud.Sky.HideButton);hud.OpenFromHand();
-        Require(hud.Sky.Visible&&Vector3.Distance(skyPosition,hud.Sky.transform.position)<0.001f,"Sky hide/reopen lost pinned position");
-        layout.BeginEdit(true);Grab(layout.SkyHandle);Hold(layout.ViewZone);Point(layout.ViewZone.transform,false);
-        var skyLocal=camera.transform.InverseTransformPoint(hud.Sky.transform.position);camera.transform.rotation*=Quaternion.Euler(0,30,0);layout.PrepareFrame();
-        Require(Vector3.Distance(skyLocal,camera.transform.InverseTransformPoint(hud.Sky.transform.position))<0.001f,"Sky view dock not relative");
+        // Sky is now a passive environment layer, not another draggable window.
+        Track();hud.ShowSkyMap();var skyPosition=hud.Sky.transform.position;layout.BeginEdit(true);
+        Require(!layout.Editing&&layout.SkyHandle==null,"Sky entered obsolete window editor");
+        Require(hud.Sky.Visible,"HUD layout action hid the independent sky");
         foreach(var text in UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None))
         {text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Layout text overflow: "+text.name);}
         layout.ResetAll();layout.EndEdit();hud.ShowMapDetail();view.ShowMap(false);view.CloseButton.onClick.Invoke();reader.enabled=true;layout.DeltaForChecks=0;
-        Debug.Log("[AeroPulse Layout] PASS: explicit edit, hold threshold, true-ray preview/release, world/view/hand, undo/reset, ownership, lost tracking/focus, recovery, sky placement persistence");
+        Debug.Log("[AeroPulse Layout] PASS: explicit edit, hold threshold, true-ray preview/release, world/view/hand, undo/reset, ownership, lost tracking/focus, recovery; sky cannot enter window layout");
     }
 }

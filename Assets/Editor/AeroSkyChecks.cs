@@ -1,51 +1,41 @@
 using System;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.XR.Hands;
-
 public static class AeroSkyChecks
 {
-    static void Require(bool value,string message) { if(!value) throw new InvalidOperationException(message); }
+    static void Require(bool v,string m){if(!v)throw new InvalidOperationException(m);}
     public static void Run()
     {
-        var hud=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
-        hud.OpenFromHand();
-        var view=UnityEngine.Object.FindObjectsByType<AeroHudView>(FindObjectsInactive.Include)[0];
-        view.ShowMap(true);var camera=Camera.main;
-        void Click(UnityEngine.UI.Button button)
-        {
-            var origin=camera.transform.position+new Vector3(0.25f,-0.3f,0.2f);
-            var aim=Quaternion.LookRotation(button.transform.position-origin);
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,false,camera.transform.parent);hud.ProcessInput();
-            AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,true,camera.transform.parent);hud.ProcessInput();
-        }
-        Click(view.SkyButton);var sky=hud.Sky;
-        Require(sky.Visible && !view.gameObject.activeSelf && hud.IsCardOpen,"Sky switch visibility failed");
-        Require(ReferenceEquals(view.Route,sky.Route),"Sky cloned route state");
-        Require(sky.GetComponent<UnityEngine.UI.Image>()==null && sky.transform.Find("MapBacking")==null,"Sky has opaque card backdrop");
-        var fixedPosition=sky.transform.position;camera.transform.rotation*=Quaternion.Euler(0,65,0);
-        for(int i=0;i<50;i++)hud.SendMessage("LateUpdate");
-        Require(Vector3.Distance(fixedPosition,sky.transform.position)<0.001f,"Sky follows head on every turn");
-        Click(sky.RecallButton);
-        Require(Vector3.Distance(fixedPosition,sky.transform.position)>0.1f,"Sky recall did not use new heading");
-        for(int i=0;i<sky.Route.Count;i++)
-        {
-            Require(sky.LocationLabel.text.Contains(sky.Route.Current.Name)&&sky.LocationLabel.text.Contains(sky.Route.NextName),"Sky labels stale");
-            Require(Vector2.Distance(sky.CurrentMarker.anchoredPosition,AeroSkyMap.MapPoint(sky.Route.Current.Position))<0.01f,"Sky current position stale");
-            Require(sky.NextMarker.gameObject.activeSelf==(sky.Route.NextIndex>=0),"Sky next marker wrong at completion");
-            foreach(var text in sky.GetComponentsInChildren<TextMeshProUGUI>())
-            { text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Sky text overflow: "+text.name); }
-            int prior=sky.Route.CurrentIndex;Click(sky.AdvanceButton);
-            Require(sky.Route.CurrentIndex==(prior+1)%sky.Route.Count,"Sky advance ray failed");
-        }
-        int state=sky.Route.CurrentIndex;
-        Click(sky.DetailButton);
-        Require(!sky.Visible && view.IsMapOpen&&view.gameObject.activeSelf&&view.Route.CurrentIndex==state,"Detail switch reset state or left ghost sky");
-        Click(view.SkyButton);Click(sky.HideButton);
-        Require(!hud.IsCardOpen&&!sky.Visible,"Sky hide left UI active");
-        hud.OpenFromHand();
-        Require(sky.Visible && sky.Route.CurrentIndex==state,"Hand recall lost last sky mode/state");
-        hud.ShowMapDetail();view.ShowMap(false);view.CloseButton.onClick.Invoke();
-        Debug.Log("[AeroPulse Sky] PASS: real-ray sky/detail/recall/hide, shared state, 5 positions, transparency, world-fixed pose and reopening");
+        var hud=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();var c=Camera.main;
+        c.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);
+        hud.ResetViewOptions();hud.OpenDataFromShortcut();var view=hud.Follow.GetComponent<AeroHudView>();
+        hud.ShowSkyMap();var sky=hud.Sky;
+        Require(sky.Visible&&hud.IsCardOpen,"Sky and HUD cannot coexist");
+        Require(ReferenceEquals(view.Route,sky.Route),"Sky route cloned");
+        Require(sky.GetComponentsInChildren<Button>(true).Length==0&&sky.GetComponentsInChildren<Collider>(true).Length==0&&sky.GetComponentsInChildren<GraphicRaycaster>(true).Length==0,"Passive sky still has UI input surfaces");
+        Require(sky.transform.Find("SkyTitle")==null&&sky.transform.Find("SkyGrabHandle")==null,"Sky still has HUD title/handle");
+        Require(sky.GetComponentsInChildren<Graphic>(true).Length<25,"Sky still builds hundreds of line UI objects");
+        var pos=sky.transform.position;var rot=sky.transform.rotation;
+        view.CloseButton.onClick.Invoke();Require(sky.Visible&&!hud.IsCardOpen,"HUD HIDE closed sky");
+        hud.OpenFromHand();Require(sky.Visible&&hud.IsCardOpen,"Hand SHOW altered independent sky");
+        hud.ShowMapDetail();Require(sky.Visible&&view.IsMapOpen,"Detail view consumed sky");
+        hud.Recenter();Require(Vector3.Distance(pos,sky.transform.position)<0.001f,"HUD recenter moved sky");
+        var delta=new Vector3(2,0.25f,-1);c.transform.position+=delta;sky.Tick(0.02f);
+        Require(Vector3.Distance(sky.transform.position,pos+delta)<0.002f&&Quaternion.Angle(rot,sky.transform.rotation)<0.01f,"Sky does not follow translation independently of heading");
+        c.transform.rotation=Quaternion.Euler(0,50,0);for(int i=0;i<20;i++)sky.Tick(0.02f);
+        Require(Quaternion.Angle(rot,sky.transform.rotation)<0.01f,"Sky rigidly head locked");
+        c.transform.rotation=Quaternion.Euler(0,150,0);for(int i=0;i<140;i++)sky.Tick(0.02f);
+        Require(Quaternion.Angle(rot,sky.transform.rotation)>10,"Sky left behind after large sustained turn");
+        int start=view.Route.CurrentIndex;var current=sky.CurrentMarker.localPosition;view.Route.Advance();
+        Require(sky.Route.CurrentIndex==(start+1)%5&&Vector3.Distance(current,sky.CurrentMarker.localPosition)>0.01f,"Shared current marker stale");
+        bool cardOpen=hud.IsCardOpen;hud.ToggleSkyMap();Require(!sky.Visible&&hud.IsCardOpen==cardOpen,"Sky toggle altered HUD");
+        view.CloseButton.onClick.Invoke();hud.OpenFromHand();Require(!sky.Visible,"HUD reopen resurrected disabled sky");
+        hud.ToggleSkyMap();hud.SendMessage("OnApplicationFocus",false);hud.SendMessage("OnApplicationFocus",true);
+        Require(sky.Visible,"Focus recovery lost sky preference");
+        hud.ToggleSkyMap();hud.SendMessage("OnApplicationFocus",false);hud.SendMessage("OnApplicationFocus",true);
+        Require(!sky.Visible,"Focus recovery reopened disabled sky");
+        c.transform.rotation=Quaternion.identity;hud.ShowSkyMap();hud.RecenterSky();hud.ResetViewOptions();view.ShowMap(false);view.CloseButton.onClick.Invoke();
+        Debug.Log("[AeroPulse Sky015] PASS independent HUD/toggles/focus, no buttons/colliders/window chrome, curved batched geometry, body translation, stable heading and sustained-turn recovery, shared route");
     }
 }

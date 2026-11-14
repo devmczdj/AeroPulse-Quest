@@ -14,7 +14,7 @@ public static class AeroFinalChecks
         Require(All<HandBackHudEntry>().Length==1&&All<AeroWindowLayout>().Length==1&&All<AeroDockZone>().Length==3,"Duplicate or missing hand/layout state after reload");
         Require(All<UnityEngine.EventSystems.EventSystem>().Length==1,"Duplicate EventSystem after reload");
         var h=All<PinchHudExperiment>()[0];var v=All<AeroHudView>()[0];
-        Require(!h.IsCardOpen&&!h.Sky.Visible&&!h.Layout.Editing&&!h.Layout.Dragging,"Cold scene retains open/edit state");
+        Require(!h.IsCardOpen&&h.Sky.Visible&&!h.Layout.Editing&&!h.Layout.Dragging,"Cold scene retains open/edit state");
         Require(h.HandEntry.EnabledForEntry&&!h.HandEntry.ShortcutsEnabled&&Mathf.Abs(h.HandEntry.HeightOffset-0.035f)<0.0001f,"Cold hand defaults incorrect");
         Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&h.Compact.Side==AeroCompactHud.Placement.Hidden&&h.Layout.MainAnchor==AeroWindowAnchor.Follow,"Cold placement defaults incorrect");
         Require(v.Route.CurrentIndex==0&&ReferenceEquals(v.Route,h.Sky.Route)&&ReferenceEquals(v.Route,h.Compact.Route),"Cold route state not fresh/shared");
@@ -38,12 +38,13 @@ public static class AeroFinalChecks
         }
         for(int i=0;i<20;i++)
         {
-            Require(h.IsCardOpen&&!h.Sky.Visible,"Repeated journey card missing");
+            Require(h.IsCardOpen,"Repeated journey card missing");
             if(v.IsMapOpen)Click(v.MapButton);
             Click(v.MapButton);Require(v.IsMapOpen,"Repeated MAP failed");
-            int before=v.Route.CurrentIndex;Click(v.SkyButton);Require(h.Sky.Visible&&!v.gameObject.activeSelf,"Repeated SKY failed");
-            Click(h.Sky.AdvanceButton);Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
-            Click(h.Sky.DetailButton);Require(v.gameObject.activeSelf&&v.IsMapOpen,"Repeated DETAIL failed");
+            int before=v.Route.CurrentIndex;bool skyWas=h.Sky.Visible;Click(v.SkyButton);
+            Require(h.Sky.Visible!=skyWas&&v.gameObject.activeSelf,"Sky toggle changed HUD visibility");
+            Click(v.MapView.AdvanceButton);Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
+            h.ShowMapDetail();Require(v.gameObject.activeSelf&&v.IsMapOpen,"Repeated DETAIL failed");
             Click(v.CloseButton);Require(!h.IsCardOpen,"Repeated HIDE failed");
             h.OpenFromHand();Require(h.IsCardOpen&&v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated reopen lost route");
         }

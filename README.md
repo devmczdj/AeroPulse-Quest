@@ -2,7 +2,7 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前v0.14.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.14.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前v0.15.0为自动验证预发布，最终Quest试戴待做。** [下载预发布APK](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.15.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![设置页编辑器相机预览，非Quest实机截图](Docs/07_设置编辑器预览.png)
 
@@ -11,7 +11,8 @@ AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运�
 - [编辑布局与手部快捷](Docs/12_布局与手部快捷.md)：显式拖拽把手、WORLD/VIEW/HAND停靠、撤销/复位与丢手召回。
 
 - 小型视野读数左/右/隐藏、独立锚定与可选OPEN HUD备用入口。
-- 天空透明区域地图与前方细看共用路线/位置，支持推进、召回、收起与重开。
+- 独立天空环境地图：无按钮/边框，随人平移、转头保持方向并缓慢回归；HUD的显示/收起不影响天空。
+- 按键同帧确认、真实命中短时衔接与关节释放优先；跟随不再被悬停锁住。
 - 左手手背HUD/HIDE片，右食指先离开再轻触打开/收起；失追踪恢复不自动触发。
 - 固定模拟心率/配速/距离、数据与5站示意地图切换，当前位置/下一站、ADVANCE/RESET、关闭重开保持会话状态。
 - SOFT/QUICK/FIXED、面板距离、手背显示高度、召回/默认复位；设置仅在当前会话生效。
@@ -57,3 +58,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [演示旅程](Docs/13_Demo/01_演示旅程与分镜.md) · [能力证据](Docs/13_Demo/02_证据与能力映射.md) · [商业假设与问答](Docs/13_Demo/03_商业假设与问答.md) · [路演PPT](Docs/13_Demo/04_路演演示.pptx) · [模拟众筹长图](Docs/13_Demo/05_模拟众筹长图.png) · [HUD序列GIF](Docs/13_Demo/06_HUD流程.gif)
 
 [最终验收与安装](Docs/14_最终验收与安装.md) · [发布历史审计工具](Tools/02_audit_release_history.py)
+
+[0.15响应与独立天空说明](Docs/15_响应与独立天空.md) · [天空运行时预览](Docs/11_Releases/0.15.0-sky.png) · [HUD共存预览](Docs/11_Releases/0.15.0-coexist.png)

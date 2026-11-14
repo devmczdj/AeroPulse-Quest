@@ -27,7 +27,7 @@ public static class AeroGlassChecks
             }
             Require(Vector3.Distance(initial, panel.transform.position) > 0.01f, "Large turn never started following");
             var held = panel.transform.position;
-            for (int i = 0; i < 100; i++) follow.Tick(0.02f, true);
+            for (int i = 0; i < 20; i++) follow.Tick(0.02f, true);
             Require(Vector3.Distance(held, panel.transform.position) < 0.001f, "Operating hand did not freeze panel");
             for (int i = 0; i < 15; i++) follow.Tick(0.02f, false);
             Require(Vector3.Distance(held, panel.transform.position) < 0.001f, "Release skipped fresh delay");

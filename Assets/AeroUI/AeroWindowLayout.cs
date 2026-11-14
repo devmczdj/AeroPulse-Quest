@@ -21,7 +21,6 @@ public class AeroWindowLayout : MonoBehaviour
         get
         {
             if(!owner.IsCardOpen||Editing)return false;
-            if(owner.Sky.Visible)return Vector3.Angle(eye.transform.forward,sky.position-eye.transform.position)>70f;
             return (MainAnchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked) ||
                 ((MainAnchor==AeroWindowAnchor.World||owner.Follow.Mode==HudSoftFollow.FollowMode.Fixed) &&
                  Vector3.Angle(eye.transform.forward,card.position-eye.transform.position)>70f);
@@ -51,7 +50,7 @@ public class AeroWindowLayout : MonoBehaviour
     public void Initialize(PinchHudExperiment hud,Camera camera,Transform detail,Transform skyLayer)
     {
         owner=hud;eye=camera;card=detail;sky=skyLayer;
-        CardHandle=Handle(card,false,252);SkyHandle=Handle(sky,true,338);
+        CardHandle=Handle(card,false,252);SkyHandle=null;
         WorldZone=Zone("WorldDock",AeroWindowAnchor.World,"PIN WORLD / FIXED HERE");
         ViewZone=Zone("ViewDock",AeroWindowAnchor.View,"PIN VIEW / FOLLOWS HEAD");
         HandZone=Zone("HandDock",AeroWindowAnchor.Hand,"PIN HAND / FOLLOWS LEFT");
@@ -88,15 +87,16 @@ public class AeroWindowLayout : MonoBehaviour
     }
     public void BeginEdit(bool isSky)
     {
+        if(isSky){owner.RecenterSky();return;}
         if(Dragging)CancelDrag("CANCELLED");
-        if(isSky)owner.ShowSkyMap();else owner.ShowDetailForLayout();
+        owner.ShowDetailForLayout();
         editingSky=isSky;Editing=true;if(hasUndo&&undo.Sky!=isSky)hasUndo=false;SetEditUI(true);
         PlaceZones();status.text="LAYOUT: HOLD HANDLE, RELEASE ON A ZONE";owner.ClearPresses();
     }
     public void EndEdit() { if(Dragging)CancelDrag("CANCELLED");Editing=false;SetEditUI(false);owner.ClearPresses(); }
     void SetEditUI(bool show)
     {
-        CardHandle.gameObject.SetActive(show&&!editingSky);SkyHandle.gameObject.SetActive(show&&editingSky);
+        CardHandle.gameObject.SetActive(show&&!editingSky);if(SkyHandle!=null)SkyHandle.gameObject.SetActive(false);
         toolbar.SetActive(show);WorldZone.gameObject.SetActive(show);ViewZone.gameObject.SetActive(show);
         HandZone.gameObject.SetActive(show&&!editingSky&&owner.HandEntry.AnchorTracked);
     }
@@ -206,13 +206,15 @@ public class AeroWindowLayout : MonoBehaviour
     {
         if(Dragging)CancelDrag("CANCELLED");
         MainAnchor=AeroWindowAnchor.Follow;SkyAnchor=AeroWindowAnchor.World;HasSkyPlacement=false;card.localScale=Vector3.one*0.0015f;
-        SetHandRendering(true);owner.Follow.ResetOptions();if(owner.Sky.Visible)owner.Sky.Recall();hasUndo=false;
+        SetHandRendering(true);owner.Follow.ResetOptions();hasUndo=false;
         if(Editing){PlaceZones();status.text="DEFAULT LAYOUT RESTORED";}Physics.SyncTransforms();
     }
+    Canvas cardCanvas;Collider[] cardColliders;bool? handRendering;
     void SetHandRendering(bool visible)
     {
-        card.GetComponent<Canvas>().enabled=visible;
-        foreach(var collider in card.GetComponentsInChildren<Collider>(true))collider.enabled=visible;
+        if(handRendering==visible)return;handRendering=visible;
+        if(cardCanvas==null){cardCanvas=card.GetComponent<Canvas>();cardColliders=card.GetComponentsInChildren<Collider>(true);}
+        cardCanvas.enabled=visible;foreach(var collider in cardColliders)collider.enabled=visible;
     }
     public void PrepareFrame()
     {
@@ -228,7 +230,6 @@ public class AeroWindowLayout : MonoBehaviour
         }
         if(MainAnchor==AeroWindowAnchor.View)ApplyView(card,mainViewLocal);
         if(SkyAnchor==AeroWindowAnchor.View)ApplyView(sky,skyViewLocal);
-        Physics.SyncTransforms();
     }
     void ApplyView(Transform t,Pose local) => t.SetPositionAndRotation(eye.transform.TransformPoint(local.position),eye.transform.rotation*local.rotation);
     public void ReleaseToFollow()
@@ -244,8 +245,10 @@ public class AeroWindowLayout : MonoBehaviour
     public void RecalledSky() { HasSkyPlacement=true;if(SkyAnchor==AeroWindowAnchor.View)skyViewLocal=new Pose(eye.transform.InverseTransformPoint(sky.position),Quaternion.Inverse(eye.transform.rotation)*sky.rotation); }
     public bool ToolbarButton(UnityEngine.UI.Button button) => button!=null&&button.transform.IsChildOf(toolbar.transform);
     public bool Owns(Transform t) => t.IsChildOf(toolbar.transform);
+    UnityEngine.UI.Button hoverLeft,hoverRight;bool hoverSet;
     public void SetHover(UnityEngine.UI.Button left,UnityEngine.UI.Button right)
     {
+        if(hoverSet&&left==hoverLeft&&right==hoverRight)return;hoverSet=true;hoverLeft=left;hoverRight=right;
         foreach(var b in buttons)b.GetComponent<UnityEngine.UI.Image>().color=b==left||b==right?AeroUiTokens.ButtonHover:AeroUiTokens.ButtonFill;
     }
     void OnDestroy()

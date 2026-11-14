@@ -23,13 +23,13 @@ public class AeroHudSettingsView : MonoBehaviour
         view.EntryButton=view.Row(view.layout,"HandEntry","HAND ENTRY","HAND BACK",28);
         AeroHudView.Text(view.layout,"EditLayoutHeading","WINDOW LAYOUT",new Vector2(-344,-32),new Vector2(240,36),18,AeroUiFonts.SemiBold,AeroUiTokens.Secondary,TextAlignmentOptions.Left,0,0);
         view.EditCardButton=AeroHudView.ActionButton(view.layout,"EditCard","EDIT CARD",new Vector2(82,-32),new Vector2(168,48),new Vector3(168,52,8));
-        view.EditSkyButton=AeroHudView.ActionButton(view.layout,"EditSky","EDIT SKY",new Vector2(258,-32),new Vector2(168,48),new Vector3(168,52,8));
+        view.EditSkyButton=AeroHudView.ActionButton(view.layout,"EditSky","CENTER SKY",new Vector2(258,-32),new Vector2(168,48),new Vector3(168,52,8));
         view.layout.gameObject.SetActive(false);
         view.RecenterButton = AeroHudView.ActionButton(root,"Recenter","RECENTER",new Vector2(-172,-98),new Vector2(328,48),new Vector3(328,52,8));
         view.ResetButton = AeroHudView.ActionButton(root,"ResetView","RESET DEFAULTS",new Vector2(172,-98),new Vector2(328,48),new Vector3(328,52,8));
         view.buttons = new[] {view.ModeButton,view.DistanceButton,view.HeightButton,view.RecenterButton,view.ResetButton,view.CompactButton,view.EntryButton,view.EditCardButton,view.EditSkyButton};
         view.EditCardButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.Layout.BeginEdit(false);});
-        view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.Layout.BeginEdit(true);});
+        view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.RecenterSky();});
         view.CompactButton.onClick.AddListener(()=>{if(view.owner!=null){view.owner.Compact.CyclePlacement();view.Refresh();}});
         view.EntryButton.onClick.AddListener(()=>{if(view.owner!=null){view.owner.ToggleHandEntry();view.Refresh();}});
         view.ModeButton.onClick.AddListener(() => { if(view.owner != null) {view.owner.CycleFollowMode();view.Refresh();} });
