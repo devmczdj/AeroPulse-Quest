@@ -62,3 +62,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [0.15响应与独立天空说明](Docs/15_响应与独立天空.md) · [天空运行时预览](Docs/11_Releases/0.15.0-sky.png) · [HUD共存预览](Docs/11_Releases/0.15.0-coexist.png)
 
 [Product Design交互审查与待办（待实施）](Docs/16_交互优化待办.md)
+
+[固定分类导航与成熟控件方案（待实施）](Docs/17_设置导航方案.md)
