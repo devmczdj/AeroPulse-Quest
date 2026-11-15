@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="580" viewBox="0 0 1200 580">
+<rect width="1200" height="580" fill="#15191d"/>
+<g font-family="PingFang SC, sans-serif" fill="#f4f5f7"><text x="54" y="64" font-size="26" font-weight="600">HUD · 图标选型</text><text x="54" y="98" font-size="16" fill="#adb7c0">IconMCP 统一线性图标 · 设计候选，尚未接入 Unity</text></g>
+<rect x="54" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="116" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M6.663 3.269 L6.631 2.646 C6.611 2.246 6.93 1.91 7.33 1.91 L8.67 1.91 C9.07 1.91 9.389 2.246 9.369 2.646 L9.337 3.269 C9.324 3.532 9.459 3.779 9.686 3.911 L10.698 4.495 C10.926 4.626 11.208 4.619 11.428 4.476 L11.953 4.137 C12.289 3.92 12.739 4.028 12.939 4.375 L13.609 5.535 C13.809 5.882 13.678 6.326 13.322 6.508 L12.766 6.793 C12.532 6.912 12.385 7.153 12.385 7.416 L12.385 8.584 C12.385 8.847 12.532 9.088 12.766 9.207 L13.322 9.492 C13.678 9.674 13.809 10.118 13.609 10.465 L12.939 11.625 C12.739 11.972 12.289 12.08 11.953 11.863 L11.428 11.524 C11.208 11.381 10.926 11.374 10.698 11.505 L9.686 12.089 C9.459 12.221 9.324 12.468 9.337 12.731 L9.369 13.354 C9.389 13.754 9.07 14.09 8.67 14.09 L7.33 14.09 C6.93 14.09 6.611 13.754 6.631 13.354 L6.663 12.731 C6.676 12.468 6.541 12.221 6.314 12.089 L5.302 11.505 C5.074 11.374 4.792 11.381 4.572 11.524 L4.047 11.863 C3.711 12.08 3.261 11.972 3.061 11.625 L2.391 10.465 C2.191 10.118 2.322 9.674 2.678 9.492 L3.234 9.207 C3.468 9.088 3.615 8.847 3.615 8.584 L3.615 7.416 C3.615 7.153 3.468 6.912 3.234 6.793 L2.678 6.508 C2.322 6.326 2.191 5.882 2.391 5.535 L3.061 4.375 C3.261 4.028 3.711 3.92 4.047 4.137 L4.572 4.476 C4.792 4.619 5.074 4.626 5.302 4.495 L6.314 3.911 C6.541 3.779 6.676 3.532 6.663 3.269 Z"/>
+    <circle cx="8" cy="8" r="2"/>
+  </g>
+</svg>
+<text x="140" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">设置</text>
+<rect x="238" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="300" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <circle cx="6" cy="3.75" r="0.44" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="3.75" r="0.44" fill="currentColor" stroke="none"/>
+    <circle cx="6" cy="8" r="0.44" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="8" r="0.44" fill="currentColor" stroke="none"/>
+    <circle cx="6" cy="12.25" r="0.44" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="12.25" r="0.44" fill="currentColor" stroke="none"/>
+  </g>
+</svg>
+<text x="324" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">移动</text>
+<rect x="422" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="484" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g transform="rotate(90 8 8)">
+    <line x1="3.5" y1="12.5" x2="12.5" y2="3.5"/>
+    <path d="M8 3.5 L12.5 3.5 L12.5 8"/>
+    <path d="M3.5 8 L3.5 12.5 L8 12.5"/>
+  </g>
+</svg>
+<text x="508" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">等比缩放</text>
+<rect x="606" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="668" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M5.726 2.25 L10.274 2.25 C10.661 2.25 10.873 2.702 10.625 3 L10 3.75 L10 6.96 C10 7.148 10.066 7.329 10.185 7.473 L11.407 8.938 C11.841 9.459 11.47 10.25 10.792 10.25 L5.208 10.25 C4.53 10.25 4.159 9.459 4.593 8.938 L5.815 7.473 C5.934 7.329 6 7.148 6 6.96 L6 3.75 L5.375 3 C5.127 2.702 5.339 2.25 5.726 2.25 Z"/>
+    <line x1="8" y1="10.25" x2="8" y2="14.25"/>
+  </g>
+</svg>
+<text x="692" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">环境固定</text>
+<rect x="790" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="852" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M8.974 10.25 L5.208 10.25 C4.53 10.25 4.159 9.459 4.593 8.938 L5.815 7.473 C5.866 7.411 5.908 7.342 5.939 7.268 M6 4.724 L6 3.75 L5.375 3 C5.127 2.702 5.339 2.25 5.726 2.25 L10.274 2.25 C10.661 2.25 10.873 2.702 10.625 3 L10 3.75 L10 6.96 C10 7.148 10.066 7.329 10.185 7.473 L11.407 8.938 C11.682 9.268 11.634 9.707 11.389 9.984"/>
+    <line x1="8" y1="10.25" x2="8" y2="14.25"/>
+    <line x1="2.75" y1="2.75" x2="13.25" y2="13.25"/>
+  </g>
+</svg>
+<text x="876" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">环境跟随</text>
+<rect x="974" y="138" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="1036" y="165" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M2.75 6.5 H9.75 A3.5 3.5 0 0 1 9.75 13.5 H6.25"/>
+    <path d="M6 3.25 L2.75 6.5 L6 9.75"/>
+  </g>
+</svg>
+<text x="1060" y="250" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">撤销</text>
+<rect x="54" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="116" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M7 3 A5.5 5.5 0 1 1 2.5 8.5"/>
+    <path d="M9.5 1.75 L7 3 L9.5 4.25"/>
+  </g>
+</svg>
+<text x="140" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">复位</text>
+<rect x="238" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="300" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M2.75 8.5 L6.25 12 L13.25 4.5"/>
+  </g>
+</svg>
+<text x="324" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">完成编辑</text>
+<rect x="422" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="484" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M5.639 4.252 C6.387 3.919 7.182 3.75 8 3.75 C10.4 3.75 12.6 5.2 14 8 C13.458 9.083 12.797 9.964 12.051 10.638 M10.361 11.748 C9.613 12.081 8.818 12.25 8 12.25 C5.6 12.25 3.4 10.8 2 8 C2.542 6.917 3.203 6.036 3.949 5.362"/>
+    <path d="M8.743 10.124 A2.25 2.25 0 0 1 5.876 7.257 M7.257 5.876 A2.25 2.25 0 0 1 10.25 8 A2.25 2.25 0 0 1 10.124 8.743"/>
+    <line x1="2.75" y1="2.75" x2="13.25" y2="13.25"/>
+  </g>
+</svg>
+<text x="508" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">收起 HUD</text>
+<rect x="606" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="668" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M8.383 1.959 L13.083 4.523 C13.34 4.663 13.5 4.932 13.5 5.225 L13.5 10.775 C13.5 11.068 13.34 11.337 13.083 11.477 L8.383 14.041 C8.144 14.171 7.856 14.171 7.617 14.041 L2.917 11.477 C2.66 11.337 2.5 11.068 2.5 10.775 L2.5 5.225 C2.5 4.932 2.66 4.663 2.917 4.523 L7.617 1.959 C7.856 1.829 8.144 1.829 8.383 1.959 Z"/>
+    <path d="M2.626 4.819 L8 7.75 L13.374 4.819"/>
+    <line x1="8" y1="7.75" x2="8" y2="14.125"/>
+  </g>
+</svg>
+<text x="692" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">环境</text>
+<rect x="790" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="852" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M8 3.68 L7.97 3.71 L7.94 3.7 L7.86 3.52 L7.77 3.38 L7.63 3.23 L7.5 3.13 L7.34 3.03 L7.18 2.97 L6.89 2.92 L6.71 2.93 L6.54 2.96 L6.25 3.09 L6.12 3.18 L5.98 3.31 L5.88 3.44 L5.79 3.61 L5.72 3.82 L5.625 4.08 L5.625 9.29 L5.65 9.3 L5.63 9.28 L4.52 7.52 L4.29 7.3 L4.15 7.21 L3.98 7.14 L3.73 7.08 L3.45 7.09 L3.18 7.16 L2.94 7.3 L2.77 7.45 L2.61 7.67 L2.51 7.89 L2.46 8.18 L2.48 8.46 L2.57 8.72 L3.19 9.98 L3.58 10.73 L3.96 11.4 L4.28 11.91 L4.63 12.4 L5 12.83 L5.32 13.14 L5.61 13.36 L5.92 13.55 L6.23 13.7 L6.63 13.84 L6.99 13.92 L7.44 14 L7.93 14 L8.35 14 L8.82 13.93 L9.29 13.82 L9.68 13.68 L10.09 13.5 L10.47 13.28 L10.86 13.01 L11.22 12.69 L11.5 12.39 L11.75 12.07 L12.01 11.66 L12.22 11.24 L12.39 10.79 L12.52 10.33 L12.625 9.89 L12.625 9.45 L12.625 4.93 L12.55 4.62 L12.47 4.45 L12.37 4.29 L12.26 4.17 L12.13 4.06 L11.87 3.92 L11.69 3.87 L11.53 3.85 L11.25 3.87 L10.95 3.97 L10.72 4.12 L10.6 4.24 L10.49 4.38 L10.37 4.62 L10.32 4.63 L10.25 4.61 L10.25 3.06 L10.27 2.88 L10.22 2.72 L10.06 2.45 L9.87 2.25 L9.58 2.08 L9.29 2.01 L8.81 2.05 L8.66 2.11 L8.42 2.26 L8.23 2.46 L8.09 2.7 L8.02 2.95 L8 3.13 Z"/>
+    <path d="M8 7.54 L8 3.68"/>
+    <path d="M10.25 7.54 L10.25 4.61"/>
+  </g>
+</svg>
+<text x="876" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">手部</text>
+<rect x="974" y="325" width="172" height="164" rx="15" fill="#20272e"/>
+<svg x="1036" y="352" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="0.667" stroke-linecap="round" stroke-linejoin="round" color="#F4F5F7">
+  <g>
+    <path d="M3.45 4.25 L12.55 4.25 C13.213 4.25 13.75 4.787 13.75 5.45 L13.75 10.05 C13.75 10.713 13.213 11.25 12.55 11.25 L10.539 11.25 C10.196 11.25 9.87 11.103 9.642 10.847 L8.897 10.009 C8.42 9.472 7.58 9.472 7.103 10.009 L6.358 10.847 C6.13 11.103 5.804 11.25 5.461 11.25 L3.45 11.25 C2.787 11.25 2.25 10.713 2.25 10.05 L2.25 5.45 C2.25 4.787 2.787 4.25 3.45 4.25 Z"/>
+  </g>
+</svg>
+<text x="1060" y="437" text-anchor="middle" fill="#f4f5f7" font-family="PingFang SC, sans-serif" font-size="18">面前</text>
+<text x="54" y="542" fill="#adb7c0" font-family="PingFang SC, sans-serif" font-size="16">文字仅为本选型表的图例；应用操作按钮优先只显示图标。</text>
+</svg>
