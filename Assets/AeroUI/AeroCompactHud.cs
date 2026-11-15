@@ -13,6 +13,7 @@ public class AeroCompactHud : MonoBehaviour
     GameObject fallback;
     TextMeshProUGUI openLabel;
     bool paused, fallbackRequested, recallRequested;
+    public System.Action<Placement> PlacementChanged;
     public static AeroCompactHud Build(Camera camera,AeroRouteDemo route,System.Action open)
     {
         var go=new GameObject("CompactViewHUD",typeof(RectTransform),typeof(Canvas));
@@ -30,7 +31,7 @@ public class AeroCompactHud : MonoBehaviour
         ((RectTransform)widget.fallback.transform).sizeDelta=new Vector2(220,80);
         var fallbackCanvas=widget.fallback.GetComponent<Canvas>();fallbackCanvas.renderMode=RenderMode.WorldSpace;fallbackCanvas.worldCamera=camera;
         widget.OpenButton=AeroHudView.ActionButton(widget.fallback.transform,"FallbackOpenButton","OPEN HUD",Vector2.zero,new Vector2(220,64),new Vector3(232,80,8));
-        widget.openLabel=widget.OpenButton.GetComponentInChildren<TextMeshProUGUI>();
+        widget.openLabel=widget.OpenButton.GetComponentInChildren<TextMeshProUGUI>();AeroUiIcons.Apply(widget.OpenButton,"browser",40);
         widget.OpenButton.onClick.AddListener(()=>open());widget.fallback.SetActive(false);
         route.Changed+=widget.Refresh;widget.Refresh();widget.SetPlacement(Placement.Hidden);return widget;
     }
@@ -43,8 +44,9 @@ public class AeroCompactHud : MonoBehaviour
     public void CyclePlacement() => SetPlacement((Placement)(((int)Side+1)%3));
     public void SetPlacement(Placement side)
     {
-        Side=side;transform.localPosition=new Vector3(side==Placement.Right?0.42f:-0.42f,-0.14f,1.05f);
-        transform.localRotation=Quaternion.identity;gameObject.SetActive(side!=Placement.Hidden&&!paused);
+        bool changed=Side!=side;Side=side;
+        if(PlacementChanged==null){transform.localPosition=new Vector3(side==Placement.Right?.42f:-.42f,-.14f,1.05f);transform.localRotation=Quaternion.identity;}
+        gameObject.SetActive(side!=Placement.Hidden&&!paused);if(changed&&PlacementChanged!=null)PlacementChanged(side);
     }
     public void SetPaused(bool value) { paused=value;SetPlacement(Side);SetFallbackVisible(fallbackRequested,recallRequested); }
     public void SetFallbackVisible(bool value,bool recall=false)
@@ -52,6 +54,6 @@ public class AeroCompactHud : MonoBehaviour
         fallbackRequested=value;recallRequested=recall;
         bool visible=value&&!paused;if(fallback.activeSelf!=visible)fallback.SetActive(visible);
         var label=recall?"RECALL HUD":"OPEN HUD";
-        if(openLabel.text!=label)openLabel.text=label;
+        if(openLabel.text!=label){openLabel.text=label;AeroUiIcons.Set(OpenButton,recall?"crosshair":"browser");}
     }
 }

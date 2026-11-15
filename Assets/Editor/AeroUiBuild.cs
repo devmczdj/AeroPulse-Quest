@@ -10,14 +10,14 @@ public static class AeroUiBuild
 
     public static void Build()
     {
-        PlayerSettings.bundleVersion = "0.17.1";
-        PlayerSettings.Android.bundleVersionCode = 16;
+        PlayerSettings.bundleVersion = "0.18.0";
+        PlayerSettings.Android.bundleVersionCode = 17;
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.three.aeropulsemvp.glass");
         if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
             throw new InvalidOperationException("Active build target is not Android");
 
         string projectRoot = Directory.GetParent(Application.dataPath).FullName;
-        string output = Path.Combine(projectRoot, "Builds", "AeroPulse-GlassLab-v0.17.1.apk");
+        string output = Path.Combine(projectRoot, "Builds", "AeroPulse-GlassLab-v0.18.0.apk");
         Directory.CreateDirectory(Path.GetDirectoryName(output));
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {

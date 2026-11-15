@@ -31,7 +31,7 @@ public class HandBackHudEntry : MonoBehaviour
     XRHandSubsystem subsystem;
     readonly List<XRHandSubsystem> subsystems = new List<XRHandSubsystem>();
     GameObject tile;
-    UnityEngine.UI.Image fill;
+    UnityEngine.UI.Image fill,entryIcon;
     HandBackTouchGate gate;
     bool focused = true;
 
@@ -47,10 +47,12 @@ public class HandBackHudEntry : MonoBehaviour
             Vector2.zero, new Vector2(58, 38), AeroUiTokens.ButtonFill);
         caption = AeroHudView.Text(tile.transform, "HandHUDLabel", "HUD", Vector2.zero, new Vector2(54, 34),
             18, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Center, 0, 0, true);
+        caption.enabled=false;entryIcon=AeroHudView.AddPanelImage(tile.transform,"EntryIcon",AeroUiIcons.Get("browser"),Vector2.zero,new Vector2(24,24),AeroUiTokens.Ink);
         ShortcutRoot=AeroHudView.NewRect("HandShortcuts",tile.transform,Vector2.zero,new Vector2(280,180));
         DataShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandData","DATA",new Vector2(92,48),new Vector2(96,38),new Vector3(100,44,8));
         SkyShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandSky","SKY",new Vector2(92,0),new Vector2(96,38),new Vector3(100,44,8));
         RecallShortcut=AeroHudView.ActionButton(ShortcutRoot,"HandRecall","RECALL",new Vector2(92,-48),new Vector2(96,38),new Vector3(100,44,8));
+        AeroUiIcons.Apply(DataShortcut,"heart-pulse",24);AeroUiIcons.Apply(SkyShortcut,"globe",24);AeroUiIcons.Apply(RecallShortcut,"crosshair",24);
         shortcutButtons=new[]{DataShortcut,SkyShortcut,RecallShortcut};
         shortcutFills=new UnityEngine.UI.Image[shortcutButtons.Length];
         for(int i=0;i<shortcutButtons.Length;i++)shortcutFills[i]=shortcutButtons[i].GetComponent<UnityEngine.UI.Image>();
@@ -123,7 +125,7 @@ public class HandBackHudEntry : MonoBehaviour
             hud.ToggleFromHand();
         }
         var label=hud.IsCardOpen ? "HIDE" : "HUD";
-        if(caption.text!=label)caption.text=label;
+        if(caption.text!=label){caption.text=label;entryIcon.sprite=AeroUiIcons.Get(hud.IsCardOpen?"eye-off":"browser");}
     }
 
     public void SetShortcutHover(UnityEngine.UI.Button left,UnityEngine.UI.Button right)
@@ -141,12 +143,20 @@ public class HandBackHudEntry : MonoBehaviour
 
 public struct HandBackTouchGate
 {
-    bool armed;
+    bool armed, hasPrevious;
+    float previousHeight;
     public bool Step(bool valid, bool inside, float height, float dt)
     {
-        if (!valid) { armed = false; return false; }
+        if (!valid || !inside || float.IsNaN(height) || float.IsInfinity(height) || height < -0.03f)
+        {
+            armed = false; hasPrevious = false; return false;
+        }
+        // Both hands define this surface: use relative height, so either hand may
+        // make a deliberate contact. A side/back re-entry cannot reuse an old arm.
+        bool crossing = hasPrevious && previousHeight > 0.003f && height <= 0.003f;
+        hasPrevious = true; previousHeight = height;
         if (height > 0.018f) { armed = true; return false; }
-        if (!armed || !inside || height < -0.03f || height > 0.003f) { return false; }
+        if (!armed || !crossing) return false;
         // Fresh front contact confirms immediately; holding cannot repeat.
         armed = false; return true;
     }

@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--evidence-dir',type=Path,required=True)
     parser.add_argument('--source-manifest',type=Path,required=True)
     parser.add_argument('--repo',default='devmczdj/AeroPulse-Quest')
+    parser.add_argument('--expected-visibility',choices=['PUBLIC','PRIVATE'],default='PUBLIC')
     parser.add_argument('--build-tools',type=Path,required=True)
     args=parser.parse_args();assert re.fullmatch(r'0\.\d+\.\d+',args.version)
     root=Path(__file__).resolve().parents[1];evidence=args.evidence_dir;evidence.mkdir(parents=True,exist_ok=True)
@@ -34,7 +35,7 @@ def main():
     sha=digest(apk);sources=json.loads(args.source_manifest.read_text())
     for name,h in sources.items():assert digest(root/name)==h,f'Source changed after build: {name}'
     repo=json.loads(run(['gh','repo','view',args.repo,'--json','visibility,url'],text=True).stdout)
-    assert repo['visibility']=='PRIVATE','Release destination must stay private'
+    assert repo['visibility']==args.expected_visibility,'Release destination visibility changed unexpectedly'
     record={'version':args.version,'versionCode':code,'package':'com.three.aeropulsemvp.glass','apk':apk.name,
             'size_bytes':apk.stat().st_size,'sha256':sha,'signature':signature,'zipalign':'PASS','crc':'PASS',
             'source_files_at_build':sources,'scope':'Editor/automated validation; final user headset acceptance pending'}
@@ -43,7 +44,9 @@ def main():
     if not exists:
         previous=[]
         for metadata in docs.glob('0.*.json'):
+            if not re.fullmatch(r'0\.\d+\.\d+\.json',metadata.name):continue
             item=json.loads(metadata.read_text())
+            assert isinstance(item,dict),f'Invalid release metadata: {metadata.name}'
             if item.get('version')!=args.version and 'versionCode' in item:previous.append(item['versionCode'])
         assert code>max(previous,default=0),'Android versionCode must increase'
     if exists:

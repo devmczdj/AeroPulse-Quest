@@ -76,7 +76,7 @@ public class PinchHudExperiment : MonoBehaviour
         rightPointer = BuildPointer("RightHandRay");
         DirectTouch=gameObject.AddComponent<AeroDirectTouch>();DirectTouch.Initialize(this);
         DirectTouch.IgnoreLeftRoot=HandEntry.ShortcutRoot;
-        DirectTouch.RebuildTargets(UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include,FindObjectsSortMode.None));
+        DirectTouch.RebuildTargets(UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include));
     }
 
     static bool ReadHand(MetaAimHand hand)
@@ -152,18 +152,17 @@ public class PinchHudExperiment : MonoBehaviour
     {
         if(Layout!=null)Layout.PrepareFrame();
         if(Sky!=null)Sky.Tick(Time.unscaledDeltaTime);
-        if (card != null && card.activeSelf && focused && !Layout.Editing && AeroValueSlider.Active==null && Layout.MainAnchor==AeroWindowAnchor.Follow)
-            follow.Tick(Time.unscaledDeltaTime, FollowPaused);
+        if (focused && Layout!=null) Layout.Tick(Time.unscaledDeltaTime, FollowPaused);
     }
 
     public bool FollowPaused => IsCardOpen &&
-        Vector3.Angle(view.transform.forward, card.transform.position - view.transform.position) < 35f &&
         ((DirectTouch!=null&&DirectTouch.AnyNear) || (leftPointer.overCard && leftPointer.button != null && leftPointer.pressed) || (rightPointer.overCard && rightPointer.button != null && rightPointer.pressed));
 
     public void ClearPresses(){ResetPresses();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}
     public void ActivateButton(UnityEngine.UI.Button button)
     {
         if(button==null||!button.isActiveAndEnabled||!button.IsInteractable()||AeroValueSlider.Active!=null)return;
+        if(Layout.Editing&&!Layout.ToolbarButton(button)&&button!=Compact.OpenButton)return;
         button.onClick.Invoke();ResetPresses();Feedback.Confirm(button);
     }
     bool JointAllowed(MetaAimHand hand)
@@ -186,15 +185,12 @@ public class PinchHudExperiment : MonoBehaviour
     public void OpenOrRecall() { if(IsCardOpen)Recenter();else OpenFromHand(); }
     public void CycleFollowMode()
     {
-        if(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View)
-        { Layout.ReleaseToFollow();follow.SetMode(HudSoftFollow.FollowMode.Soft);Recenter(); }
-        else {follow.CycleMode();Layout.SetAnchorFromFollowMode();}
+        SetFollowMode(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View
+            ?HudSoftFollow.FollowMode.Soft:(HudSoftFollow.FollowMode)(((int)follow.Mode+1)%3));
     }
     public void Recenter()
     {
-        if(Layout!=null&&Layout.Dragging)Layout.CancelDrag("RECENTERED");
-        if(Layout!=null&&(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View))Layout.ReleaseToFollow();
-        follow.SnapToView();Physics.SyncTransforms();RefreshSettings("主卡已移到面前");
+        Layout.Recall();Physics.SyncTransforms();RefreshSettings("主卡已移到面前");
     }
     public void RecenterSky() { if(Sky!=null)Sky.Recall();RefreshSettings("天空地图已回到前上方"); }
     public void ToggleSkyMap() => SetSkyVisible(!Sky.Visible);
@@ -236,14 +232,14 @@ public class PinchHudExperiment : MonoBehaviour
     {
         bool detached=Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View;
         if(!detached&&follow.Mode==mode){RefreshSettings();return;}
-        if(detached)Layout.ReleaseToFollow();follow.SetMode(mode);Layout.SetAnchorFromFollowMode();if(detached)follow.SnapToView();
+        if(detached)Layout.ReleaseToFollow();follow.SetMode(mode);Layout.SetAnchorFromFollowMode();
         RefreshSettings(mode==HudSoftFollow.FollowMode.Fixed?"主卡已固定在环境中":"主卡跟随方式已更新");
     }
     public bool SetPanelDistance(float distance)
     {
         if(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View){RefreshSettings("移回面前后可调距离");return false;}
         if(Mathf.Approximately(follow.Distance,distance)){RefreshSettings();return true;}
-        follow.SetDistance(distance);follow.SnapToView();Physics.SyncTransforms();RefreshSettings("面板距离已更新");return true;
+        Layout.InvalidateMainUndo();follow.CaptureOffset();follow.SetDistance(distance);follow.ApplyOffset();Physics.SyncTransforms();RefreshSettings("面板距离已更新");return true;
     }
     public void ShowHelp(){if(Feedback!=null)Feedback.ShowHelp();}
     public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SoundEnabled=enabled;RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
@@ -320,7 +316,7 @@ public class PinchHudExperiment : MonoBehaviour
             if (pointer.overCard || (Compact.FallbackVisible && hit.collider.gameObject == Compact.OpenButton.gameObject) || (HandEntry.ShortcutsVisible && hit.collider.transform.IsChildOf(HandEntry.ShortcutRoot)))
             {
                 var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
-                if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button))) pointer.button = button;
+                if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button) || button==Compact.OpenButton)) pointer.button = button;
             }
         }
         // A cursor is meaningful only at a real surface, never at an arbitrary depth.
@@ -403,7 +399,7 @@ public class PinchHudExperiment : MonoBehaviour
     public void ShowMapDetail()
     {
         entry.gameObject.SetActive(false);HandEntry.RequireRelease();hudView.ShowMap(true);card.SetActive(true);
-        Layout.ReleaseToFollow();follow.SnapToView();hudView.PlayReveal();ResetPresses();Physics.SyncTransforms();
+        Layout.PlaceOpenedCard();hudView.PlayReveal();ResetPresses();Physics.SyncTransforms();
     }
 
     public void OpenFromHand()

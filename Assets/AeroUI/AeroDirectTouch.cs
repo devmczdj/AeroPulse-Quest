@@ -13,6 +13,7 @@ public sealed class AeroDirectTouch : MonoBehaviour
     const float NearDistance = 0.08f;
     const float BackLimit = -0.03f;
     const float MinimumFingerAdvance = 0.003f;
+    const float CrossingFingerAdvance = 0.00001f;
     const float EdgeMargin = 0.003f;
 
     public bool NearLeft { get; private set; }
@@ -165,6 +166,7 @@ public sealed class AeroDirectTouch : MonoBehaviour
         }
         if(crossing&&finger.Armed==candidate&&currentDepth>=BackLimit&&
            Vector3.Dot(finger.ArmPoint-tip,normal)>=MinimumFingerAdvance&&
+           Vector3.Dot(finger.Previous-tip,normal)>=CrossingFingerAdvance&&
            Vector3.Distance(finger.Previous,tip)<0.3f)
         {
             float fraction=(previousDepth-PressDistance)/(previousDepth-currentDepth);
@@ -173,8 +175,9 @@ public sealed class AeroDirectTouch : MonoBehaviour
             Vector3 crossingLocal=Vector3.Lerp(previousLocal,currentLocal,Mathf.Clamp01(fraction));
             if(InsideLocal(candidate,crossingLocal,EdgeMargin,EdgeMargin)&&pendingButton==null)
             {
-                // A control moving into a stationary finger has no absolute fingertip
-                // advance and cannot pass the above condition.
+                // Cumulative travel permits a slow tap, while the crossing frame must
+                // contain real fingertip advance. Earlier motion cannot pay for a UI
+                // that subsequently moves into a stationary finger.
                 finger.Armed=null;finger.Locked=true;finger.ReleasePoint=origin;finger.ReleaseNormal=normal;
                 if(candidate.Slider!=null)
                 {

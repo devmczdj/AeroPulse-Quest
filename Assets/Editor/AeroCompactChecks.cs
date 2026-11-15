@@ -10,7 +10,9 @@ public static class AeroCompactChecks
     {
         var hud=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();hud.OpenFromHand();
         var view=UnityEngine.Object.FindObjectsByType<AeroHudView>(FindObjectsInactive.Include)[0];view.ShowMap(false);
-        var camera=Camera.main;
+        var camera=Camera.main;hud.SendMessage("OnApplicationFocus",true);hud.HandEntry.enabled=false;hud.DirectInputForChecks=true;
+        camera.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);hud.ResetViewOptions();hud.OpenDataFromShortcut();
+        AeroHandRayChecks.Set(MetaAimHand.left,false,false,Vector3.zero,Quaternion.identity);
         void Click(UnityEngine.UI.Button button)
         {
             var origin=camera.transform.position+new Vector3(0.25f,-0.3f,0.2f);
@@ -21,11 +23,11 @@ public static class AeroCompactChecks
         Click(view.SettingsButton);Click(view.SettingsView.TabButtons[0]);
         Require(view.SettingsView.CurrentTab==AeroHudSettingsView.SettingsTab.Display,"Display settings navigation failed");
         Click(view.SettingsView.CompactOptions[1]);var compact=hud.Compact;
-        Require(compact.Side==AeroCompactHud.Placement.Left&&compact.gameObject.activeSelf&&compact.transform.localPosition.x<0,"Left HUD selection failed");
-        Require(compact.transform.parent==camera.transform&&ReferenceEquals(compact.Route,view.Route),"Compact anchor/state not shared");
-        var local=compact.transform.localPosition;var world=compact.transform.position;
-        camera.transform.rotation*=Quaternion.Euler(0,40,0);
-        Require(Vector3.Distance(local,compact.transform.localPosition)<0.001f&&Vector3.Distance(world,compact.transform.position)>0.05f,"Small HUD is not view-relative");
+        Require(compact.Side==AeroCompactHud.Placement.Left&&compact.gameObject.activeSelf&&camera.transform.InverseTransformPoint(compact.transform.position).x<0,"Left HUD selection failed");
+        Require(hud.Layout.CompactAnchor==AeroWindowAnchor.View&&ReferenceEquals(compact.Route,view.Route),"Compact anchor/state not shared");
+        var local=camera.transform.InverseTransformPoint(compact.transform.position);var world=compact.transform.position;
+        camera.transform.rotation*=Quaternion.Euler(0,40,0);hud.Layout.PrepareFrame();
+        Require(Vector3.Distance(local,camera.transform.InverseTransformPoint(compact.transform.position))<0.001f&&Vector3.Distance(world,compact.transform.position)>0.05f,"Small HUD is not view-relative");
         hud.ShowSkyMap();var skyPosition=hud.Sky.transform.position;camera.transform.rotation*=Quaternion.Euler(0,30,0);
         Require(Vector3.Distance(skyPosition,hud.Sky.transform.position)<0.001f,"Compact choice made sky follow head");
         view.Route.Advance();
@@ -34,7 +36,7 @@ public static class AeroCompactChecks
         {text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Compact text overflow: "+text.name);}
         hud.ShowMapDetail();view.ShowMap(false);Click(view.SettingsButton);
         Click(view.SettingsView.CompactOptions[2]);
-        Require(compact.Side==AeroCompactHud.Placement.Right&&compact.transform.localPosition.x>0,"Right HUD selection failed");
+        Require(compact.Side==AeroCompactHud.Placement.Right&&camera.transform.InverseTransformPoint(compact.transform.position).x>0,"Right HUD selection failed");
         Click(view.SettingsView.CompactOptions[0]);
         Require(compact.Side==AeroCompactHud.Placement.Hidden&&!compact.gameObject.activeSelf,"Hidden readout stays visible");
         compact.SetPlacement(AeroCompactHud.Placement.Left);
@@ -49,7 +51,7 @@ public static class AeroCompactChecks
         Click(view.SettingsView.ResetButton);Click(view.SettingsView.ConfirmResetButton);
         Require(compact.Side==AeroCompactHud.Placement.Hidden&&hud.HandEntry.EnabledForEntry,"Default layout reset failed");
         if(view.SettingsView.LayoutPage)view.SettingsView.TogglePage();
-        view.ShowMap(false);view.CloseButton.onClick.Invoke();
+        view.ShowMap(false);view.CloseButton.onClick.Invoke();hud.DirectInputForChecks=false;hud.HandEntry.enabled=true;
         Debug.Log("[AeroPulse Compact] PASS: real-ray left/right/hidden, shared next state, head/world separation, focus, fallback open and default reset");
     }
 }

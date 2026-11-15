@@ -89,6 +89,7 @@ public class AeroHudSettingsView : MonoBehaviour
             .025f,.045f,.035f,.001f,value=>Mathf.RoundToInt(value*1000)+" mm",
             value=>{if(view.owner!=null)view.owner.SetHandHeight(value);view.Refresh();});
         view.HelpButton=view.Button(input,"InteractionHelp","操作帮助",new Vector2(-252,-88),new Vector2(184,42));
+        AeroUiIcons.Apply(view.HelpButton,"help",26);
         view.HelpButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.ShowHelp();});
         view.Text(input,"SoundHeading","提示音",new Vector2(-136,-88),new Vector2(88,30),22,AeroUiTokens.Secondary);
         view.SoundOptions=new[] {
@@ -131,6 +132,13 @@ public class AeroHudSettingsView : MonoBehaviour
         view.CompactButton=view.CompactOptions[0];view.EntryButton=view.EntryOptions[0];
         view.ModeButton=view.ModeOptions[0];view.DistanceButton=view.DistanceSlider.Button;view.HeightButton=view.HeightSlider.Button;
         view.HeightOptions=new[]{view.HeightButton};view.DistanceOptions=new[]{view.DistanceButton};
+        AeroUiIcons.Apply(view.RecenterButton,"crosshair",36);
+        AeroUiIcons.Apply(view.EditCardButton,"grip-vertical",36);
+        AeroUiIcons.Apply(view.EditSkyButton,"globe",28);
+        AeroUiIcons.Apply(view.ResetButton,"rotate-ccw",36);
+        AeroUiIcons.Apply(view.CancelResetButton,"close",28);
+        AeroUiIcons.Apply(view.ConfirmResetButton,"check",28);
+        AeroUiIcons.Apply(view.TabButtons[0],"vr-headset",36);AeroUiIcons.Apply(view.TabButtons[1],"hand-open",36);AeroUiIcons.Apply(view.TabButtons[2],"grip-vertical",36);
         view.SelectTab(SettingsTab.Display);
         return view;
     }
@@ -204,6 +212,7 @@ public class AeroHudSettingsView : MonoBehaviour
             Select(SoundOptions,owner.FeedbackSoundEnabled?1:0);
             bool attached=owner.Layout.MainAnchor==AeroWindowAnchor.Hand||owner.Layout.MainAnchor==AeroWindowAnchor.View;
             Select(ModeOptions,attached?-1:(int)owner.Follow.Mode);
+            foreach(var mode in ModeOptions)mode.interactable=!attached;
             DistanceSlider.SetValueWithoutNotify(owner.Follow.Distance);
             DistanceSlider.SetInteractable(!attached);
             CurrentModeLabel.text=owner.Layout.MainAnchor==AeroWindowAnchor.Hand?"随左手：移到面前后可调距离。":

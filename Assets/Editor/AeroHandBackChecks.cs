@@ -7,8 +7,30 @@ using UnityEngine.XR.Hands;
 public static class AeroHandBackChecks
 {
     static void Require(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    public static void RunGate()
+    {
+        var gate=new HandBackTouchGate();
+        Require(!gate.Step(true,true,.04f,.02f),"Front hover toggled");
+        Require(!gate.Step(true,false,-.04f,.02f),"Outside backside sample toggled");
+        Require(!gate.Step(true,true,-.02f,.02f),"Backside re-entry reused the previous front arm");
+        Require(!gate.Step(true,true,.002f,.02f),"Back-to-front re-entry toggled");
+        Require(!gate.Step(true,true,.04f,.02f)&&gate.Step(true,true,.002f,.02f),"Fresh front crossing after re-entry failed");
+        Require(!gate.Step(true,true,.002f,.02f),"Held contact repeated");
+        gate=default;
+        Require(!gate.Step(true,false,.04f,.02f)&&!gate.Step(true,true,.002f,.02f),"Outside front hover armed a side entry");
+        gate.Step(true,true,.04f,.02f);gate.Step(true,false,.01f,.02f);
+        Require(!gate.Step(true,true,.002f,.02f),"Leaving bounds retained a pending press");
+        gate.Step(true,true,.04f,.02f);gate.Step(false,true,.01f,.02f);
+        Require(!gate.Step(true,true,.002f,.02f),"Tracking recovery retained a pending press");
+        gate.Step(true,true,.04f,.02f);gate.Step(true,true,-.04f,.02f);
+        Require(!gate.Step(true,true,-.02f,.02f),"Back-limit re-entry retained a pending press");
+        gate.Step(true,true,.04f,.02f);
+        Require(gate.Step(true,true,-.02f,.02f),"Valid fast front crossing was rejected");
+        Debug.Log("[AeroPulse HandBack018] PASS front crossing, side/back invalidation, release and tracking recovery");
+    }
     public static void Run()
     {
+        RunGate();
         var hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
         hud.LegacyEntryForChecks(true);
         try { AeroHandRayChecks.Run(); AeroHandRayChecks.RunMap(); }

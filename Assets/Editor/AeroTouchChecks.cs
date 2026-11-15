@@ -65,6 +65,16 @@ public static class AeroTouchChecks
             Vector3 original=v.MapButton.transform.position;Vector3 stationary=Front(v.MapButton,.03f);
             Finger(false,stationary);v.MapButton.transform.position-=v.MapButton.transform.forward*.03f;
             Finger(false,stationary);Require(clicks==before,"UI movement into a stationary finger clicked");v.MapButton.transform.position=original;Clear();
+            // Regression: earlier 5 mm of finger travel must not authorize a later
+            // crossing caused entirely by the panel moving 24 mm into the held finger.
+            Finger(false,Front(v.MapButton,.030f));stationary=Front(v.MapButton,.025f);Finger(false,stationary);
+            v.MapButton.transform.position-=v.MapButton.transform.forward*.024f;Finger(false,stationary);
+            Require(clicks==before,"Partially advanced stationary finger clicked when UI moved 24 mm");
+            v.MapButton.transform.position=original;Clear();
+            // A slow tap accumulates its travel; no individual frame reaches 3 mm.
+            Finger(false,Front(v.MapButton,.030f));
+            for(int i=1;i<=580;i++)Finger(false,Front(v.MapButton,.030f-i*.00005f));
+            Require(clicks==before+1,"Slow 0.5 mm/frame tap was rejected");before=clicks;Clear();
             // A hand-docked panel and fingertip may translate together. Their relative
             // gap never crossed the plane, even if the old tip looks front of the new pose.
             Vector3 panelPosition=v.transform.position;Vector3 overlap=Front(v.MapButton,.001f);
@@ -144,7 +154,20 @@ public static class AeroTouchChecks
             Require(h.IsCardOpen,"Held hand-back contact repeated");
             h.HandEntry.Sample(true,palm,back,true,surface+normal*.04f,.02f);h.HandEntry.Sample(true,palm,back,true,surface+normal*.002f,.02f);
             Require(!h.IsCardOpen,"Fresh hand-back tap did not hide");
-            Debug.Log("[AeroPulse Touch017] PASS both index fingers, fast/front/back/overlap/recovery/moving-UI gates, hidden/disabled, near/ray arbitration, direct+ray sliders preview/release/cancel/owner lock/clamp, visible hand-back tap without pinch");
+            // Relative hand-back contact permits movement by the left palm itself;
+            // translating both hands with an unchanged gap must not count as a tap.
+            h.HandEntry.Sample(true,palm,back,false,Vector3.zero,.02f);
+            surface=h.HandEntry.Surface.position;var heldTip=surface+normal*.04f;
+            h.HandEntry.Sample(true,palm,back,true,heldTip,.02f);
+            var sharedMotion=normal*.02f+Vector3.right*.01f;palm+=sharedMotion;heldTip+=sharedMotion;
+            h.HandEntry.Sample(true,palm,back,true,heldTip,.02f);
+            Require(!h.IsCardOpen,"Rigid movement of both hands toggled hand-back entry");
+            palm+=normal*.038f;h.HandEntry.Sample(true,palm,back,true,heldTip,.02f);
+            Require(h.IsCardOpen,"Left palm approaching a stationary right fingertip failed to toggle");
+            for(int i=0;i<8;i++)h.HandEntry.Sample(true,palm,back,true,heldTip,.02f);
+            Require(h.IsCardOpen,"Held palm-driven contact repeated");
+            AeroHandBackChecks.RunGate();
+            Debug.Log("[AeroPulse Touch018] PASS both index fingers, fast/slow/front/back/overlap/recovery/moving-UI gates, hidden/disabled, near/ray arbitration, direct+ray sliders preview/release/cancel/owner lock/clamp, relative two-hand entry");
         }
         finally
         {
