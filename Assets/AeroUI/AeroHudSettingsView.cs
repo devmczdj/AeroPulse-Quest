@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-// Right-side categories navigate only; the content region owns settings and actions.
+// Left-side categories navigate only; the content region owns settings and actions.
 public class AeroHudSettingsView : MonoBehaviour
 {
     public enum SettingsTab { Display, Input, Layout }
@@ -42,9 +42,9 @@ public class AeroHudSettingsView : MonoBehaviour
             AeroHudView.NewRect("InputSettings",root,Vector2.zero,new Vector2(760,430)),
             AeroHudView.NewRect("LayoutSettings",root,Vector2.zero,new Vector2(760,430))
         };
-        // Navigation lives in its own right column. Plain text and a quiet neutral selection
-        // distinguish category changes from the value controls on the left.
-        var navigation=AeroHudView.NewRect("SettingsNavigation",root,new Vector2(270,0),new Vector2(148,224));
+        // Navigation lives in its own left column. Plain text and a quiet neutral selection
+        // distinguish category changes from the value controls on the right.
+        var navigation=AeroHudView.NewRect("SettingsNavigation",root,new Vector2(-270,0),new Vector2(148,224));
         view.TabButtons = new UnityEngine.UI.Button[3];
         string[] tabs = { "显示", "交互", "布局" };
         for(int i=0;i<tabs.Length;i++)
@@ -56,6 +56,9 @@ public class AeroHudSettingsView : MonoBehaviour
             view.TabButtons[i]=button;
             button.onClick.AddListener(()=>view.SelectTab((SettingsTab)index));
         }
+
+        // Move each complete content page without changing its internal control spacing.
+        foreach(var page in view.pages)page.anchoredPosition=new Vector2(212,0);
 
         var display=view.pages[0];
         view.Heading(display,"SkyHeading","天空地图",84);
@@ -117,7 +120,7 @@ public class AeroHudSettingsView : MonoBehaviour
         view.ResetButton=view.Button(root,"ResetHudDefaults","恢复默认",new Vector2(66,-172),new Vector2(156,56));
         view.ResetButton.GetComponent<BoxCollider>().size=new Vector3(164,70,8);
         view.ResetButton.onClick.AddListener(view.RequestReset);
-        view.resetConfirmation=AeroHudView.NewRect("ResetHudConfirmation",root,new Vector2(-106,0),new Vector2(476,236));
+        view.resetConfirmation=AeroHudView.NewRect("ResetHudConfirmation",root,new Vector2(106,0),new Vector2(476,236));
         view.Text(view.resetConfirmation,"ResetTitle","恢复HUD默认设置？",new Vector2(-226,58),new Vector2(452,36),26,AeroUiTokens.Ink);
         view.Text(view.resetConfirmation,"ResetScope","入口、读数、高度、提示音、主卡布局将复位。\n天空与路线进度不变。",new Vector2(-226,0),new Vector2(452,72),18,AeroUiTokens.Secondary);
         view.CancelResetButton=view.Button(view.resetConfirmation,"CancelHudReset","取消",new Vector2(-120,-90),new Vector2(216,44));

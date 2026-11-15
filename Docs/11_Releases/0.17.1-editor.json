@@ -1,0 +1,19 @@
+{
+  "passed": [
+    "[AeroPulse Final] PASS cold/reloaded scene: one owner/window set, defaults, shared fresh route, text fit",
+    "[AeroPulse Touch017] PASS both index fingers, fast/front/back/overlap/recovery/moving-UI gates, hidden/disabled, near/ray arbitration, direct+ray sliders preview/release/cancel/owner lock/clamp, visible hand-back tap without pinch",
+    "[AeroPulse Settings016] PASS fixed tabs, actual-ray explicit/idempotent choices, return state, scoped reset/cancel, no hidden inputs, adaptive targets, attached distance guard and recenter status, Chinese glyphs/fit"
+  ],
+  "geometry": "all3tabs left, all3pages shifted+212, reset dialog right; PASS frame2861149",
+  "groundTruth": {
+    "sampledUtc": "2026-11-15T07:56:01.20717Z",
+    "ageMs": 83,
+    "compilationFailed": false,
+    "compiling": false,
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "consoleLogs": 54,
+    "seeded": true
+  },
+  "scope": "existing direct/ray/slider/settings regressions and new geometry checks; not Quest test"
+}
