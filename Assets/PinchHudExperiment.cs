@@ -14,6 +14,7 @@ public class PinchHudExperiment : MonoBehaviour
     bool legacyEntry;
     public AeroWindowLayout Layout { get; private set; }
     public AeroCompactHud Compact { get; private set; }
+    public AeroWidgetCatalog Widgets { get; private set; }
     public HandBackHudEntry HandEntry { get; private set; }
     public HudSoftFollow Follow => follow;
     public AeroInteractionFeedback Feedback { get; private set; }
@@ -68,6 +69,7 @@ public class PinchHudExperiment : MonoBehaviour
         Sky = AeroSkyMap.Build(view,hudView.Route);
         Sky.Show();
         Compact = AeroCompactHud.Build(view,hudView.Route,OpenOrRecall);
+        Widgets=AeroWidgetCatalog.Build(view,hudView.Route);
         Layout = gameObject.AddComponent<AeroWindowLayout>();
         Layout.Initialize(this,view,card.transform,Sky.transform);
         Feedback=AeroInteractionFeedback.Build(view);
@@ -113,7 +115,7 @@ public class PinchHudExperiment : MonoBehaviour
         if (rightPointer.target != null) rightPointer.target.SetGazed(true);
         if (hudView != null) hudView.SetHover(DirectTouch.HoverLeft??leftPointer.button, DirectTouch.HoverRight??rightPointer.button);
 
-        Layout.SetHover(leftPointer.button,rightPointer.button);
+        Layout.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         HandEntry.SetShortcutHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         if(Layout.Dragging)
         {
@@ -145,7 +147,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         Feedback.HandEntryEnabled=HandEntry.EnabledForEntry;
         Feedback.RecoveryControlVisible=Compact.FallbackVisible;
-        Feedback.Tick(IsCardOpen,HandEntry.AnchorTracked,HasTrackedHand,focused,Time.unscaledDeltaTime);
+        Feedback.Tick(IsCardOpen||Layout.HasVisibleWidgets||Widgets.IsOpen,HandEntry.AnchorTracked,HasTrackedHand,focused,Time.unscaledDeltaTime);
     }
 
     void LateUpdate()
@@ -182,7 +184,7 @@ public class PinchHudExperiment : MonoBehaviour
 #if UNITY_EDITOR
     public bool DirectInputForChecks;
 #endif
-    public void OpenOrRecall() { if(IsCardOpen)Recenter();else OpenFromHand(); }
+    public void OpenOrRecall() { if(Layout.NeedsRecall){if(!IsCardOpen)OpenFromHand();Recenter();}else if(IsCardOpen)Recenter();else OpenFromHand(); }
     public void CycleFollowMode()
     {
         SetFollowMode(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View
@@ -259,7 +261,7 @@ public class PinchHudExperiment : MonoBehaviour
                       " flags=" + (hand != null ? hand.aimFlags.ReadValue().ToString() : "none"));
             pointer.wasValid = valid;
         }
-        bool showRay = IsCardOpen || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
+        bool showRay = IsCardOpen || Layout.Editing || Layout.HasVisibleWidgets || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
         pointer.line.enabled = valid && showRay;
         pointer.tip.gameObject.SetActive(false);
         pointer.target = null;
@@ -312,7 +314,7 @@ public class PinchHudExperiment : MonoBehaviour
         {
             if(Layout.Editing){pointer.handle=hit.collider.GetComponent<AeroDragHandle>();pointer.zone=hit.collider.GetComponent<AeroDockZone>();}
             if (!IsCardOpen) pointer.target = hit.collider.GetComponent<GazeHotspot>();
-            pointer.overCard = IsCardOpen && (hit.collider.transform.IsChildOf(card.transform) || (Sky != null && hit.collider.transform.IsChildOf(Sky.transform)) || Layout.Owns(hit.collider.transform));
+            pointer.overCard = Layout.Owns(hit.collider.transform);
             if (pointer.overCard || (Compact.FallbackVisible && hit.collider.gameObject == Compact.OpenButton.gameObject) || (HandEntry.ShortcutsVisible && hit.collider.transform.IsChildOf(HandEntry.ShortcutRoot)))
             {
                 var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
@@ -434,9 +436,9 @@ public class PinchHudExperiment : MonoBehaviour
     void CloseCard()
     {
         ClearPresses();
-        if(Layout!=null&&Layout.Editing)Layout.EndEdit();
+
         if (HandEntry != null) HandEntry.RequireRelease();
-        card.SetActive(false);
+        card.SetActive(false);if(Layout!=null)Layout.MainHidden();
         var forward = Vector3.ProjectOnPlane(view.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
         entry.transform.position = view.transform.position + forward * 3f - Vector3.up * 0.2f;
@@ -444,7 +446,7 @@ public class PinchHudExperiment : MonoBehaviour
         entry.transform.Find("HudEntryLabel").rotation = Quaternion.LookRotation(forward);
         entry.gameObject.SetActive(legacyEntry);
         Physics.SyncTransforms();
-        if(Feedback!=null)Feedback.Notify("HUD已收起，天空状态保持");
+        if(Feedback!=null)Feedback.Notify("主面板已收起，组件保留");
         Debug.Log("[AeroPulse Hands] CLOSE");
     }
 
@@ -453,20 +455,20 @@ public class PinchHudExperiment : MonoBehaviour
         focused = hasFocus;
         if(!hasFocus)ClearPresses();
         if(!hasFocus&&Layout!=null&&Layout.Dragging)Layout.CancelDrag("APP PAUSED - RESTORED");
-        if(Compact!=null)Compact.SetPaused(!hasFocus);
+        if(Compact!=null)Compact.SetPaused(!hasFocus);if(Layout!=null)Layout.SetPaused(!hasFocus);
         if(Sky!=null)Sky.SetPaused(!hasFocus);
         if(!hasFocus&&Feedback!=null)Feedback.Tick(IsCardOpen,false,false,false,0);
         if (leftPointer != null) { leftPointer.gate = default; leftPointer.pinch = default;leftPointer.pendingPress=false; }
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
     }
 
-    void OnEnable() { if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
+    void OnEnable() { if(Layout!=null)Layout.SetPaused(!focused);if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
 
     void OnDisable()
     {
         ClearPresses();
         if(Layout!=null&&Layout.Editing)Layout.EndEdit();
-        if(Compact!=null)Compact.SetPaused(true);
+        if(Compact!=null)Compact.SetPaused(true);if(Layout!=null)Layout.SetPaused(true);
         if(Feedback!=null)Feedback.Tick(false,false,false,false,0);
         if (leftPointer != null) { leftPointer.gate = default; leftPointer.pinch = default;leftPointer.pendingPress=false; }
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
@@ -485,6 +487,7 @@ public class PinchHudExperiment : MonoBehaviour
         if (card != null) Destroy(card);
         if (Sky != null) Destroy(Sky.gameObject);
         if (Compact != null) Destroy(Compact.gameObject);
+        if (Widgets != null) Destroy(Widgets.gameObject);
         if (Feedback != null) Destroy(Feedback.gameObject);
     }
 

@@ -27,7 +27,7 @@ public static class AeroSettingsChecks
         Click(v.SettingsButton);Require(v.IsMapOpen&&v.Route.CurrentIndex==route,"Return lost previous route page");Click(v.SettingsButton);
         Click(s.TabButtons[0]);Click(s.SkyOptions[0]);Click(s.SkyOptions[0]);Require(!h.Sky.Visible&&h.IsCardOpen,"Explicit sky off cycled");
         Click(s.SkyOptions[1]);Click(s.SkyOptions[1]);Require(h.Sky.Visible,"Explicit sky on cycled");
-        Click(s.CompactOptions[2]);Click(s.CompactOptions[2]);Require(h.Compact.Side==AeroCompactHud.Placement.Right,"Explicit readout choice cycled");
+        Require(s.WidgetLibraryButton.gameObject.activeInHierarchy&&!s.CompactOptions[2].gameObject.activeInHierarchy,"Widget catalog did not replace legacy compact choices");
         Click(s.TabButtons[1]);Click(s.EntryOptions[2]);Click(s.EntryOptions[2]);Require(!h.HandEntry.EnabledForEntry&&!h.Feedback.HandEntryEnabled,"Front entry state/help diverged");
         h.SetHandHeight(.045f);h.SetHandHeight(.045f);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
         Click(s.SoundOptions[1]);Require(h.Feedback.SoundEnabled,"Sound selection not bound");Click(s.HelpButton);Require(h.Feedback.Visible&&h.Feedback.Message.Contains("前方"),"Front help teaches hidden hand entry");

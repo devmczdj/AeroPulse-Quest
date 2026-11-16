@@ -1,0 +1,46 @@
+[
+  {
+    "check": "AeroFinalChecks.Cold",
+    "result": "PASS frame=123265"
+  },
+  {
+    "check": "AeroHandBackChecks.RunGate",
+    "result": "PASS frame=123297"
+  },
+  {
+    "check": "AeroTouchChecks.Run",
+    "result": "PASS frame=123329"
+  },
+  {
+    "check": "AeroWidgets020Checks.Run",
+    "result": "PASS frame=123360"
+  },
+  {
+    "check": "AeroSettingsChecks.Run",
+    "result": "PASS frame=123392"
+  },
+  {
+    "check": "AeroSettingsChecks.Feedback",
+    "result": "PASS frame=123426"
+  },
+  {
+    "check": "AeroSkyChecks.Run",
+    "result": "PASS frame=123528"
+  },
+  {
+    "check": "AeroShortcutChecks.Run",
+    "result": "PASS frame=123563"
+  },
+  {
+    "check": "AeroResponseChecks.Run",
+    "result": "PASS frame=123596"
+  },
+  {
+    "check": "AeroGlassChecks.Run",
+    "result": "PASS frame=123630"
+  },
+  {
+    "check": "AeroFinalChecks.RepeatedJourney",
+    "result": "PASS frame=123663"
+  }
+]

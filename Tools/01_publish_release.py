@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--evidence-dir',type=Path,required=True)
     parser.add_argument('--source-manifest',type=Path,required=True)
     parser.add_argument('--repo',default='devmczdj/AeroPulse-Quest')
+    parser.add_argument('--prepare-only',action='store_true',help='Validate and create the local commit/tag/checksum; transport and remote verification remain pending')
     parser.add_argument('--expected-visibility',choices=['PUBLIC','PRIVATE'],default='PUBLIC')
     parser.add_argument('--build-tools',type=Path,required=True)
     args=parser.parse_args();assert re.fullmatch(r'0\.\d+\.\d+',args.version)
@@ -76,6 +77,10 @@ def main():
     if branch!='main':
         run(['git','-C',str(root),'switch','main'],text=True)
         run(['git','-C',str(root),'merge','--ff-only',branch],text=True)
+    if args.prepare_only:
+        checksum=evidence/(apk.name+'.sha256');checksum.write_text(sha+'  '+apk.name+'\n')
+        print(json.dumps({'version':args.version,'commit':commit,'sha256':sha,'prepared_only':True,'remote_verified':False}))
+        return
     run(['git','-C',str(root),'push','origin','main','--follow-tags'],text=True)
     checksum=evidence/(apk.name+'.sha256');checksum.write_text(sha+'  '+apk.name+'\n')
     release_exists=subprocess.run(['gh','release','view','v'+args.version,'--repo',args.repo],capture_output=True).returncode==0

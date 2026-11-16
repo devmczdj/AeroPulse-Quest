@@ -13,7 +13,7 @@ public class AeroHudSettingsView : MonoBehaviour
         HeightOptions, ModeOptions, DistanceOptions, SoundOptions;
     public AeroValueSlider HeightSlider { get; private set; }
     public AeroValueSlider DistanceSlider { get; private set; }
-    public UnityEngine.UI.Button HelpButton, ConfirmResetButton, CancelResetButton;
+    public UnityEngine.UI.Button WidgetLibraryButton, HelpButton, ConfirmResetButton, CancelResetButton;
     public TextMeshProUGUI CurrentModeLabel { get; private set; }
     // Aliases keep older Editor helpers compilable; the height/distance controls are sliders.
     public UnityEngine.UI.Button CompactButton, EntryButton, EditCardButton, EditSkyButton,
@@ -72,6 +72,11 @@ public class AeroHudSettingsView : MonoBehaviour
             int index=i;
             view.CompactOptions[i].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetCompactPlacement((AeroCompactHud.Placement)index);view.Refresh();});
         }
+        foreach(var old in view.CompactOptions)old.gameObject.SetActive(false);
+        display.Find("CompactHeading").GetComponent<TextMeshProUGUI>().text="组件";
+        view.WidgetLibraryButton=view.Button(display,"WidgetLibrary","组件列表",new Vector2(-16,8),new Vector2(296,44));
+        AeroUiIcons.Label(view.WidgetLibraryButton,"picture-in-picture","组件列表");
+        view.WidgetLibraryButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.Layout.BeginEdit(false);});
         view.Heading(display,"SkyRecallHeading","天空位置",-68);
         view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(-16,-68),new Vector2(296,44));
         view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.RecenterSky();});
@@ -123,7 +128,7 @@ public class AeroHudSettingsView : MonoBehaviour
         view.ResetButton.onClick.AddListener(view.RequestReset);
         view.resetConfirmation=AeroHudView.NewRect("ResetHudConfirmation",root,new Vector2(106,0),new Vector2(476,236));
         view.Text(view.resetConfirmation,"ResetTitle","恢复HUD默认设置？",new Vector2(-226,58),new Vector2(452,36),26,AeroUiTokens.Ink);
-        view.Text(view.resetConfirmation,"ResetScope","入口、读数、高度、提示音、主卡布局将复位。\n天空与路线进度不变。",new Vector2(-226,0),new Vector2(452,72),18,AeroUiTokens.Secondary);
+        view.Text(view.resetConfirmation,"ResetScope","入口、组件、高度、提示音、布局将复位。\n天空与路线进度不变。",new Vector2(-226,0),new Vector2(452,72),18,AeroUiTokens.Secondary);
         view.CancelResetButton=view.Button(view.resetConfirmation,"CancelHudReset","取消",new Vector2(-120,-90),new Vector2(216,44));
         view.ConfirmResetButton=view.Button(view.resetConfirmation,"ConfirmHudReset","恢复默认",new Vector2(120,-90),new Vector2(216,44));
         view.CancelResetButton.onClick.AddListener(view.CancelReset);

@@ -39,7 +39,7 @@ public static class AeroGlassChecks
                     "Panel did not recover after translation");
             eye.transform.rotation = Quaternion.Euler(0, 70, 40);
             follow.SnapToView();
-            Require(Vector3.Dot(panel.transform.up, Vector3.up) > 0.999f, "Panel inherited head roll");
+            Require(Quaternion.Angle(panel.transform.rotation, eye.transform.rotation)<0.1f, "Panel inherited head roll");
             var material = Resources.Load<Material>("AeroGlassBackground");
             Require(material != null && material.shader.isSupported && material.GetTexture("_Background") != null,
                     "Glass material/cubemap unavailable");

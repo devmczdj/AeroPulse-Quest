@@ -34,7 +34,7 @@ public class HudSoftFollow : MonoBehaviour
     public void CaptureOffset()
     {
         referenceRotation=ViewRotation();
-        Offset=new Pose(Quaternion.Inverse(referenceRotation)*(transform.position-view.position),Quaternion.Inverse(referenceRotation)*transform.rotation);
+        Offset=new Pose(Quaternion.Inverse(referenceRotation)*(transform.position-view.position),Quaternion.identity);
         Distance=Mathf.Max(.01f,Offset.position.magnitude);scalePerMeter=transform.localScale.x/(Distance*UserScale);
         outsideTime=pressFreezeTime=0;moving=false;SyncView();
     }
@@ -46,12 +46,12 @@ public class HudSoftFollow : MonoBehaviour
         referenceRotation=ViewRotation();Offset=new Pose(new Vector3(0,0,Distance),Quaternion.identity);
         ApplyOffset();outsideTime=pressFreezeTime=0;moving=false;SyncView();ApplyScale();
     }
-    public void ApplyOffset(){transform.SetPositionAndRotation(view.position+referenceRotation*Offset.position,referenceRotation*Offset.rotation);SyncView();}
+    public void ApplyOffset(){transform.SetPositionAndRotation(view.position+referenceRotation*Offset.position,view.rotation);SyncView();}
     public void Tick(float delta,bool interacting)
     {
         if(view==null||!gameObject.activeInHierarchy)return;
         float elapsed=Mathf.Clamp(delta,0,.25f);delta=Mathf.Clamp(delta,0,.05f);
-        var translation=view.position-previousViewPosition;SyncView();if(Mode==FollowMode.Fixed)return;
+        var translation=view.position-previousViewPosition;SyncView();transform.rotation=view.rotation;if(Mode==FollowMode.Fixed)return;
         transform.position+=translation;
         pressFreezeTime=interacting?pressFreezeTime+elapsed:0;
         if(interacting&&pressFreezeTime<.6f){outsideTime=0;moving=false;return;}
@@ -64,7 +64,7 @@ public class HudSoftFollow : MonoBehaviour
         referenceRotation=Quaternion.RotateTowards(referenceRotation,desired,(Mode==FollowMode.Quick?90:55)*delta);
         var target=view.position+referenceRotation*Offset.position;
         transform.position=Vector3.MoveTowards(transform.position,target,(Mode==FollowMode.Quick?2:1.2f)*delta);
-        transform.rotation=Quaternion.RotateTowards(transform.rotation,referenceRotation*Offset.rotation,(Mode==FollowMode.Quick?90:55)*delta);
+        transform.rotation=view.rotation;
         if(Vector3.Distance(transform.position,target)<.01f&&Quaternion.Angle(referenceRotation,desired)<1)
         {moving=false;outsideTime=0;}
     }
