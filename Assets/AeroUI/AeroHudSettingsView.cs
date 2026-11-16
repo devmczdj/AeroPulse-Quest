@@ -132,13 +132,13 @@ public class AeroHudSettingsView : MonoBehaviour
         view.CompactButton=view.CompactOptions[0];view.EntryButton=view.EntryOptions[0];
         view.ModeButton=view.ModeOptions[0];view.DistanceButton=view.DistanceSlider.Button;view.HeightButton=view.HeightSlider.Button;
         view.HeightOptions=new[]{view.HeightButton};view.DistanceOptions=new[]{view.DistanceButton};
-        AeroUiIcons.Apply(view.RecenterButton,"crosshair",36);
-        AeroUiIcons.Apply(view.EditCardButton,"grip-vertical",36);
+        AeroUiIcons.Label(view.RecenterButton,"crosshair","召回");
+        AeroUiIcons.Label(view.EditCardButton,"grip-vertical","编辑布局");
         AeroUiIcons.Apply(view.EditSkyButton,"globe",28);
         AeroUiIcons.Apply(view.ResetButton,"rotate-ccw",36);
         AeroUiIcons.Apply(view.CancelResetButton,"close",28);
         AeroUiIcons.Apply(view.ConfirmResetButton,"check",28);
-        AeroUiIcons.Apply(view.TabButtons[0],"vr-headset",36);AeroUiIcons.Apply(view.TabButtons[1],"hand-open",36);AeroUiIcons.Apply(view.TabButtons[2],"grip-vertical",36);
+        AeroUiIcons.Label(view.TabButtons[0],"vr-headset","显示");AeroUiIcons.Label(view.TabButtons[1],"hand-open","交互");AeroUiIcons.Label(view.TabButtons[2],"grip-vertical","布局");
         view.SelectTab(SettingsTab.Display);
         return view;
     }
@@ -215,8 +215,8 @@ public class AeroHudSettingsView : MonoBehaviour
             foreach(var mode in ModeOptions)mode.interactable=!attached;
             DistanceSlider.SetValueWithoutNotify(owner.Follow.Distance);
             DistanceSlider.SetInteractable(!attached);
-            CurrentModeLabel.text=owner.Layout.MainAnchor==AeroWindowAnchor.Hand?"随左手：移到面前后可调距离。":
-                owner.Layout.MainAnchor==AeroWindowAnchor.View?"随视野：移到面前后可调距离。":"";
+            CurrentModeLabel.text=owner.Layout.MainAnchor==AeroWindowAnchor.Hand?"随左手：用编辑中的远近调整。":
+                owner.Layout.MainAnchor==AeroWindowAnchor.View?"随视野：用编辑中的远近调整。":"";
         }
         Paint();
     }

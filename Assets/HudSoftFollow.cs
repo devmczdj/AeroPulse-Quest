@@ -14,13 +14,13 @@ public class HudSoftFollow : MonoBehaviour
     Transform view;
     Vector3 previousViewPosition;
     Quaternion referenceRotation;
-    float outsideTime,pressFreezeTime,scalePerMeter=.0015f/1.8f;
+    float outsideTime,pressFreezeTime,scalePerMeter=.0015f/1.8f,defaultScalePerMeter=.0015f/1.8f;
     bool moving;
     public void Initialize(Transform camera) { view=camera;referenceRotation=ViewRotation();previousViewPosition=view.position; }
-    public void ConfigureScale(float perMeter,float distance){scalePerMeter=perMeter;Distance=distance;Offset=new Pose(new Vector3(0,0,distance),Quaternion.identity);}
+    public void ConfigureScale(float perMeter,float distance){scalePerMeter=defaultScalePerMeter=perMeter;Distance=distance;Offset=new Pose(new Vector3(0,0,distance),Quaternion.identity);}
     public void SetMode(FollowMode value){Mode=value;outsideTime=pressFreezeTime=0;moving=false;SyncView();}
     public void CycleMode()=>SetMode((FollowMode)(((int)Mode+1)%3));
-    public void SetDistance(float value){float next=Mathf.Clamp(value,.55f,2.2f);Offset=new Pose(Offset.position*(next/Distance),Offset.rotation);Distance=next;ApplyScale();}
+    public void SetDistance(float value){float next=Mathf.Clamp(value,.55f,2.2f);float radius=Mathf.Max(.01f,Offset.position.magnitude);float physical=transform.localScale.x;Offset=new Pose(Offset.position*(next/radius),Offset.rotation);Distance=next;scalePerMeter=physical/(Distance*UserScale);ApplyScale();}
     public void CycleDistance()=>SetDistance(Distance<1.6f?1.8f:Distance<2f?2.2f:1.4f);
     public void SetUserScale(float value){UserScale=Mathf.Clamp(value,MinScale,MaxScale);ApplyScale();}
     public void ApplyScale()=>transform.localScale=Vector3.one*(scalePerMeter*Distance*UserScale);
@@ -35,11 +35,12 @@ public class HudSoftFollow : MonoBehaviour
     {
         referenceRotation=ViewRotation();
         Offset=new Pose(Quaternion.Inverse(referenceRotation)*(transform.position-view.position),Quaternion.Inverse(referenceRotation)*transform.rotation);
+        Distance=Mathf.Max(.01f,Offset.position.magnitude);scalePerMeter=transform.localScale.x/(Distance*UserScale);
         outsideTime=pressFreezeTime=0;moving=false;SyncView();
     }
-    public void RestoreOptions(float distance,float size,Pose offset,FollowMode mode)
-    {Distance=distance;UserScale=size;Offset=offset;referenceRotation=ViewRotation();SetMode(mode);ApplyScale();}
-    public void ResetOptions(){UserScale=1;Distance=.65f;Mode=FollowMode.Soft;SnapToView();}
+    public void RestoreOptions(float distance,float size,Pose offset,FollowMode mode,float physicalScale=-1)
+    {Distance=distance;UserScale=size;if(physicalScale>0)scalePerMeter=physicalScale/(distance*size);Offset=offset;referenceRotation=ViewRotation();SetMode(mode);ApplyScale();}
+    public void ResetOptions(){scalePerMeter=defaultScalePerMeter;UserScale=1;Distance=.65f;Mode=FollowMode.Soft;SnapToView();}
     public void SnapToView()
     {
         referenceRotation=ViewRotation();Offset=new Pose(new Vector3(0,0,Distance),Quaternion.identity);

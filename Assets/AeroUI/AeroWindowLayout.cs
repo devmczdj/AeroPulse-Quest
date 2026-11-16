@@ -17,7 +17,7 @@ public class AeroWindowLayout : MonoBehaviour
     public AeroWindowAnchor SkyAnchor=>AeroWindowAnchor.World;
     // Old Editor helpers remain compilable; these zones never enter the new UI.
     public AeroDockZone WorldZone,ViewZone,HandZone;
-    public AeroDragHandle CardHandle,SkyHandle,ResizeHandle,CompactHandle,CompactResizeHandle;
+    public AeroDragHandle CardHandle,SkyHandle,ResizeHandle,CompactHandle,CompactResizeHandle,DepthHandle,CompactDepthHandle;
     public Button DoneButton,UndoButton,ResetButton,PinButton,EnvironmentButton,HandButton,ViewButton,SelectMainButton,SelectCompactButton,SpeedButton;
     public string MainLabel=>main.Anchor==AeroWindowAnchor.Hand?"HAND DOCK":main.Anchor==AeroWindowAnchor.View?"VIEW DOCK":main.Follow.ModeLabel;
     public float MainScale=>main.Follow.UserScale;
@@ -31,7 +31,7 @@ public class AeroWindowLayout : MonoBehaviour
         public Transform Root;public HudSoftFollow Follow;public AeroWindowAnchor Anchor;
         public Pose Local;public bool Pinned,Tracked=true;public HudSoftFollow.FollowMode Speed=HudSoftFollow.FollowMode.Soft;
         public Pose[] Saved=new Pose[4];public bool[] HasSaved=new bool[4];
-        public Canvas Canvas;public Collider[] Colliders;public AeroDragHandle Move,Resize;
+        public Canvas Canvas;public Collider[] Colliders;public AeroDragHandle Move,Resize,Depth;
         public Snapshot Undo;public bool HasUndo;
     }
     sealed class Snapshot
@@ -41,10 +41,10 @@ public class AeroWindowLayout : MonoBehaviour
         public Pose[] Saved;public bool[] HasSaved;
     }
     PinchHudExperiment owner;Camera eye;Panel main,small,selected;Panel[] panels;
-    RectTransform toolbar;TextMeshProUGUI nameLabel,sizeLabel;
+    RectTransform toolbar,sideTools;TextMeshProUGUI nameLabel,sizeLabel;
     readonly List<Button> buttons=new List<Button>();
-    string dragOwner;float holdTime,holdDistance,startProjection;
-    bool resizing;Vector3 grabOffset,pivot,diagonal;Plane resizePlane;Snapshot before;
+    string dragOwner;float holdTime,startProjection,startRadius,minRadius,maxRadius;
+    bool resizing,depthMoving;Vector3 pivot,diagonal,orbitCenter,radial,startOrigin,orbitHit;Plane resizePlane,orbitPlane;Snapshot before;
     readonly RaycastHit[] hits=new RaycastHit[64];
     Button hoverLeft,hoverRight;
     bool NeedsRecallFor(Panel p)=>p.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked||Vector3.Angle(eye.transform.forward,p.Root.position-eye.transform.position)>70;
@@ -55,21 +55,22 @@ public class AeroWindowLayout : MonoBehaviour
         var compact=owner.Compact.transform;compact.SetParent(null,true);
         var f=compact.gameObject.AddComponent<HudSoftFollow>();f.Initialize(eye.transform);f.ConfigureScale(.0009f/1.05f,1.05f);
         small=MakePanel(compact,f,AeroWindowAnchor.View,true);small.Local=new Pose(new Vector3(-.42f,-.14f,1.05f),Quaternion.identity);
-        panels=new[]{main,small};owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;ResizeHandle=main.Resize;CompactHandle=small.Move;CompactResizeHandle=small.Resize;
+        panels=new[]{main,small};owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;ResizeHandle=main.Resize;CompactHandle=small.Move;CompactResizeHandle=small.Resize;DepthHandle=main.Depth;CompactDepthHandle=small.Depth;
         WorldZone=LegacyZone(AeroWindowAnchor.World);ViewZone=LegacyZone(AeroWindowAnchor.View);HandZone=LegacyZone(AeroWindowAnchor.Hand);
-        toolbar=AeroHudView.NewRect("LayoutToolbar",detail,Vector2.zero,new Vector2(456,132));
-        AeroHudView.AddPanelImage(toolbar,"Backing",AeroUiSprites.Pill,Vector2.zero,new Vector2(456,132),new Color(.04f,.07f,.08f,.96f));
-        SelectMainButton=Button("SelectMain","主卡","browser",-180,34,()=>SelectPanel(false));
-        SelectCompactButton=Button("SelectCompact","小型读数","picture-in-picture",-108,34,()=>SelectPanel(true));
-        nameLabel=AeroHudView.Text(toolbar,"EditedObject","主卡",new Vector2(-56,34),new Vector2(174,40),22,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Left,0,0);
-        SpeedButton=Button("FollowSpeed","跟随速度","arrow-right",180,34,ToggleSpeed);
-        EnvironmentButton=Button("PlaceEnvironment","环境","cube",-180,-34,()=>SetPlacement(AeroWindowAnchor.Follow));
-        HandButton=Button("PlaceHand","手部","hand-open",-108,-34,()=>SetPlacement(AeroWindowAnchor.Hand));
-        ViewButton=Button("PlaceView","面前","vr-headset",-36,-34,()=>SetPlacement(AeroWindowAnchor.View));
-        UndoButton=Button("LayoutUndo","撤销","undo",36,-34,Undo);
-        ResetButton=Button("LayoutReset","复位","rotate-ccw",108,-34,ResetSelected);
-        DoneButton=Button("LayoutDone","完成","check",180,-34,EndEdit);
-        PinButton=AeroHudView.ActionButton(detail,"EnvironmentPin","",Vector2.zero,new Vector2(56,56),new Vector3(64,64,8));AeroUiIcons.Apply(PinButton,"pushpin-off",36);PinButton.onClick.AddListener(TogglePin);buttons.Add(PinButton);
+        toolbar=AeroHudView.NewRect("PlacementChoices",detail,Vector2.zero,new Vector2(432,72));
+        sideTools=AeroHudView.NewRect("LayoutSideTools",detail,Vector2.zero,new Vector2(196,440));
+        Backing(toolbar,new Vector2(432,72),Vector2.zero);Backing(sideTools,new Vector2(196,440),new Vector2(0,14));
+        EnvironmentButton=Button(toolbar,"PlaceEnvironment","环境","cube",-144,0,136,()=>SetPlacement(AeroWindowAnchor.Follow));
+        HandButton=Button(toolbar,"PlaceHand","手部","hand-open",0,0,136,()=>SetPlacement(AeroWindowAnchor.Hand));
+        ViewButton=Button(toolbar,"PlaceView","面前","vr-headset",144,0,136,()=>SetPlacement(AeroWindowAnchor.View));
+        nameLabel=AeroHudView.Text(sideTools,"EditedObject","主面板",new Vector2(-80,214),new Vector2(160,32),20,AeroUiFonts.Interface,AeroUiTokens.Secondary,TextAlignmentOptions.Left,0,0);
+        SelectMainButton=Button(sideTools,"SelectMain","主面板","browser",0,168,180,()=>SelectPanel(false));
+        SelectCompactButton=Button(sideTools,"SelectCompact","显示小窗","picture-in-picture",0,112,180,()=>SelectPanel(true));
+        PinButton=Button(sideTools,"EnvironmentPin","跟随","pushpin-off",0,56,180,TogglePin);
+        SpeedButton=Button(sideTools,"FollowSpeed","柔和","arrow-right",0,0,180,ToggleSpeed);
+        UndoButton=Button(sideTools,"LayoutUndo","撤销","undo",0,-56,180,Undo);
+        ResetButton=Button(sideTools,"LayoutReset","复位","rotate-ccw",0,-112,180,ResetSelected);
+        DoneButton=Button(sideTools,"LayoutDone","完成","check",0,-168,180,EndEdit);
         sizeLabel=AeroHudView.Text(detail,"ResizeValue","",Vector2.zero,new Vector2(140,40),24,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Right,0,0);
         main.Follow.SnapToView();ApplyAttached(small);SetEditUI(false);
     }
@@ -77,7 +78,10 @@ public class AeroWindowLayout : MonoBehaviour
     {
         var p=new Panel{Root=t,Follow=f,Anchor=anchor,Canvas=t.GetComponent<Canvas>()};
         var rect=(RectTransform)t;var size=rect.rect.size;
-        p.Move=Handle(t,"MoveHandle",new Vector2(0,size.y/2+34),new Vector2(Mathf.Min(200,size.x-100),52),"grip-vertical",compact,false);
+        p.Move=Handle(t,"OrbitHandle",new Vector2(-82,size.y/2+36),new Vector2(156,56),"grip-vertical",compact,false);
+        HandleLabel(p.Move,"环绕");
+        p.Depth=Handle(t,"DepthHandle",new Vector2(82,size.y/2+36),new Vector2(156,56),"crosshair",compact,false);p.Depth.Depth=true;
+        HandleLabel(p.Depth,"远近");
         p.Resize=Handle(t,"ResizeHandle",new Vector2(size.x/2+32,-size.y/2-32),new Vector2(56,56),"move-diagonal",compact,true);
         return p;
     }
@@ -89,22 +93,35 @@ public class AeroWindowLayout : MonoBehaviour
         var h=image.gameObject.AddComponent<AeroDragHandle>();h.Compact=compact;h.Resize=resize;h.gameObject.SetActive(false);return h;
     }
     AeroDockZone LegacyZone(AeroWindowAnchor anchor){var go=new GameObject("Legacy"+anchor);var z=go.AddComponent<AeroDockZone>();z.Anchor=anchor;go.SetActive(false);return z;}
-    Button Button(string name,string label,string icon,float x,float y,UnityEngine.Events.UnityAction action)
+    void Backing(Transform parent,Vector2 size,Vector2 position)
     {
-        var b=AeroHudView.ActionButton(toolbar,name,label,new Vector2(x,y),new Vector2(56,52),new Vector3(64,60,8));AeroUiIcons.Apply(b,icon,36);b.onClick.AddListener(action);buttons.Add(b);return b;
+        var image=AeroHudView.AddPanelImage(parent,"Backing",Resources.Load<Sprite>("JetStyle/RoundedRect"),position,size,new Color(.04f,.07f,.08f,.96f));
+        image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=8;
     }
+    void HandleLabel(AeroDragHandle handle,string label)
+    {
+        ((RectTransform)handle.transform.Find("Icon")).anchoredPosition=new Vector2(-50,0);
+        AeroHudView.Text(handle.transform,"Caption",label,new Vector2(18,0),new Vector2(98,44),22,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Left,0,0,true);
+    }
+    Button Button(Transform parent,string name,string label,string icon,float x,float y,float width,UnityEngine.Events.UnityAction action)
+    {
+        var b=AeroHudView.ActionButton(parent,name,label,new Vector2(x,y),new Vector2(width,48),new Vector3(width+4,52,8));AeroUiIcons.Label(b,icon,label);b.onClick.AddListener(action);buttons.Add(b);return b;
+    }
+    void Caption(Button button,string value){var text=button.GetComponentInChildren<TextMeshProUGUI>(true);if(text.text!=value)text.text=value;}
     public void BeginEdit(bool isSky){if(isSky){owner.RecenterSky();return;}if(Dragging)CancelDrag("");owner.ShowDetailForLayout();selected=main;Editing=true;SetEditUI(true);owner.ClearPresses();}
     public void EndEdit(){if(Dragging)CancelDrag("");Editing=false;SetEditUI(false);owner.ClearPresses();owner.RefreshSettings();}
     public void SelectPanel(bool compact)
     {
-        if(Dragging||compact&&!owner.Compact.gameObject.activeSelf)return;
+        if(Dragging)return;
+        if(compact&&!owner.Compact.gameObject.activeSelf)owner.SetCompactPlacement(AeroCompactHud.Placement.Left);
         selected=compact?small:main;SetEditUI(Editing);owner.ClearPresses();
     }
     void SetEditUI(bool visible)
     {
-        foreach(var p in panels){p.Canvas.sortingOrder=visible&&p==selected?10:0;p.Move.gameObject.SetActive(visible&&p==selected);p.Resize.gameObject.SetActive(visible&&p==selected);}
-        toolbar.SetParent(selected.Root,false);toolbar.anchoredPosition=new Vector2(0,-((RectTransform)selected.Root).rect.height/2-120);
-        PinButton.transform.SetParent(selected.Root,false);((RectTransform)PinButton.transform).anchoredPosition=new Vector2(((RectTransform)selected.Root).rect.width/2-28,((RectTransform)selected.Root).rect.height/2+34);
+        foreach(var p in panels){p.Canvas.sortingOrder=visible&&p==selected?10:0;p.Move.gameObject.SetActive(visible&&p==selected);p.Depth.gameObject.SetActive(visible&&p==selected);p.Resize.gameObject.SetActive(visible&&p==selected);}
+        toolbar.SetParent(selected.Root,false);toolbar.anchoredPosition=new Vector2(0,-((RectTransform)selected.Root).rect.height/2-112);
+        sideTools.SetParent(selected.Root,false);sideTools.anchoredPosition=new Vector2(Mathf.Max(((RectTransform)selected.Root).rect.width/2+120,336),0);
+        sideTools.gameObject.SetActive(visible);
         sizeLabel.transform.SetParent(selected.Root,false);sizeLabel.rectTransform.anchoredPosition=new Vector2(((RectTransform)selected.Root).rect.width/2-140,-((RectTransform)selected.Root).rect.height/2-32);
         toolbar.gameObject.SetActive(visible);PinButton.gameObject.SetActive(visible&&IsEnvironment(selected));sizeLabel.gameObject.SetActive(false);
         main.Root.GetComponent<AeroHudView>().SetLayoutEditing(visible);RefreshEditor();Physics.SyncTransforms();
@@ -112,22 +129,30 @@ public class AeroWindowLayout : MonoBehaviour
     static bool IsEnvironment(Panel p)=>p.Anchor==AeroWindowAnchor.Follow||p.Anchor==AeroWindowAnchor.World;
     void RefreshEditor()
     {
-        if(toolbar==null)return;nameLabel.text=SelectedCompact?"小型读数":"主卡";
+        if(toolbar==null)return;nameLabel.text=SelectedCompact?"小窗":"主面板";
         HandButton.interactable=!Dragging&&owner.HandEntry.AnchorTracked;
-        SelectCompactButton.interactable=!Dragging&&owner.Compact.gameObject.activeSelf;
+        SelectCompactButton.interactable=!Dragging;Caption(SelectCompactButton,owner.Compact.gameObject.activeSelf?"小窗":"显示小窗");
         foreach(var b in buttons)if(b!=HandButton&&b!=SelectCompactButton)b.interactable=!Dragging;
         UndoButton.interactable=!Dragging&&selected.HasUndo;
+        Caption(PinButton,selected.Anchor==AeroWindowAnchor.World?"固定":"跟随");Caption(SpeedButton,selected.Speed==HudSoftFollow.FollowMode.Quick?"快速":"柔和");
         SpeedButton.gameObject.SetActive(Editing&&selected.Anchor==AeroWindowAnchor.Follow);AeroUiIcons.Set(SpeedButton,selected.Speed==HudSoftFollow.FollowMode.Quick?"fast-forward":"arrow-right");
         PinButton.gameObject.SetActive(Editing&&IsEnvironment(selected));AeroUiIcons.Set(PinButton,selected.Anchor==AeroWindowAnchor.World?"pushpin":"pushpin-off");
+        int hiddenRows=selected.Anchor==AeroWindowAnchor.Follow?0:selected.Anchor==AeroWindowAnchor.World?1:2;
+        ((RectTransform)UndoButton.transform).anchoredPosition=new Vector2(0,-56+hiddenRows*56);
+        ((RectTransform)ResetButton.transform).anchoredPosition=new Vector2(0,-112+hiddenRows*56);
+        ((RectTransform)DoneButton.transform).anchoredPosition=new Vector2(0,-168+hiddenRows*56);
+        var backing=(RectTransform)sideTools.Find("Backing");backing.sizeDelta=new Vector2(196,440-hiddenRows*56);backing.anchoredPosition=new Vector2(0,14+hiddenRows*28);
+        foreach(var b in buttons){var tint=b.interactable?AeroUiTokens.Ink:new Color(.55f,.64f,.62f,.45f);b.transform.Find("ActionIcon").GetComponent<Image>().color=tint;b.GetComponentInChildren<TextMeshProUGUI>().color=tint;}
+
         foreach(var b in buttons){bool active=b==EnvironmentButton&&IsEnvironment(selected)||b==HandButton&&selected.Anchor==AeroWindowAnchor.Hand||b==ViewButton&&selected.Anchor==AeroWindowAnchor.View||b==PinButton&&selected.Anchor==AeroWindowAnchor.World||b==SelectMainButton&&!SelectedCompact||b==SelectCompactButton&&SelectedCompact;
             b.GetComponent<Image>().color=!b.interactable?new Color(.08f,.11f,.12f,.5f):b==hoverLeft||b==hoverRight?AeroUiTokens.ButtonHover:active?new Color(.2f,.31f,.28f,1):AeroUiTokens.ButtonFill;}
     }
     Pose Reference(Panel p)=>p.Anchor==AeroWindowAnchor.Hand?owner.HandEntry.ContactSurface:new Pose(eye.transform.position,eye.transform.rotation);
     static Pose ToLocal(Pose basis,Transform t)=>new Pose(Quaternion.Inverse(basis.rotation)*(t.position-basis.position),Quaternion.Inverse(basis.rotation)*t.rotation);
     void ApplyAttached(Panel p){var basis=Reference(p);p.Root.SetPositionAndRotation(basis.position+basis.rotation*p.Local.position,basis.rotation*p.Local.rotation);}
-    void Remember(Panel p){if(p.Anchor==AeroWindowAnchor.Hand||p.Anchor==AeroWindowAnchor.View)p.Local=ToLocal(Reference(p),p.Root);else if(p.Anchor==AeroWindowAnchor.Follow)p.Follow.CaptureOffset();p.Saved[(int)p.Anchor]=p.Anchor==AeroWindowAnchor.World?new Pose(p.Root.position,p.Root.rotation):p.Anchor==AeroWindowAnchor.Follow?p.Follow.Offset:p.Local;p.HasSaved[(int)p.Anchor]=true;}
+    void Remember(Panel p){p.Follow.CaptureOffset();if(p.Anchor==AeroWindowAnchor.Hand||p.Anchor==AeroWindowAnchor.View)p.Local=ToLocal(Reference(p),p.Root);p.Saved[(int)p.Anchor]=p.Anchor==AeroWindowAnchor.World?new Pose(p.Root.position,p.Root.rotation):p.Anchor==AeroWindowAnchor.Follow?p.Follow.Offset:p.Local;p.HasSaved[(int)p.Anchor]=true;}
     Snapshot Capture(Panel p)=>new Snapshot{World=new Pose(p.Root.position,p.Root.rotation),Local=p.Local,Offset=p.Follow.Offset,Scale=p.Root.localScale,Anchor=p.Anchor,Distance=p.Follow.Distance,Size=p.Follow.UserScale,Mode=p.Follow.Mode,Speed=p.Speed,Pinned=p.Pinned,Saved=(Pose[])p.Saved.Clone(),HasSaved=(bool[])p.HasSaved.Clone()};
-    void Restore(Panel p,Snapshot s){p.Anchor=s.Anchor;p.Local=s.Local;p.Pinned=s.Pinned;p.Speed=s.Speed;p.Saved=(Pose[])s.Saved.Clone();p.HasSaved=(bool[])s.HasSaved.Clone();p.Follow.RestoreOptions(s.Distance,s.Size,s.Offset,s.Mode);p.Root.SetPositionAndRotation(s.World.position,s.World.rotation);p.Root.localScale=s.Scale;p.Follow.SyncView();SetRendering(p,p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked);}
+    void Restore(Panel p,Snapshot s){p.Anchor=s.Anchor;p.Local=s.Local;p.Pinned=s.Pinned;p.Speed=s.Speed;p.Saved=(Pose[])s.Saved.Clone();p.HasSaved=(bool[])s.HasSaved.Clone();p.Follow.RestoreOptions(s.Distance,s.Size,s.Offset,s.Mode,s.Scale.x);p.Root.SetPositionAndRotation(s.World.position,s.World.rotation);p.Root.localScale=s.Scale;p.Follow.SyncView();SetRendering(p,p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked);}
     void SaveUndo(Panel p){p.Undo=Capture(p);p.HasUndo=true;}
     public void SetPlacement(AeroWindowAnchor mode)
     {
@@ -148,7 +173,7 @@ public class AeroWindowLayout : MonoBehaviour
             else{selected.Follow.RestoreOptions(selected.Follow.Distance,selected.Follow.UserScale,saved,selected.Speed);selected.Follow.ApplyOffset();}
         }
         else if(mode==AeroWindowAnchor.Follow)selected.Follow.CaptureOffset();
-        SetRendering(selected,true);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();
+        selected.Follow.CaptureOffset();SetRendering(selected,true);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();
     }
     public void TogglePin()
     {
@@ -162,7 +187,13 @@ public class AeroWindowLayout : MonoBehaviour
     {
         if(!Editing||Dragging||AeroValueSlider.Active!=null||handle==null||handle.Sky||handle.Compact!=SelectedCompact)return;
         if(selected.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked)return;
-        before=Capture(selected);resizing=handle.Resize;dragOwner=hand;holdTime=0;holdDistance=Mathf.Clamp(distance,.05f,4.5f);grabOffset=selected.Root.position-ray.GetPoint(holdDistance);
+        before=Capture(selected);resizing=handle.Resize;depthMoving=handle.Depth;dragOwner=hand;holdTime=0;
+        orbitCenter=eye.transform.position;startRadius=Vector3.Distance(selected.Root.position,orbitCenter);
+        if(startRadius<.01f){dragOwner=null;return;}
+        radial=(selected.Root.position-orbitCenter)/startRadius;startOrigin=ray.origin;
+        minRadius=Mathf.Min(.55f,startRadius);maxRadius=Mathf.Max(2.2f,startRadius);
+        orbitPlane=new Plane(radial,selected.Root.position);
+        if(!resizing&&!depthMoving){if(!orbitPlane.Raycast(ray,out float hit)||hit<=0||hit>5){dragOwner=null;return;}orbitHit=ray.GetPoint(hit);}
         var rect=(RectTransform)selected.Root;Vector3 corner=selected.Root.TransformPoint(new Vector3(rect.rect.xMax,rect.rect.yMin,0));
         pivot=selected.Root.TransformPoint(new Vector3(rect.rect.xMin,rect.rect.yMax,0));diagonal=(corner-pivot).normalized;resizePlane=new Plane(selected.Root.forward,selected.Root.position);
         if(resizing){if(!resizePlane.Raycast(ray,out float d)){dragOwner=null;return;}startProjection=Vector3.Dot(ray.GetPoint(d)-pivot,diagonal);if(startProjection<=.001f){dragOwner=null;return;}}
@@ -190,7 +221,19 @@ public class AeroWindowLayout : MonoBehaviour
             var rect=(RectTransform)selected.Root;selected.Root.position+=pivot-selected.Root.TransformPoint(new Vector3(rect.rect.xMin,rect.rect.yMax,0));
             sizeLabel.gameObject.SetActive(true);sizeLabel.text=Mathf.RoundToInt(size*100)+"%";
         }
-        else selected.Root.SetPositionAndRotation(ray.GetPoint(holdDistance)+grabOffset,before.World.rotation);
+        else if(depthMoving)
+        {
+            float radius=Mathf.Clamp(startRadius+Vector3.Dot(ray.origin-startOrigin,radial),minRadius,maxRadius);
+            selected.Root.SetPositionAndRotation(orbitCenter+radial*radius,before.World.rotation);
+            sizeLabel.gameObject.SetActive(true);sizeLabel.text=radius.ToString("F2",System.Globalization.CultureInfo.InvariantCulture)+" m";
+        }
+        else
+        {
+            if(!orbitPlane.Raycast(ray,out float distance)||distance<=0||distance>5)return;
+            var candidate=before.World.position+ray.GetPoint(distance)-orbitHit;var direction=(candidate-orbitCenter).normalized;
+            if(direction.sqrMagnitude<.5f)return;
+            selected.Root.SetPositionAndRotation(orbitCenter+direction*startRadius,Quaternion.FromToRotation(radial,direction)*before.World.rotation);
+        }
         Physics.SyncTransforms();
     }
     public void CancelDrag(string reason){if(!Dragging)return;dragOwner=null;Restore(selected,before);sizeLabel.gameObject.SetActive(false);RefreshEditor();}
@@ -245,7 +288,7 @@ public class AeroWindowLayout : MonoBehaviour
     public void InvalidateMainUndo(){main.HasUndo=false;}
     public void CompactPreset(AeroCompactHud.Placement side){if(side==AeroCompactHud.Placement.Hidden)return;small.HasUndo=false;small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(small);SetRendering(small,true);}
     public void Recall(){if(Editing)EndEdit();if(Dragging)CancelDrag("");ReleaseToFollow();main.Follow.SnapToView();if(NeedsRecallFor(small)){small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(-.42f,-.14f,1.05f),Quaternion.identity);small.HasUndo=false;ApplyAttached(small);SetRendering(small,true);}}
-    public bool ToolbarButton(Button b)=>b!=null&&(b.transform.IsChildOf(toolbar)||b==PinButton);
+    public bool ToolbarButton(Button b)=>b!=null&&(b.transform.IsChildOf(toolbar)||b.transform.IsChildOf(sideTools));
     public bool Owns(Transform t)=>t.IsChildOf(main.Root)||t.IsChildOf(small.Root);
     public void SetHover(Button left,Button right){if(hoverLeft==left&&hoverRight==right)return;hoverLeft=left;hoverRight=right;if(Editing)RefreshEditor();}
     void OnDestroy(){foreach(var z in new[]{WorldZone,ViewZone,HandZone})if(z!=null)Destroy(z.gameObject);}

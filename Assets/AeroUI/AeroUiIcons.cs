@@ -22,6 +22,14 @@ public static class AeroUiIcons
         else{icon=t.GetComponent<Image>();icon.sprite=Get(name);((RectTransform)t).sizeDelta=new Vector2(size,size);}
         icon.preserveAspect=true;icon.raycastTarget=false;
     }
+    public static void Label(Button button,string name,string text,float size=28)
+    {
+        Apply(button,name,size);float width=((RectTransform)button.transform).rect.width;
+        ((RectTransform)button.transform.Find("ActionIcon")).anchoredPosition=new Vector2(-width/2+26,0);
+        var label=button.GetComponentInChildren<TextMeshProUGUI>(true);label.enabled=true;label.text=text;
+        label.font=AeroUiFonts.Interface;label.fontSize=22;label.characterSpacing=0;label.alignment=TextAlignmentOptions.Left;
+        label.rectTransform.anchoredPosition=new Vector2(20,0);label.rectTransform.sizeDelta=new Vector2(width-58,44);
+    }
     public static void Set(Button button,string name)
     {var t=button.transform.Find("ActionIcon");if(t==null)Apply(button,name);else t.GetComponent<Image>().sprite=Get(name);}
 }
