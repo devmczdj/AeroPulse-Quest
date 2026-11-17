@@ -46,10 +46,11 @@ public static class AeroSettingsChecks
         Click(s.TabButtons[2]);var palm=c.transform.position+new Vector3(-.2f,-.3f,.5f);var rotation=Quaternion.Euler(-90,0,0);
         h.HandEntry.Sample(true,palm,rotation,false,Vector3.zero,.02f);Click(s.EditCardButton);var l=h.Layout;l.DeltaForChecks=.02f;
         Require(l.Editing&&!l.WorldZone.gameObject.activeInHierarchy&&!l.HandZone.gameObject.activeInHierarchy&&!v.MapButton.IsInteractable(),"Idle editor still exposes clutter/clicks");
+        if(h.Widgets.IsOpen)l.ToggleTools();
         Point(l.CardHandle.transform,false);Point(l.CardHandle.transform,true);
         for(int i=0;i<8;i++)Point(l.CardHandle.transform,true);
         Require(l.DragActive&&!l.HandZone.gameObject.activeInHierarchy,"Old drop zones returned");
-        l.CancelDrag("settings check");Click(l.HandButton);Click(l.DoneButton);
+        l.CancelDrag("settings check");Click(l.HandButton);l.ToggleTools();Click(l.DoneButton);
         Require(l.MainAnchor==AeroWindowAnchor.Hand&&!l.WorldZone.gameObject.activeInHierarchy,"Hand placement/exit failed");
         Click(v.SettingsButton);Click(s.TabButtons[2]);Require(!s.DistanceOptions[0].IsInteractable()&&s.CurrentModeLabel.text.Contains("随左手"),"Attached distance/status not reflected");
         var handPosition=v.transform.position;Require(!h.SetPanelDistance(1.4f)&&l.MainAnchor==AeroWindowAnchor.Hand&&Vector3.Distance(handPosition,v.transform.position)<.001f,"Disabled distance detaches window");

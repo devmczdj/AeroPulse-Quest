@@ -36,7 +36,7 @@ public static class AeroLayoutReview022Checks
             }
             else
             {
-                field.SetValue(h.HandEntry,false);l.PrepareFrame();l.AddWidget("pace");l.PrepareFrame();Physics.SyncTransforms();
+                field.SetValue(h.HandEntry,false);l.PrepareFrame();l.SetEditingLayer(AeroEditLayer.Environment);l.AddWidget("pace");l.PrepareFrame();Physics.SyncTransforms();
                 foreach(var b in new[]{l.EnvironmentButton,l.ViewButton})Require(b.GetComponent<Collider>().enabled,"Shared toolbar retained disabled collider");
                 var button=l.ViewButton;var ray=new Ray(button.transform.position-button.transform.forward*.15f,button.transform.forward);
                 Require(l.Raycast(ray,1,out var hit)&&hit.collider.gameObject==button.gameObject,"Recovered toolbar cannot receive ray");

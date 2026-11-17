@@ -10,6 +10,8 @@ public class PinchHudExperiment : MonoBehaviour
 {
     public bool HasTrackedHand { get; private set; }
     public bool IsCardOpen => card != null && card.activeSelf;
+    public bool IsCardVisible => IsCardOpen&&cardCanvas!=null&&cardCanvas.enabled;
+    Canvas cardCanvas;
     public AeroSkyMap Sky { get; private set; }
     bool legacyEntry;
     public AeroWindowLayout Layout { get; private set; }
@@ -21,6 +23,8 @@ public class PinchHudExperiment : MonoBehaviour
     public AeroDirectTouch DirectTouch { get; private set; }
     public AeroNearManipulation Near { get; private set; }
     public AeroLayoutProfileView Profiles { get; private set; }
+    public AeroHandToolsEntry ToolsEntry { get; private set; }
+    bool wasKeyboardActive;
     bool directLeftValid,directRightValid;
     bool restoreAttempted;
     int initializedFrame;
@@ -79,6 +83,7 @@ public class PinchHudExperiment : MonoBehaviour
         Feedback=AeroInteractionFeedback.Build(view);
         hudView.BindControls(this);
         Profiles=AeroLayoutProfileView.Build(view,this,Widgets);
+        ToolsEntry=gameObject.AddComponent<AeroHandToolsEntry>();ToolsEntry.Initialize(view,this);
         leftPointer = BuildPointer("LeftHandRay");
         rightPointer = BuildPointer("RightHandRay");
         DirectTouch=gameObject.AddComponent<AeroDirectTouch>();DirectTouch.Initialize(this);
@@ -108,12 +113,16 @@ public class PinchHudExperiment : MonoBehaviour
             SubsystemManager.GetSubsystems(handSubsystems);
             handSubsystem = handSubsystems.Find(x => x.running);
         }
+        bool keyboard=Profiles!=null&&Profiles.KeyboardInputActive;
+        if(wasKeyboardActive!=keyboard){ClearPresses();wasKeyboardActive=keyboard;}
         Layout.PrepareFrame();
         TryRestoreProfile();
         SampleDirectHands();
         // Batch all hand/layout transforms before the two ray queries.
         Physics.SyncTransforms();
-        Compact.SetFallbackVisible(!legacyEntry && focused && ((!HandEntry.EnabledForEntry && !IsCardOpen) || Layout.NeedsRecall),Layout.NeedsRecall);
+        bool recoverTools=focused&&Layout.Editing&&!Widgets.IsOpen&&!ToolsEntry.Visible&&!Layout.Dragging&&AeroValueSlider.Active==null&&!Profiles.ModalOpen;
+        bool recoverHud=!Layout.Editing&&!legacyEntry&&focused&&((!HandEntry.EnabledForEntry&&!IsCardOpen)||Layout.NeedsRecall);
+        Compact.SetFallbackVisible(recoverTools||recoverHud,!recoverTools&&Layout.NeedsRecall,recoverTools);
         ClearHover(leftPointer);
         ClearHover(rightPointer);
         bool leftSelect = UpdatePointer(leftPointer, MetaAimHand.left, out bool leftValid);
@@ -126,6 +135,8 @@ public class PinchHudExperiment : MonoBehaviour
         Layout.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         Profiles.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         HandEntry.SetShortcutHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
+        ToolsEntry.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
+        if(keyboard||ToolsEntry.ActivatedThisFrame){TickFeedback();return;}
         if(Layout.NearDragging||Near.ConsumedThisSample){TickFeedback();return;}
         if(Layout.Dragging)
         {
@@ -157,7 +168,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         Feedback.HandEntryEnabled=HandEntry.EnabledForEntry;
         Feedback.RecoveryControlVisible=Compact.FallbackVisible;
-        Feedback.Tick(IsCardOpen||Layout.HasVisibleWidgets||Widgets.IsOpen,HandEntry.AnchorTracked,HasTrackedHand,focused,Time.unscaledDeltaTime);
+        Feedback.Tick(IsCardOpen||Layout.HasVisibleWidgets||Widgets.IsOpen,HandEntry.AnchorTracked,HasTrackedHand,focused&&!Profiles.KeyboardInputActive,Time.unscaledDeltaTime);
     }
 
     void LateUpdate()
@@ -170,16 +181,16 @@ public class PinchHudExperiment : MonoBehaviour
     public bool FollowPaused => (IsCardOpen || Layout.HasVisibleWidgets) &&
         ((DirectTouch!=null&&DirectTouch.AnyNear) || (leftPointer.overCard && leftPointer.button != null && leftPointer.pressed) || (rightPointer.overCard && rightPointer.button != null && rightPointer.pressed));
 
-    public void ClearPresses(){ResetPresses();if(Near!=null)Near.ResetGates();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}
+    public void ClearPresses(){ResetPresses();if(ToolsEntry!=null)ToolsEntry.RequireRelease();if(Near!=null)Near.ResetGates();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}
     public void ActivateButton(UnityEngine.UI.Button button)
     {
         if(button==null||!button.isActiveAndEnabled||!button.IsInteractable()||AeroValueSlider.Active!=null||Layout.Dragging)return;
-        if(Profiles!=null&&!Profiles.AllowButton(button))return;
+        if(Profiles!=null&&!Profiles.AllowButton(button)||!Layout.CanInteract(button.transform))return;
         if(Layout.Editing&&!Layout.ToolbarButton(button)&&button!=Compact.OpenButton)return;
         button.onClick.Invoke();ResetPresses();Feedback.Confirm(button);
     }
     bool JointAllowed(MetaAimHand hand)
-    {return focused&&(hand==null||!hand.added||(((MetaAimFlags)hand.aimFlags.ReadValue()&(MetaAimFlags.SystemGesture|MetaAimFlags.MenuPressed))==0));}
+    {return focused&&(Profiles==null||!Profiles.KeyboardInputActive)&&(hand==null||!hand.added||(((MetaAimFlags)hand.aimFlags.ReadValue()&(MetaAimFlags.SystemGesture|MetaAimFlags.MenuPressed))==0));}
     void SampleDirectHands()
     {
         if(DirectTouch==null)return;
@@ -217,7 +228,7 @@ public class PinchHudExperiment : MonoBehaviour
 #if UNITY_EDITOR
     public bool DirectInputForChecks;
 #endif
-    public void OpenOrRecall() { if(Layout.NeedsRecall){if(!IsCardOpen)OpenFromHand();Recenter();}else if(IsCardOpen)Recenter();else OpenFromHand(); }
+    public void OpenOrRecall() { if(Compact.ToolsFallbackVisible){Layout.ToggleTools();return;}if(Layout.NeedsRecall){if(!IsCardOpen)OpenFromHand();Recenter();}else if(IsCardOpen)Recenter();else OpenFromHand(); }
     public void CycleFollowMode()
     {
         SetFollowMode(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View
@@ -281,21 +292,21 @@ public class PinchHudExperiment : MonoBehaviour
 
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 
-    public void ToggleFromHand() { if(Layout.Dragging||Profiles!=null&&Profiles.ModalOpen)return;if (IsCardOpen) CloseCard(); else OpenFromHand(); }
+    public void ToggleFromHand() { if(Layout.IsPreviewing||Layout.Dragging||Profiles!=null&&Profiles.ModalOpen)return;if(Layout.Editing&&IsCardOpen&&!IsCardVisible){Layout.SelectWidget("main");return;}if (IsCardOpen) CloseCard(); else OpenFromHand(); }
 
     bool UpdatePointer(HandPointer pointer, MetaAimHand hand, out bool valid)
     {
         bool near=(DirectTouch!=null&&(pointer==leftPointer?DirectTouch.NearLeft:DirectTouch.NearRight))
             ||(Near!=null&&(pointer==leftPointer?Near.NearLeft:Near.NearRight));
         if(pointer.wasNear!=near){pointer.gate=default;pointer.pinch=default;pointer.pendingPress=false;pointer.wasNear=near;}
-        valid = ReadHand(hand) && focused && !near;
+        valid = ReadHand(hand) && focused && !Profiles.KeyboardInputActive && !near;
         if (pointer.wasValid != valid && Time.unscaledTime < diagnosticsUntil)
         {
             Debug.Log("[AeroPulse Hands] TRACK " + pointer.line.name + " valid=" + valid +
                       " flags=" + (hand != null ? hand.aimFlags.ReadValue().ToString() : "none"));
             pointer.wasValid = valid;
         }
-        bool showRay = IsCardOpen || Layout.Editing || Layout.HasVisibleWidgets || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
+        bool showRay = ToolsEntry!=null&&ToolsEntry.Visible || IsCardOpen || Layout.Editing || Layout.HasVisibleWidgets || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
         pointer.line.enabled = valid && showRay;
         pointer.tip.gameObject.SetActive(false);
         pointer.target = null;
@@ -342,7 +353,7 @@ public class PinchHudExperiment : MonoBehaviour
         }
         var ray = new Ray(position, rotation * Vector3.forward);
         pointer.ray=ray;
-        bool hitSomething = Layout.Raycast(ray,maxDistance,out RaycastHit hit);
+        bool hitSomething = Layout.Raycast(ray,maxDistance,out RaycastHit hit,pointer==rightPointer&&ToolsEntry!=null?ToolsEntry.Root:null);
         pointer.hitDistance=hitSomething?hit.distance:maxDistance;
         if (hitSomething)
         {
@@ -490,6 +501,7 @@ public class PinchHudExperiment : MonoBehaviour
     void OnApplicationFocus(bool hasFocus)
     {
         focused = hasFocus;
+        if(Profiles!=null)Profiles.SetAppFocused(hasFocus);if(ToolsEntry!=null)ToolsEntry.SetPaused(!hasFocus);
         if(Near!=null)Near.SetPaused(!hasFocus);
         if(!hasFocus)ClearPresses();
         if(!hasFocus&&Layout!=null&&Layout.Dragging)Layout.CancelDrag("APP PAUSED - RESTORED");
@@ -500,12 +512,13 @@ public class PinchHudExperiment : MonoBehaviour
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
     }
 
-    void OnEnable() { if(Near!=null)Near.SetPaused(!focused);if(Layout!=null)Layout.SetPaused(!focused);if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
+    void OnEnable() { if(ToolsEntry!=null)ToolsEntry.SetPaused(!focused);if(Near!=null)Near.SetPaused(!focused);if(Layout!=null)Layout.SetPaused(!focused);if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
 
     void OnDisable()
     {
         if(Layout!=null&&!Layout.SurfacesAvailable){Layout.AbandonForTeardown();return;}
         ClearPresses();
+        if(ToolsEntry!=null)ToolsEntry.SetPaused(true);
         if(Near!=null)Near.SetPaused(true);
         if(Layout!=null&&Layout.Editing)Layout.EndEdit();
         if(Compact!=null)Compact.SetPaused(true);if(Layout!=null)Layout.SetPaused(true);
@@ -537,7 +550,7 @@ public class PinchHudExperiment : MonoBehaviour
             new GameObject("HandExperimentEventSystem", typeof(EventSystem));
         card = new GameObject("PinchHudCard", typeof(RectTransform), typeof(Canvas),
                               typeof(UnityEngine.UI.GraphicRaycaster), typeof(BoxCollider));
-        var canvas = card.GetComponent<Canvas>();
+        var canvas = card.GetComponent<Canvas>();cardCanvas=canvas;
         canvas.renderMode = RenderMode.WorldSpace;
         canvas.worldCamera = view;
         var rect = (RectTransform)card.transform;

@@ -58,6 +58,7 @@ public static class AeroNear021Checks
             eye.transform.parent.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             eye.transform.SetPositionAndRotation(new Vector3(0, 1.6f, 0), Quaternion.identity);
             hud.ResetViewOptions(); hud.OpenDataFromShortcut(); layout.BeginEdit(false);
+            if(hud.Widgets.IsOpen)layout.ToggleTools();
             NativeOff(); hud.DirectTouch.Sample(false, Vector3.zero, false, Vector3.zero, .02f);
             near.RebuildTargets(); layout.PrepareFrame();
         }

@@ -1,0 +1,247 @@
+{
+  "version": "0.22.0",
+  "checks": [
+    {
+      "check": "AeroFinalChecks.Cold",
+      "result": {
+        "check": "AeroFinalChecks.Cold",
+        "frame": 90122,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroCatalog023Checks.Run",
+      "result": {
+        "check": "AeroCatalog023Checks.Run",
+        "frame": 90195,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroHandTools023Checks.Run",
+      "result": {
+        "check": "AeroHandTools023Checks.Run",
+        "frame": 68464,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroNativeKeyboard023Checks.Run",
+      "result": {
+        "check": "AeroNativeKeyboard023Checks.Run",
+        "frame": 90159,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroProfilesUi021Checks.Run",
+      "result": {
+        "check": "AeroProfilesUi021Checks.Run",
+        "frame": 68532,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroNear021Checks.Run",
+      "result": {
+        "check": "AeroNear021Checks.Run",
+        "frame": 90306,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutPersistence021Checks.Run",
+      "result": {
+        "check": "AeroLayoutPersistence021Checks.Run",
+        "frame": 68600,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroWidgets020Checks.Run",
+      "result": {
+        "check": "AeroWidgets020Checks.Run",
+        "frame": 68634,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSettingsChecks.Run",
+      "result": {
+        "check": "AeroSettingsChecks.Run",
+        "frame": 68668,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroTouchChecks.Run",
+      "result": {
+        "check": "AeroTouchChecks.Run",
+        "frame": 68702,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroInputReview022Checks.Run",
+      "result": {
+        "check": "AeroInputReview022Checks.Run",
+        "frame": 68736,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutReview022Checks.TrackingIsolation",
+      "result": {
+        "check": "AeroLayoutReview022Checks.TrackingIsolation",
+        "frame": 68770,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutReview022Checks.ToolbarRecovery",
+      "result": {
+        "check": "AeroLayoutReview022Checks.ToolbarRecovery",
+        "frame": 68804,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayers023Checks.Run",
+      "result": {
+        "check": "AeroLayers023Checks.Run",
+        "frame": 90269,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSettingsChecks.Feedback",
+      "result": {
+        "check": "AeroSettingsChecks.Feedback",
+        "frame": 59984,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroHandBackChecks.RunGate",
+      "result": {
+        "check": "AeroHandBackChecks.RunGate",
+        "frame": 60151,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSkyChecks.Run",
+      "result": {
+        "check": "AeroSkyChecks.Run",
+        "frame": 60168,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroShortcutChecks.Run",
+      "result": {
+        "check": "AeroShortcutChecks.Run",
+        "frame": 60201,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroResponseChecks.Run",
+      "result": {
+        "check": "AeroResponseChecks.Run",
+        "frame": 60235,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroGlassChecks.Run",
+      "result": {
+        "check": "AeroGlassChecks.Run",
+        "frame": 60268,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroFinalChecks.RepeatedJourney",
+      "result": {
+        "check": "AeroFinalChecks.RepeatedJourney",
+        "frame": 68838,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroToolsOcclusion023Checks.Run",
+      "result": {
+        "check": "AeroToolsOcclusion023Checks.Run",
+        "frame": 90231,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroProfileStore021Checks.Run",
+      "result": {
+        "check": "AeroProfileStore021Checks.Run",
+        "frame": 209869,
+        "result": "PASS"
+      }
+    }
+  ],
+  "check_count": 23,
+  "render_frame": 129399,
+  "render_scope": "Actual Editor camera rendering with injected hand/view poses and temporary keyboard response; not Quest OS keyboard capture",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 7,
+    "fonts": [
+      {
+        "path": "Assets/Resources/AeroUI/Fonts/AeroPulseCJKFallback_SDF.asset",
+        "bytes": 960
+      },
+      {
+        "path": "Assets/Resources/AeroUI/Fonts/AeroPulseCJKFallback_SDF.asset",
+        "bytes": 144
+      },
+      {
+        "path": "Assets/Resources/AeroUI/Fonts/AeroPulseCJKFallback_SDF.asset",
+        "bytes": 808
+      },
+      {
+        "path": "Assets/Fonts/Source/NotoSansCJKsc-Regular.otf",
+        "bytes": 148
+      },
+      {
+        "path": "Assets/Fonts/Source/NotoSansCJKsc-Regular.otf",
+        "bytes": 124
+      },
+      {
+        "path": "Assets/Fonts/Source/NotoSansCJKsc-Regular.otf",
+        "bytes": 16437506
+      }
+    ]
+  },
+  "runtime_console": {
+    "entries": [],
+    "cursor": 1405,
+    "session": "bf353716e3374afe9df05aa0974a139d",
+    "returned": 0,
+    "dropped": false,
+    "reset": false,
+    "counts": {
+      "error": 0,
+      "warn": 0,
+      "log": 18
+    },
+    "groundTruth": {
+      "sampledUtc": "2026-11-17T12:41:01.287044Z",
+      "ageMs": 75,
+      "compilationFailed": false,
+      "compiling": false,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "consoleLogs": 18,
+      "seeded": true
+    }
+  },
+  "quest_acceptance": "pending; no new install in this task"
+}

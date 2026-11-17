@@ -20,6 +20,7 @@ public static class AeroInterfaceFontBuild
         AssetDatabase.CreateAsset(font,path);
         font.material.name="AeroPulseSC_SDF Material";AssetDatabase.AddObjectToAsset(font.material,font);
         foreach(var atlas in font.atlasTextures){atlas.name="AeroPulseSC_SDF Atlas";atlas.filterMode=FilterMode.Bilinear;AssetDatabase.AddObjectToAsset(atlas,font);}
+        AeroKeyboardSetup.ConfigureFontFallback(font);
         EditorUtility.SetDirty(font);AssetDatabase.SaveAssets();
         Debug.Log("[AeroPulse Font] BAKED "+font.characterTable.Count+" static glyphs; atlas="+font.atlasTexture.width+"x"+font.atlasTexture.height);
     }

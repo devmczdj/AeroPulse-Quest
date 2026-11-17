@@ -42,11 +42,11 @@ public static class AeroProfilesUi021Checks
         var h = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
         Require(h != null && h.Profiles != null, "Profile scene is missing");
         var v = h.Profiles; var l = h.Layout; var w = h.Widgets;
-        bool direct = h.DirectInputForChecks, editing = l.Editing, profilePage = w.ShowingProfiles;
+        bool direct = h.DirectInputForChecks, editing = l.Editing, profilePage = w.ShowingProfiles, keepOpen = w.KeepOpen, stub = v.UseKeyboardStubForChecks;
         var oldLayout = l.CaptureLayout();
         string directory = Path.Combine(Path.GetTempPath(), "aeropulse-profile-ui-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        h.DirectInputForChecks = true; h.SendMessage("OnApplicationFocus", true);
+        h.DirectInputForChecks = true; h.SendMessage("OnApplicationFocus", true); w.SetKeepOpen(true); v.UseKeyboardStubForChecks = true;
         if (MetaAimHand.left == null) MetaAimHand.left = MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Left);
         if (MetaAimHand.right == null) MetaAimHand.right = MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Right);
         using (v.UseStoreForChecks(Path.Combine(directory, "profiles.json")))
@@ -67,8 +67,10 @@ public static class AeroProfilesUi021Checks
                 Click(h, Find(w, "SaveNewProfile")); Click(h, Find(w, "NamePreset2")); Click(h, Find(w, "CancelProfileName"));
                 Require(v.IsDirty && v.Store.Data.profiles.Length == 1 && File.ReadAllText(Path.Combine(directory, "profiles.json")) == savedBeforeCancel, "Cancel naming mutated saved data");
                 Click(h, Find(w, "SaveNewProfile"));
-                Click(h, Find(w, "NameClear")); Click(h, Find(w, "NameKey0"));
-                Click(h, Find(w, "NameCharacterSet")); Click(h, Find(w, "NameKey1"));
+                Click(h, Find(w, "EditProfileName"));
+                Require(v.KeyboardInputActive && !Find(w, "ConfirmProfileName").IsInteractable(), "System keyboard did not own input");
+                v.KeyboardResultForChecks(TouchScreenKeyboard.Status.Done, "A1");
+                Require(!v.KeyboardInputActive && v.Store.Data.profiles.Length == 1, "Keyboard Done saved without confirmation");
                 Click(h, Find(w, "ConfirmProfileName"));
                 Require(v.ActiveName == "A1" && v.Store.Data.profiles.Length == 2 && !v.IsDirty, "Alphanumeric name/save-as failed");
                 string second = v.Store.Data.activeId;
@@ -107,7 +109,7 @@ public static class AeroProfilesUi021Checks
                 Require(!Find(w, "NextProfilePage").IsInteractable(), "Pagination exceeds final page");
                 Click(h, w.DoneButton);
                 Require(!l.Editing && !w.IsOpen, "Done did not end profile editing");
-                Debug.Log("[AeroPulse ProfilesUI021] PASS real ray tabs, naming presets/keyboard, save-as/rename, dirty cancel/discard/save switch, modal input isolation, temp-file reload/live data preservation, limit/pagination and Done. Quest readability and hand feel remain pending.");
+                Debug.Log("[AeroPulse ProfilesUI021] PASS real ray tabs, naming presets/system-keyboard result, save-as/rename, dirty cancel/discard/save switch, modal input isolation, temp-file reload/live data preservation, limit/pagination and Done. Quest readability and hand feel remain pending.");
             }
             finally
             {
@@ -117,7 +119,7 @@ public static class AeroProfilesUi021Checks
                 Clear(h); l.ApplyLayout(oldLayout);
                 if (editing) l.BeginEdit(false);
                 w.SetPage(profilePage);
-                h.DirectInputForChecks = direct;
+                h.DirectInputForChecks = direct; w.SetKeepOpen(keepOpen); v.UseKeyboardStubForChecks = stub;
                 Directory.Delete(directory, true);
             }
         }

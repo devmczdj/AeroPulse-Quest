@@ -54,7 +54,8 @@ public static class AeroLayoutPersistence021Checks
             var root = layout.WidgetRoot(p.id); roots.Add(p.id, root);
             worldPoses.Add(p.id, new Pose(root.position, root.rotation));
         }
-        bool wasEditing = layout.Editing, wasOpen = widgets.IsOpen, wasProfiles = widgets.ShowingProfiles;
+        bool wasEditing = layout.Editing, wasOpen = widgets.IsOpen, wasProfiles = widgets.ShowingProfiles, keepOpen=widgets.KeepOpen;
+        widgets.SetKeepOpen(true);
         string selectedId = layout.SelectedId;
         var eyeLocal = new Pose(eye.transform.localPosition, eye.transform.localRotation);
         var trackingPose = new Pose(eye.transform.parent.position, eye.transform.parent.rotation);
@@ -255,7 +256,7 @@ public static class AeroLayoutPersistence021Checks
             layout.ApplyLayout(original);
             if (wasEditing) { layout.BeginEdit(false); layout.ApplyLayout(original); layout.SelectWidget(selectedId); }
             foreach (var pair in worldPoses) roots[pair.Key].SetPositionAndRotation(pair.Value.position, pair.Value.rotation);
-            widgets.SetPage(wasProfiles); widgets.SetOpen(wasOpen);
+            widgets.SetKeepOpen(keepOpen);widgets.SetPage(wasProfiles); widgets.SetOpen(wasOpen);
             for (int i = 0; i < main.Route.Count && main.Route.CurrentIndex != routeIndex; i++) main.Route.Advance();
             if (profiles != null && dirtyProperty != null) { dirtyProperty.SetValue(profiles, wasDirty); profiles.Refresh(); }
             hud.DirectInputForChecks = direct; hud.HandEntry.enabled = handEnabled; layout.DeltaForChecks = checkDelta;

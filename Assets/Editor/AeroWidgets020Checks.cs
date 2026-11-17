@@ -270,7 +270,7 @@ public static class AeroWidgets020Checks
         public readonly Camera Eye;
         public readonly AeroHudView Main;
         readonly TrackedPoseDriver driver;
-        readonly bool driverEnabled, handEnabled, directInput;
+        readonly bool driverEnabled, handEnabled, directInput, keepOpen;
         readonly float checkDelta;
         readonly Pose eyeLocal, parentPose;
         readonly int routeIndex;
@@ -279,6 +279,7 @@ public static class AeroWidgets020Checks
         {
             Hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>(); Eye = Camera.main;
             Require(Hud != null && Eye != null && Hud.Widgets != null && Hud.Layout != null, "Widget scene is missing");
+            keepOpen=Hud.Widgets.KeepOpen;Hud.Widgets.SetKeepOpen(true);
             Main = Hud.Follow.GetComponent<AeroHudView>(); driver = Eye.GetComponent<TrackedPoseDriver>();
             driverEnabled = driver != null && driver.enabled;
             handEnabled = Hud.HandEntry.enabled; directInput = Hud.DirectInputForChecks; checkDelta = Hud.Layout.DeltaForChecks;
@@ -355,7 +356,7 @@ public static class AeroWidgets020Checks
             }
             finally
             {
-                Hud.Layout.DeltaForChecks = checkDelta; Hud.DirectInputForChecks = directInput; Hud.HandEntry.enabled = handEnabled;
+                Hud.Widgets.SetKeepOpen(keepOpen);Hud.Layout.DeltaForChecks = checkDelta; Hud.DirectInputForChecks = directInput; Hud.HandEntry.enabled = handEnabled;
                 Eye.transform.parent.SetPositionAndRotation(parentPose.position, parentPose.rotation);
                 Eye.transform.SetLocalPositionAndRotation(eyeLocal.position, eyeLocal.rotation);
                 if (driver != null) driver.enabled = driverEnabled;

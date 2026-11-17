@@ -10,9 +10,10 @@ public class AeroCompactHud : MonoBehaviour
     public TextMeshProUGUI NextLabel { get; private set; }
     public UnityEngine.UI.Button OpenButton { get; private set; }
     public bool FallbackVisible => fallback != null && fallback.activeSelf;
+    public bool ToolsFallbackVisible => FallbackVisible&&toolsRequested;
     GameObject fallback;
     TextMeshProUGUI openLabel;
-    bool paused, fallbackRequested, recallRequested;
+    bool paused, fallbackRequested, recallRequested,toolsRequested;
     public System.Action<Placement> PlacementChanged;
     public static AeroCompactHud Build(Camera camera,AeroRouteDemo route,System.Action open)
     {
@@ -48,12 +49,17 @@ public class AeroCompactHud : MonoBehaviour
         if(PlacementChanged==null){transform.localPosition=new Vector3(side==Placement.Right?.42f:-.42f,-.14f,1.05f);transform.localRotation=Quaternion.identity;}
         gameObject.SetActive(side!=Placement.Hidden&&!paused);if(changed&&PlacementChanged!=null)PlacementChanged(side);
     }
-    public void SetPaused(bool value) { paused=value;SetPlacement(Side);SetFallbackVisible(fallbackRequested,recallRequested); }
-    public void SetFallbackVisible(bool value,bool recall=false)
+    public void SetPaused(bool value) { paused=value;SetPlacement(Side);SetFallbackVisible(fallbackRequested,recallRequested,toolsRequested); }
+    public void SetFallbackVisible(bool value,bool recall=false,bool tools=false)
     {
-        fallbackRequested=value;recallRequested=recall;
+        bool changedMode=toolsRequested!=tools;fallbackRequested=value;recallRequested=recall;toolsRequested=tools;
         bool visible=value&&!paused;if(fallback.activeSelf!=visible)fallback.SetActive(visible);
-        var label=recall?"RECALL HUD":"OPEN HUD";
-        if(openLabel.text!=label){openLabel.text=label;AeroUiIcons.Set(OpenButton,recall?"crosshair":"browser");}
+        string label=tools?"打开工具":recall?"RECALL HUD":"OPEN HUD";
+        if(changedMode||openLabel.text!=label)
+        {
+            openLabel.text=label;
+            if(tools)AeroUiIcons.Label(OpenButton,"settings",label);
+            else{AeroUiIcons.Apply(OpenButton,recall?"crosshair":"browser",40);((RectTransform)OpenButton.transform.Find("ActionIcon")).anchoredPosition=Vector2.zero;}
+        }
     }
 }

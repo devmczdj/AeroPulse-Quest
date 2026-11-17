@@ -11,6 +11,7 @@ public static class AeroUiSprites
     static Sprite dot;
     static Sprite glow;
     static Sprite pill;
+    static Sprite solidPanel;
     static Sprite white;
     static Sprite tint;
     static Sprite pillStroke;
@@ -23,6 +24,16 @@ public static class AeroUiSprites
     public static Sprite Dot { get { return dot != null ? dot : dot = Load("dot"); } }
     public static Sprite Glow { get { return glow != null ? glow : glow = Load("glow"); } }
     public static Sprite Pill { get { return pill != null ? pill : pill = Load("pill"); } }
+    public static Sprite SolidPanel
+    {
+        get
+        {
+            if(solidPanel!=null)return solidPanel;
+            var source=Pill;if(source==null)return White;var texture=source.texture;float corner=texture.height*.5f;
+            solidPanel=Sprite.Create(texture,new Rect(0,0,texture.width,texture.height),new Vector2(.5f,.5f),100f,0,SpriteMeshType.FullRect,new Vector4(corner,corner,corner,corner));
+            return solidPanel;
+        }
+    }
     public static Sprite Tint { get { return tint != null ? tint : tint = Load("panel_tint"); } }
     public static Sprite PillStroke { get { return pillStroke != null ? pillStroke : pillStroke = Load("pill_stroke"); } }
     public static Sprite White

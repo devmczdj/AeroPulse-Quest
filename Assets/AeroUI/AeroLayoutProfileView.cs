@@ -11,6 +11,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     public string ActiveName => Store.Find(Store.Data.activeId)?.name ?? "尚未保存";
     public bool ModalOpen => naming || confirming;
     public bool BlocksLayoutEdits => ModalOpen;
+    public bool KeyboardInputActive { get; private set; }
     public AeroLayoutProfileStore Store { get; private set; }
     public Transform ActiveModalRoot => naming ? namePanel : confirming ? confirmPanel : null;
 
@@ -21,13 +22,13 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     readonly List<UnityEngine.UI.Button> controls = new List<UnityEngine.UI.Button>();
     readonly UnityEngine.UI.Button[] rows = new UnityEngine.UI.Button[4];
     readonly TextMeshProUGUI[] rowNames = new TextMeshProUGUI[4], rowStates = new TextMeshProUGUI[4];
-    readonly UnityEngine.UI.Button[] keys = new UnityEngine.UI.Button[28];
-    UnityEngine.UI.Button saveButton, newButton, renameButton, previousButton, nextButton, charsetButton, nameSaveButton;
+    UnityEngine.UI.Button saveButton, newButton, renameButton, previousButton, nextButton, nameSaveButton;
     UnityEngine.UI.Button hoverLeft, hoverRight;
     string pendingId, draftName = "", message = "";
     int page;
-    bool naming, confirming, renaming, numericKeys, applying, restoreAttempted;
-    const string Letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", Digits = "0123456789";
+    bool naming, confirming, renaming, applying, restoreAttempted, appFocused = true;
+    TouchScreenKeyboard keyboard;
+    string nameBeforeKeyboard = "";
 
     public static AeroLayoutProfileView Build(Camera camera, PinchHudExperiment owner, AeroWidgetCatalog catalog, string storagePath = null)
     {
@@ -70,32 +71,21 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     {
         namePanel = AeroHudView.NewRect("ProfileNameDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(400, 560));
         Backing(namePanel);
-        nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 240), new Vector2(352, 40), 26);
-        var input = AeroHudView.AddPanelImage(namePanel, "NameField", AeroUiSprites.Pill, new Vector2(-30, 186), new Vector2(292, 48), new Color(.12f, .18f, .18f, 1));
-        nameLabel = Label(input.transform, "NameValue", "", Vector2.zero, new Vector2(272, 42), 24);
-        nameLabel.enableAutoSizing = true; nameLabel.fontSizeMin = 16; nameLabel.fontSizeMax = 24;
-        charsetButton = Button(namePanel, "NameCharacterSet", "123", new Vector2(146, 186), new Vector2(60, 48), () => { numericKeys = !numericKeys; RefreshKeys(); });
+        nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 196), new Vector2(352, 40), 26);
+        var input = Button(namePanel, "EditProfileName", "", new Vector2(0, 126), new Vector2(352, 56), OpenKeyboard);
+        nameLabel = input.GetComponentInChildren<TextMeshProUGUI>(true); nameLabel.name = "NameValue";
+        nameLabel.enableAutoSizing = true; nameLabel.fontSizeMin = 16; nameLabel.fontSizeMax = 24;nameLabel.overflowMode=TextOverflowModes.Ellipsis;
+        Label(namePanel, "KeyboardHint", "点按名称，使用系统键盘", new Vector2(0, 76), new Vector2(352, 36), 20);
         string[] presets = { "日常", "运动", "演示" };
         for (int i = 0; i < presets.Length; i++)
         {
             string preset = presets[i];
-            Button(namePanel, "NamePreset" + i, preset, new Vector2((i - 1) * 120, 130), new Vector2(112, 44), () => { draftName = UniqueName(preset); RefreshName(); });
+            Button(namePanel, "NamePreset" + i, preset, new Vector2((i - 1) * 120, 0), new Vector2(112, 48), () => { draftName = UniqueName(preset); RefreshName(); });
         }
-        for (int i = 0; i < keys.Length; i++)
-        {
-            int key = i;
-            keys[i] = Button(namePanel, "NameKey" + i, "", new Vector2((i % 7 - 3) * 50, 68 - i / 7 * 52), new Vector2(44, 44), () =>
-            {
-                string chars = numericKeys ? Digits : Letters;
-                if (key < chars.Length && draftName.Length < AeroLayoutProfileStore.MaxNameLength) { draftName += chars[key]; RefreshName(); }
-            });
-        }
-        Button(namePanel, "NameSpace", "空格", new Vector2(-120, -144), new Vector2(112, 44), () => { if (draftName.Length < AeroLayoutProfileStore.MaxNameLength) draftName += " "; RefreshName(); });
-        Button(namePanel, "NameClear", "清空", new Vector2(0, -144), new Vector2(112, 44), () => { draftName = ""; RefreshName(); });
-        Button(namePanel, "NameBackspace", "退格", new Vector2(120, -144), new Vector2(112, 44), () => { if (draftName.Length > 0) draftName = draftName.Substring(0, draftName.Length - 1); RefreshName(); });
-        nameHint = Label(namePanel, "NameHint", "", new Vector2(0, -188), new Vector2(352, 32), 18);
-        Button(namePanel, "CancelProfileName", "取消", new Vector2(-90, -238), new Vector2(172, 48), CancelModal);
-        nameSaveButton = Button(namePanel, "ConfirmProfileName", "保存", new Vector2(90, -238), new Vector2(172, 48), ConfirmName);
+        nameHint = Label(namePanel, "NameHint", "", new Vector2(0, -62), new Vector2(352, 64), 20);
+        Label(namePanel, "NameFallbackHint", "也可选择上方的预设名称", new Vector2(0, -126), new Vector2(352, 36), 20);
+        Button(namePanel, "CancelProfileName", "取消", new Vector2(-90, -204), new Vector2(172, 48), CancelModal);
+        nameSaveButton = Button(namePanel, "ConfirmProfileName", "保存", new Vector2(90, -204), new Vector2(172, 48), ConfirmName);
         namePanel.gameObject.SetActive(false);
     }
 
@@ -111,7 +101,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         confirmPanel.gameObject.SetActive(false);
     }
 
-    public bool AllowButton(UnityEngine.UI.Button button) => !ModalOpen || (button != null && ActiveModalRoot != null && button.transform.IsChildOf(ActiveModalRoot));
+    public bool AllowButton(UnityEngine.UI.Button button) => !KeyboardInputActive && (!ModalOpen || (button != null && ActiveModalRoot != null && button.transform.IsChildOf(ActiveModalRoot)));
 
     public void MarkChanged()
     {
@@ -138,30 +128,30 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public bool SaveCurrent()
     {
-        if (owner.Layout.Dragging) return false;
+        if (owner.Layout.Dragging || KeyboardInputActive) return false;
         var profile = Store.Find(Store.Data.activeId);
         if (profile == null) { OpenName(false); return false; }
         if (!Store.TryReplace(profile.id, owner.Layout.CaptureLayout())) { Failure("保存失败；原档案保持"); return false; }
-        IsDirty = false; message = "已保存"; Refresh();
+        IsDirty = false; message = "已保存"; Refresh(); CompleteToolAction();
         return true;
     }
 
     public bool SaveAs(string name)
     {
-        if (owner.Layout.Dragging) return false;
+        if (owner.Layout.Dragging || KeyboardInputActive) return false;
         if (!NameValid(name, null, out string error)) { Failure(error); return false; }
         if (!Store.TryAdd(name, owner.Layout.CaptureLayout(), out var profile)) { Failure("保存失败；当前布局保持"); return false; }
         IsDirty = false; page = (Store.Data.profiles.Length - 1) / rows.Length; message = "已保存并启用 " + profile.name;
-        Refresh(); return true;
+        Refresh(); CompleteToolAction(); return true;
     }
 
     public bool RenameCurrent(string name)
     {
         var profile = Store.Find(Store.Data.activeId);
-        if (profile == null || owner.Layout.Dragging) return false;
+        if (profile == null || owner.Layout.Dragging || KeyboardInputActive) return false;
         if (!NameValid(name, profile.id, out string error)) { Failure(error); return false; }
         if (!Store.TryRename(profile.id, name)) { Failure("改名失败；原名称保持"); return false; }
-        message = "名称已更新"; Refresh(); return true;
+        message = "名称已更新"; Refresh(); CompleteToolAction(); return true;
     }
 
     public void RequestActivate(string id)
@@ -184,7 +174,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         if (save && Store.Find(Store.Data.activeId) == null) { confirming = false; OpenName(false, true); return; }
         if (save && !SaveCurrent()) return;
         string id = pendingId;
-        if (Activate(id)) { pendingId = null; confirming = false; SetModalState(); }
+        if (Activate(id)) { pendingId = null; confirming = false; SetModalState(); CompleteToolAction(); }
     }
 
     bool Activate(string id)
@@ -205,7 +195,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         }
         finally { applying = false; }
         if (!applied) { Failure("切换失败；当前布局保持"); return false; }
-        IsDirty = false; message = "已启用 " + target.name; owner.ClearPresses(); Refresh(); return true;
+        IsDirty = false; message = "已启用 " + target.name; owner.ClearPresses(); Refresh(); CompleteToolAction(); return true;
     }
 
     void ActivateRow(int row)
@@ -222,14 +212,15 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         if (rename && active == null) return;
         if (!keepPending) pendingId = null;
         catalog.SetPage(true);
-        naming = true; confirming = false; renaming = rename; numericKeys = false;
+        naming = true; confirming = false; renaming = rename;
         draftName = rename ? active.name : UniqueName("布局");
         nameTitle.text = rename ? "修改档案名称" : "另存新档案";
-        RefreshKeys(); RefreshName(); SetModalState();
+        RefreshName(); SetModalState();
     }
 
     void ConfirmName()
     {
+        if (KeyboardInputActive) return;
         bool ok = renaming ? RenameCurrent(draftName) : SaveAs(draftName);
         if (!ok) { nameHint.text = message; nameHint.color = AeroUiTokens.Amber; return; }
         naming = false; SetModalState();
@@ -238,10 +229,15 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
             string id = pendingId; pendingId = null;
             Activate(id);
         }
+        else CompleteToolAction();
     }
+
+    void CompleteToolAction()
+    { if (!ModalOpen && !KeyboardInputActive) owner.Layout.ToolActionCompleted(); }
 
     void CancelModal()
     {
+        CloseKeyboard();
         naming = confirming = false; pendingId = null; SetModalState(); Refresh();
     }
 
@@ -255,23 +251,71 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         Physics.SyncTransforms();
     }
 
-    void RefreshKeys()
+    public void SetAppFocused(bool focused) { appFocused = focused; }
+
+    void OpenKeyboard()
     {
-        string chars = numericKeys ? Digits : Letters;
-        charsetButton.GetComponentInChildren<TextMeshProUGUI>(true).text = numericKeys ? "ABC" : "123";
-        for (int i = 0; i < keys.Length; i++)
+        if (!naming || KeyboardInputActive || !appFocused) return;
+        nameBeforeKeyboard = draftName;
+#if UNITY_EDITOR
+        if (UseKeyboardStubForChecks)
         {
-            keys[i].gameObject.SetActive(i < chars.Length);
-            if (i < chars.Length) keys[i].GetComponentInChildren<TextMeshProUGUI>(true).text = chars[i].ToString();
+            if (!KeyboardAvailableForChecks) { KeyboardUnavailable(); return; }
+            KeyboardInputActive = true; owner.ClearPresses(); RefreshName(); return;
         }
+#endif
+        if (!TouchScreenKeyboard.isSupported) { KeyboardUnavailable(); return; }
+        try
+        {
+            keyboard = TouchScreenKeyboard.Open(draftName, TouchScreenKeyboardType.Default,
+                false, false, false, false, "档案名称", AeroLayoutProfileStore.MaxNameLength);
+            if (keyboard == null) { KeyboardUnavailable(); return; }
+            KeyboardInputActive = true; owner.ClearPresses(); RefreshName();
+        }
+        catch (Exception exception)
+        {
+            CloseKeyboard(); KeyboardUnavailable();
+            Debug.LogWarning("[AeroPulse Keyboard] System keyboard unavailable: " + exception.Message);
+        }
+    }
+
+    void KeyboardUnavailable()
+    {
+        RefreshName(); nameHint.text = "系统键盘不可用，可使用预设名称";
+        nameHint.color = AeroUiTokens.Amber;
+    }
+
+    void Update()
+    {
+        if (!KeyboardInputActive) return;
+        // The system overlay itself can remove app focus; its result ends this session.
+        if (!naming || catalog == null || !catalog.IsOpen && appFocused)
+        { CloseKeyboard(); return; }
+        if (keyboard != null) ApplyKeyboardResult(keyboard.status, keyboard.text);
+    }
+
+    void ApplyKeyboardResult(TouchScreenKeyboard.Status status, string text)
+    {
+        if (!KeyboardInputActive || status == TouchScreenKeyboard.Status.Visible) return;
+        draftName = status == TouchScreenKeyboard.Status.Done ? text ?? "" : nameBeforeKeyboard;
+        CloseKeyboard();
+        if (naming) RefreshName();
+        if (owner != null) owner.ClearPresses();
+    }
+
+    void CloseKeyboard()
+    {
+        KeyboardInputActive = false;
+        var previous = keyboard; keyboard = null;
+        if (previous != null) previous.active = false;
     }
 
     void RefreshName()
     {
-        nameLabel.text = draftName.Length > 16 ? "…" + draftName.Substring(draftName.Length - 16) : draftName;
+        nameLabel.text = draftName;
         bool valid = NameValid(draftName, renaming ? Store.Data.activeId : null, out string error);
-        nameSaveButton.interactable = valid;
-        nameHint.text = valid ? "预设名称或字母数字，最多 24 字" : error;
+        nameSaveButton.interactable = valid && !KeyboardInputActive;
+        nameHint.text = KeyboardInputActive ? "请在系统键盘中完成或取消" : valid ? "最多 24 字，点击保存后生效" : error;
         nameHint.color = valid ? AeroUiTokens.Secondary : AeroUiTokens.Amber;
         Paint();
     }
@@ -282,6 +326,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         error = "";
         if (name.Length == 0) error = "请输入名称";
         else if (name.Length > AeroLayoutProfileStore.MaxNameLength) error = "名称最多 24 字";
+        else if (System.Array.Exists(name.ToCharArray(), char.IsControl)) error = "名称不能包含换行等控制字符";
+        else if (!AeroUiFonts.Interface.HasCharacters(name, out uint[] missing, true, true)) error = "含有暂不支持的字符，请修改名称";
         else foreach (var profile in Store.Data.profiles)
             if (profile.id != exceptId && string.Equals(profile.name, name, StringComparison.OrdinalIgnoreCase)) { error = "这个名称已存在"; break; }
         return error.Length == 0;
@@ -373,11 +419,19 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     static void Backing(Transform parent)
     {
-        var image = AeroHudView.AddPanelImage(parent, "ModalBacking", Resources.Load<Sprite>("JetStyle/RoundedRect"), Vector2.zero, new Vector2(400, 560), new Color(.04f, .065f, .07f, 1));
+        var image = AeroHudView.AddPanelImage(parent, "ModalBacking", AeroUiSprites.SolidPanel, Vector2.zero, new Vector2(400, 560), new Color(.04f, .065f, .07f, 1));
         image.type = UnityEngine.UI.Image.Type.Sliced; image.pixelsPerUnitMultiplier = 4;
     }
 
 #if UNITY_EDITOR
+    public bool UseKeyboardStubForChecks, KeyboardAvailableForChecks = true;
+    public string DraftNameForChecks => draftName;
+    public void TickKeyboardForChecks() => Update();
+    public void KeyboardResultForChecks(TouchScreenKeyboard.Status status, string text)
+    {
+        if (!UseKeyboardStubForChecks) throw new InvalidOperationException("Enable the keyboard test stub first");
+        ApplyKeyboardResult(status, text);
+    }
     // Redirect checks to a temporary store without creating a second catalog or writing user files.
     public IDisposable UseStoreForChecks(string path) => new CheckStoreScope(this, path);
     public void ReloadStoreForChecks() { Store.Load(); restoreAttempted = false; Refresh(); }
@@ -404,5 +458,6 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     }
 #endif
 
-    void OnDestroy() { if (catalog != null) catalog.PageChanged -= Refresh; }
+    void OnDisable() { CloseKeyboard(); }
+    void OnDestroy() { CloseKeyboard(); if (catalog != null) catalog.PageChanged -= Refresh; }
 }

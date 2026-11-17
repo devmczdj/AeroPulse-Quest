@@ -105,7 +105,7 @@ public class HandBackHudEntry : MonoBehaviour
         AnchorTracked = focused && hud.isActiveAndEnabled && leftValid &&
                     distance >= 0.20f && distance <= 1.0f &&
                     Vector3.Dot(normal, (eye.transform.position - center).normalized) >= 0.2f;
-        bool show=EnabledForEntry&&AnchorTracked;
+        bool show=EnabledForEntry&&AnchorTracked&&(hud.Layout==null||!hud.Layout.IsPreviewing)&&(hud.Profiles==null||!hud.Profiles.ModalOpen);
         bool wasShortcuts=ShortcutsVisible;
         if(tile.activeSelf!=show)tile.SetActive(show);
         bool showShortcuts=show&&ShortcutsEnabled&&(hud.Layout==null||!hud.Layout.Editing);
@@ -124,8 +124,8 @@ public class HandBackHudEntry : MonoBehaviour
             Debug.Log("[AeroPulse HandBack] TOUCH TOGGLE");
             hud.ToggleFromHand();
         }
-        var label=hud.IsCardOpen ? "HIDE" : "HUD";
-        if(caption.text!=label){caption.text=label;entryIcon.sprite=AeroUiIcons.Get(hud.IsCardOpen?"eye-off":"browser");}
+        var label=hud.IsCardVisible ? "HIDE" : "HUD";
+        if(caption.text!=label){caption.text=label;entryIcon.sprite=AeroUiIcons.Get(hud.IsCardVisible?"eye-off":"browser");}
     }
 
     public void SetShortcutHover(UnityEngine.UI.Button left,UnityEngine.UI.Button right)

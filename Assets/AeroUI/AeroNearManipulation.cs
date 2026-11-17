@@ -178,7 +178,7 @@ public sealed class AeroNearManipulation : MonoBehaviour
         Target best = null; float distance = NearDistance * NearDistance;
         foreach (var target in targets)
         {
-            if (!Usable(target)) continue;
+            if (!Usable(target) || owner.Layout.CoveredByTools(target.Rect, point)) continue;
             float depth = Vector3.Dot(point - target.Rect.TransformPoint(target.Rect.rect.center), -target.Rect.forward);
             if (depth < BackLimit || depth > NearDistance) continue;
             // Explicit oriented-box distance sees transforms changed in this frame,

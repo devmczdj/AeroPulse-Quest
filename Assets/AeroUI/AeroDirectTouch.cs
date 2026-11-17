@@ -65,7 +65,7 @@ public sealed class AeroDirectTouch : MonoBehaviour
         var seen=new HashSet<Button>();
         foreach(var button in buttons)
         {
-            if(button==null||!seen.Add(button))continue;
+            if(button==null||!seen.Add(button)||owner!=null&&owner.ToolsEntry!=null&&button==owner.ToolsEntry.Button)continue;
             var rect=button.transform as RectTransform;if(rect==null)continue;
             var slider=button.GetComponentInParent<AeroValueSlider>(true);
             if(slider!=null&&slider.Button!=button)slider=null;
@@ -224,17 +224,20 @@ public sealed class AeroDirectTouch : MonoBehaviour
         Target selected=null;float best=float.PositiveInfinity;selectedDepth=0;
         foreach(var target in targets)
         {
-            if(!Usable(target)||(ignore!=null&&target.Rect.IsChildOf(ignore)))continue;
+            if(!Usable(target)||(ignore!=null&&target.Rect.IsChildOf(ignore))||owner!=null&&owner.Layout.CoveredByTools(target.Rect,tip))continue;
             float depth=Vector3.Dot(tip-Origin(target),-target.Rect.forward);
             if(depth>NearDistance||depth<BackLimit||!Inside(target,tip,EdgeMargin,EdgeMargin))continue;
             float score=Mathf.Abs(depth);
-            if(score<best){selected=target;best=score;selectedDepth=depth;}
+            // A child control wins against its coplanar panel-selection surface.
+            if(selected!=null&&selected.Rect.IsChildOf(target.Rect)&&Mathf.Abs(score-best)<.001f)continue;
+            if(score<best||selected!=null&&target.Rect.IsChildOf(selected.Rect)&&Mathf.Abs(score-best)<.001f)
+            {selected=target;best=score;selectedDepth=depth;}
         }
         return selected;
     }
     bool Usable(Target t) => t!=null&&t.Button!=null&&t.Button.isActiveAndEnabled&&t.Button.IsInteractable()&&
         (t.Canvas==null||t.Canvas.enabled)&&(t.Collider==null||t.Collider.enabled)&&
-        (owner==null||owner.Layout==null||!owner.Layout.Dragging)&&
+        (owner==null||owner.Layout==null||!owner.Layout.Dragging&&owner.Layout.CanInteract(t.Rect))&&
         (owner==null||owner.Profiles==null||owner.Profiles.AllowButton(t.Button));
     static Vector3 Origin(Target t) => t.Rect.TransformPoint(t.Rect.rect.center);
     static bool Inside(Target t,Vector3 point,float marginX,float marginY)
