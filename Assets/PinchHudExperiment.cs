@@ -19,7 +19,11 @@ public class PinchHudExperiment : MonoBehaviour
     public HudSoftFollow Follow => follow;
     public AeroInteractionFeedback Feedback { get; private set; }
     public AeroDirectTouch DirectTouch { get; private set; }
+    public AeroNearManipulation Near { get; private set; }
+    public AeroLayoutProfileView Profiles { get; private set; }
     bool directLeftValid,directRightValid;
+    bool restoreAttempted;
+    int initializedFrame;
     public bool FeedbackSoundEnabled => Feedback!=null&&Feedback.SoundEnabled;
     Camera view;
     float maxDistance;
@@ -74,11 +78,14 @@ public class PinchHudExperiment : MonoBehaviour
         Layout.Initialize(this,view,card.transform,Sky.transform);
         Feedback=AeroInteractionFeedback.Build(view);
         hudView.BindControls(this);
+        Profiles=AeroLayoutProfileView.Build(view,this,Widgets);
         leftPointer = BuildPointer("LeftHandRay");
         rightPointer = BuildPointer("RightHandRay");
         DirectTouch=gameObject.AddComponent<AeroDirectTouch>();DirectTouch.Initialize(this);
+        Near=gameObject.AddComponent<AeroNearManipulation>();Near.Initialize(this);
         DirectTouch.IgnoreLeftRoot=HandEntry.ShortcutRoot;
         DirectTouch.RebuildTargets(UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include));
+        initializedFrame=Time.frameCount;
     }
 
     static bool ReadHand(MetaAimHand hand)
@@ -102,6 +109,7 @@ public class PinchHudExperiment : MonoBehaviour
             handSubsystem = handSubsystems.Find(x => x.running);
         }
         Layout.PrepareFrame();
+        TryRestoreProfile();
         SampleDirectHands();
         // Batch all hand/layout transforms before the two ray queries.
         Physics.SyncTransforms();
@@ -116,7 +124,9 @@ public class PinchHudExperiment : MonoBehaviour
         if (hudView != null) hudView.SetHover(DirectTouch.HoverLeft??leftPointer.button, DirectTouch.HoverRight??rightPointer.button);
 
         Layout.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
+        Profiles.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         HandEntry.SetShortcutHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
+        if(Layout.NearDragging||Near.ConsumedThisSample){TickFeedback();return;}
         if(Layout.Dragging)
         {
             var held=Layout.DragOwner=="left"?leftPointer:rightPointer;
@@ -160,10 +170,11 @@ public class PinchHudExperiment : MonoBehaviour
     public bool FollowPaused => IsCardOpen &&
         ((DirectTouch!=null&&DirectTouch.AnyNear) || (leftPointer.overCard && leftPointer.button != null && leftPointer.pressed) || (rightPointer.overCard && rightPointer.button != null && rightPointer.pressed));
 
-    public void ClearPresses(){ResetPresses();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}
+    public void ClearPresses(){ResetPresses();if(Near!=null)Near.ResetGates();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}
     public void ActivateButton(UnityEngine.UI.Button button)
     {
-        if(button==null||!button.isActiveAndEnabled||!button.IsInteractable()||AeroValueSlider.Active!=null)return;
+        if(button==null||!button.isActiveAndEnabled||!button.IsInteractable()||AeroValueSlider.Active!=null||Layout.Dragging)return;
+        if(Profiles!=null&&!Profiles.AllowButton(button))return;
         if(Layout.Editing&&!Layout.ToolbarButton(button)&&button!=Compact.OpenButton)return;
         button.onClick.Invoke();ResetPresses();Feedback.Confirm(button);
     }
@@ -175,11 +186,33 @@ public class PinchHudExperiment : MonoBehaviour
 #if UNITY_EDITOR
         if(DirectInputForChecks)return;
 #endif
-        Pose left=default,right=default;
+        Pose left=default,right=default,leftThumb=default,rightThumb=default;
         directLeftValid=handSubsystem!=null&&handSubsystem.running&&handSubsystem.leftHand.isTracked&&JointAllowed(MetaAimHand.left)&&handSubsystem.leftHand.GetJoint(XRHandJointID.IndexTip).TryGetPose(out left);
         directRightValid=handSubsystem!=null&&handSubsystem.running&&handSubsystem.rightHand.isTracked&&JointAllowed(MetaAimHand.right)&&handSubsystem.rightHand.GetJoint(XRHandJointID.IndexTip).TryGetPose(out right);
         var space=view.transform.parent;
-        DirectTouch.Sample(directLeftValid,space?space.TransformPoint(left.position):left.position,directRightValid,space?space.TransformPoint(right.position):right.position,Time.unscaledDeltaTime);
+        Vector3 World(Vector3 p)=>space?space.TransformPoint(p):p;
+        bool leftNear=directLeftValid&&handSubsystem.leftHand.GetJoint(XRHandJointID.ThumbTip).TryGetPose(out leftThumb);
+        bool rightNear=directRightValid&&handSubsystem.rightHand.GetJoint(XRHandJointID.ThumbTip).TryGetPose(out rightThumb);
+        Near.Sample(leftNear,World(left.position),World(leftThumb.position),rightNear,World(right.position),World(rightThumb.position),Time.unscaledDeltaTime);
+        bool consumed=Near.ConsumedThisSample;
+        DirectTouch.Sample(directLeftValid&&!Near.NearLeft&&!consumed,World(left.position),directRightValid&&!Near.NearRight&&!consumed,World(right.position),Time.unscaledDeltaTime);
+    }
+    void TryRestoreProfile()
+    {
+        if(restoreAttempted||Profiles==null||!focused||Time.frameCount<=initializedFrame+2)return;
+#if UNITY_EDITOR
+        if(DirectInputForChecks)return;
+#else
+        var head=UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.CenterEye);
+        if(!head.isValid||!head.TryGetFeatureValue(UnityEngine.XR.CommonUsages.isTracked,out bool tracked)||!tracked)return;
+#endif
+        restoreAttempted=true;Profiles.RestoreSavedLayout();
+    }
+    // Profile restoration does not replay the user's open/close gesture or mark dirty.
+    public void RestoreMainVisibility(bool visible)
+    {
+        card.SetActive(visible);entry.gameObject.SetActive(false);
+        if(visible)hudView.PlayReveal();
     }
 #if UNITY_EDITOR
     public bool DirectInputForChecks;
@@ -203,7 +236,7 @@ public class PinchHudExperiment : MonoBehaviour
     }
     public void ShowDetailForLayout()
     {
-        if(hudView.IsSettingsOpen)hudView.ToggleSettings();card.SetActive(true);Layout.PlaceOpenedCard();
+        if(hudView.IsSettingsOpen)hudView.ToggleSettings();bool wasOpen=card.activeSelf;card.SetActive(true);Layout.PlaceOpenedCard();if(!wasOpen&&Profiles!=null)Profiles.MarkChanged();
     }
     public void ToggleHandEntry()
     {
@@ -234,25 +267,26 @@ public class PinchHudExperiment : MonoBehaviour
     {
         bool detached=Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View;
         if(!detached&&follow.Mode==mode){RefreshSettings();return;}
-        if(detached)Layout.ReleaseToFollow();follow.SetMode(mode);Layout.SetAnchorFromFollowMode();
+        if(detached)Layout.ReleaseToFollow();follow.SetMode(mode);Layout.SetAnchorFromFollowMode();Profiles.MarkChanged();
         RefreshSettings(mode==HudSoftFollow.FollowMode.Fixed?"主卡已固定在环境中":"主卡跟随方式已更新");
     }
     public bool SetPanelDistance(float distance)
     {
         if(Layout.MainAnchor==AeroWindowAnchor.Hand||Layout.MainAnchor==AeroWindowAnchor.View){RefreshSettings("移回面前后可调距离");return false;}
         if(Mathf.Approximately(follow.Distance,distance)){RefreshSettings();return true;}
-        Layout.InvalidateMainUndo();follow.CaptureOffset();follow.SetDistance(distance);follow.ApplyOffset();Physics.SyncTransforms();RefreshSettings("面板距离已更新");return true;
+        Layout.InvalidateMainUndo();follow.CaptureOffset();follow.SetDistance(distance);follow.ApplyOffset();Physics.SyncTransforms();RefreshSettings("面板距离已更新");Profiles.MarkChanged();return true;
     }
     public void ShowHelp(){if(Feedback!=null)Feedback.ShowHelp();}
     public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SoundEnabled=enabled;RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
 
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 
-    public void ToggleFromHand() { if (IsCardOpen) CloseCard(); else OpenFromHand(); }
+    public void ToggleFromHand() { if(Layout.Dragging||Profiles!=null&&Profiles.ModalOpen)return;if (IsCardOpen) CloseCard(); else OpenFromHand(); }
 
     bool UpdatePointer(HandPointer pointer, MetaAimHand hand, out bool valid)
     {
-        bool near=DirectTouch!=null&&(pointer==leftPointer?DirectTouch.NearLeft:DirectTouch.NearRight);
+        bool near=(DirectTouch!=null&&(pointer==leftPointer?DirectTouch.NearLeft:DirectTouch.NearRight))
+            ||(Near!=null&&(pointer==leftPointer?Near.NearLeft:Near.NearRight));
         if(pointer.wasNear!=near){pointer.gate=default;pointer.pinch=default;pointer.pendingPress=false;pointer.wasNear=near;}
         valid = ReadHand(hand) && focused && !near;
         if (pointer.wasValid != valid && Time.unscaledTime < diagnosticsUntil)
@@ -425,11 +459,13 @@ public class PinchHudExperiment : MonoBehaviour
 
     void OpenCard(GazeHotspot target)
     {
+        bool wasOpen=card.activeSelf;
         card.SetActive(true);
         if(Layout!=null)Layout.PlaceOpenedCard();else follow.SnapToView();
         if (hudView != null) hudView.PlayReveal();
         if (target != null) target.SetGazed(false);
         entry.gameObject.SetActive(false);
+        if(!wasOpen&&Profiles!=null)Profiles.MarkChanged();
         Debug.Log("[AeroPulse Hands] OPEN " + (target != null ? target.label : "HAND BACK"));
     }
 
@@ -439,6 +475,7 @@ public class PinchHudExperiment : MonoBehaviour
 
         if (HandEntry != null) HandEntry.RequireRelease();
         card.SetActive(false);if(Layout!=null)Layout.MainHidden();
+        if(Profiles!=null)Profiles.MarkChanged();
         var forward = Vector3.ProjectOnPlane(view.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
         entry.transform.position = view.transform.position + forward * 3f - Vector3.up * 0.2f;
@@ -453,6 +490,7 @@ public class PinchHudExperiment : MonoBehaviour
     void OnApplicationFocus(bool hasFocus)
     {
         focused = hasFocus;
+        if(Near!=null)Near.SetPaused(!hasFocus);
         if(!hasFocus)ClearPresses();
         if(!hasFocus&&Layout!=null&&Layout.Dragging)Layout.CancelDrag("APP PAUSED - RESTORED");
         if(Compact!=null)Compact.SetPaused(!hasFocus);if(Layout!=null)Layout.SetPaused(!hasFocus);
@@ -462,11 +500,13 @@ public class PinchHudExperiment : MonoBehaviour
         if (rightPointer != null) { rightPointer.gate = default; rightPointer.pinch = default;rightPointer.pendingPress=false; }
     }
 
-    void OnEnable() { if(Layout!=null)Layout.SetPaused(!focused);if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
+    void OnEnable() { if(Near!=null)Near.SetPaused(!focused);if(Layout!=null)Layout.SetPaused(!focused);if(Compact!=null)Compact.SetPaused(!focused);if(Sky!=null)Sky.SetPaused(!focused); }
 
     void OnDisable()
     {
+        if(Layout!=null&&!Layout.SurfacesAvailable){Layout.AbandonForTeardown();return;}
         ClearPresses();
+        if(Near!=null)Near.SetPaused(true);
         if(Layout!=null&&Layout.Editing)Layout.EndEdit();
         if(Compact!=null)Compact.SetPaused(true);if(Layout!=null)Layout.SetPaused(true);
         if(Feedback!=null)Feedback.Tick(false,false,false,false,0);

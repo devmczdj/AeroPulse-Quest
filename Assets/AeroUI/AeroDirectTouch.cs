@@ -232,8 +232,10 @@ public sealed class AeroDirectTouch : MonoBehaviour
         }
         return selected;
     }
-    static bool Usable(Target t) => t!=null&&t.Button!=null&&t.Button.isActiveAndEnabled&&t.Button.IsInteractable()&&
-        (t.Canvas==null||t.Canvas.enabled)&&(t.Collider==null||t.Collider.enabled);
+    bool Usable(Target t) => t!=null&&t.Button!=null&&t.Button.isActiveAndEnabled&&t.Button.IsInteractable()&&
+        (t.Canvas==null||t.Canvas.enabled)&&(t.Collider==null||t.Collider.enabled)&&
+        (owner==null||owner.Layout==null||!owner.Layout.Dragging)&&
+        (owner==null||owner.Profiles==null||owner.Profiles.AllowButton(t.Button));
     static Vector3 Origin(Target t) => t.Rect.TransformPoint(t.Rect.rect.center);
     static bool Inside(Target t,Vector3 point,float marginX,float marginY)
         =>InsideLocal(t,t.Rect.InverseTransformPoint(point),marginX,marginY);

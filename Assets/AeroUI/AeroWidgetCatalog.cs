@@ -18,6 +18,13 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     public IReadOnlyList<Item> Items => items;
     public Transform CatalogRoot { get; private set; }
     public UnityEngine.UI.Button DoneButton { get; private set; }
+    public UnityEngine.UI.Button ComponentsTab { get; private set; }
+    public UnityEngine.UI.Button ProfilesTab { get; private set; }
+    public RectTransform ComponentsPage { get; private set; }
+    public RectTransform ProfilesPage { get; private set; }
+    public bool ShowingProfiles { get; private set; }
+    public Action PageChanged;
+    bool modal;
     public bool IsOpen => CatalogRoot != null && CatalogRoot.gameObject.activeSelf;
     public Action<string> Requested;
     public Action Finished;
@@ -45,9 +52,14 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     void Create()
     {
-        CatalogRoot = CreateCanvas("WidgetCatalog", new Vector2(400, 460), .001f);
-        Backing(CatalogRoot, new Vector2(400, 460));
-        Label(CatalogRoot, "CatalogTitle", "组件", new Vector2(-172, 194), new Vector2(344, 44), 28, AeroUiTokens.Ink);
+        CatalogRoot = CreateCanvas("WidgetCatalog", new Vector2(400, 560), .001f);
+        Backing(CatalogRoot, new Vector2(400, 560));
+        ComponentsTab = Tab("ComponentsTab", "组件", -90, false);
+        ProfilesTab = Tab("ProfilesTab", "档案", 90, true);
+        ComponentsPage = AeroHudView.NewRect("ComponentsPage", CatalogRoot, Vector2.zero, new Vector2(400, 410));
+        ProfilesPage = AeroHudView.NewRect("ProfilesPage", CatalogRoot, Vector2.zero, new Vector2(400, 410));
+        ProfilesPage.gameObject.SetActive(false);
+        Label(ComponentsPage, "CatalogHint", "点按添加，捏合拖出", new Vector2(-172, 200), new Vector2(344, 34), 21, AeroUiTokens.Secondary);
 
         AddItem("heart", "心率", "heart-pulse", "142", "BPM · 模拟数据");
         AddItem("pace", "配速", "fast-forward", "5:20", "/km · 模拟数据");
@@ -57,12 +69,54 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         timerValue = AddItem("timer", "会话计时", "rotate-ccw", "00:00", "应用运行时长");
 
         DoneButton = AeroHudView.ActionButton(CatalogRoot, "CatalogDone", "完成",
-            new Vector2(0, -198), new Vector2(352, 52), new Vector3(352, 52, 8));
-        var doneLabel = DoneButton.GetComponentInChildren<TextMeshProUGUI>();
+            new Vector2(0, -238), new Vector2(352, 52), new Vector3(352, 52, 8));
+        var doneLabel = DoneButton.GetComponentInChildren<TextMeshProUGUI>(true);
         doneLabel.font = AeroUiFonts.Interface;
         doneLabel.characterSpacing = 0;
         DoneButton.onClick.AddListener(() => Finished?.Invoke());
+        RefreshTabs(null, null);
         PlaceCatalog();
+    }
+
+    UnityEngine.UI.Button Tab(string name, string title, float x, bool profiles)
+    {
+        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 242), new Vector2(172, 48), new Vector3(172, 48, 8));
+        var text = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        text.font = AeroUiFonts.Interface; text.characterSpacing = 0;
+        button.onClick.AddListener(() => SetPage(profiles));
+        return button;
+    }
+
+    public void SetPage(bool profiles)
+    {
+        if (modal) return;
+        ShowingProfiles = profiles;
+        ComponentsPage.gameObject.SetActive(!profiles);
+        ProfilesPage.gameObject.SetActive(profiles);
+        RefreshTabs(null, null);
+        PageChanged?.Invoke();
+        Physics.SyncTransforms();
+    }
+
+    public void SetModal(bool value)
+    {
+        modal = value;
+        ComponentsTab.interactable = ProfilesTab.interactable = DoneButton.interactable = !value;
+        ComponentsTab.gameObject.SetActive(!value);ProfilesTab.gameObject.SetActive(!value);
+        DoneButton.gameObject.SetActive(!value);
+        RefreshTabs(null, null);
+    }
+
+    public void RefreshTabs(UnityEngine.UI.Button left, UnityEngine.UI.Button right)
+    {
+        foreach (var button in new[] { ComponentsTab, ProfilesTab, DoneButton })
+        {
+            if (button == null) continue;
+            bool selected = button == (ShowingProfiles ? ProfilesTab : ComponentsTab);
+            button.GetComponent<UnityEngine.UI.Image>().color = !button.interactable ? new Color(.06f, .08f, .08f, .6f)
+                : selected ? new Color(.2f, .31f, .28f, 1) : button == left || button == right ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
+            button.GetComponentInChildren<TextMeshProUGUI>(true).color = button.interactable ? AeroUiTokens.Ink : AeroUiTokens.Tertiary;
+        }
     }
 
     TextMeshProUGUI AddItem(string id, string title, string iconName, string value, string disclosure)
@@ -79,9 +133,9 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
             40, AeroUiFonts.SemiBold, AeroUiTokens.Ink, TextAlignmentOptions.Left, 0, 0);
         Label(root, "Disclosure", disclosure, new Vector2(-120, -46), new Vector2(240, 30), 18, AeroUiTokens.Secondary);
 
-        var entry = AeroHudView.ActionButton(CatalogRoot, "CatalogEntry_" + id, title,
-            new Vector2(0, 126 - items.Count * 64), new Vector2(352, 56), new Vector3(352, 56, 8));
-        var titleLabel = entry.GetComponentInChildren<TextMeshProUGUI>();
+        var entry = AeroHudView.ActionButton(ComponentsPage, "CatalogEntry_" + id, title,
+            new Vector2(0, 152 - items.Count * 64), new Vector2(352, 56), new Vector3(352, 56, 8));
+        var titleLabel = entry.GetComponentInChildren<TextMeshProUGUI>(true);
         titleLabel.font = AeroUiFonts.Interface;
         titleLabel.fontSize = 24;
         titleLabel.characterSpacing = 0;
@@ -134,6 +188,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         {
             PlaceCatalog();
             Refresh();
+            PageChanged?.Invoke();
         }
         CatalogRoot.gameObject.SetActive(open);
         Physics.SyncTransforms();
@@ -192,7 +247,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     void PlaceCatalog()
     {
         if (viewCamera == null || CatalogRoot == null) return;
-        CatalogRoot.position = viewCamera.transform.TransformPoint(new Vector3(-.48f, 0, 1f));
+        CatalogRoot.position = viewCamera.transform.TransformPoint(new Vector3(-.56f, 0, 1f));
         CatalogRoot.rotation = viewCamera.transform.rotation;
     }
 

@@ -8,11 +8,15 @@ public class AeroWindowLayout : MonoBehaviour
 {
     public bool Editing {get;private set;}
     public bool Dragging=>dragOwner!=null;
+    public bool NearDragging=>Dragging&&nearDragging;
     public bool DragActive=>Dragging&&holdTime>=.15f;
     public string DragOwner=>dragOwner;
     public bool SelectedCompact=>selected!=main;
     public string SelectedId=>selected.Key;
     public bool HasVisibleWidgets { get {foreach(var p in panels)if(p.Key!="main"&&p.Key!="legacy"&&p.Root.gameObject.activeSelf)return true;return false;} }
+    public bool SurfacesAvailable {get{if(owner==null||owner.Widgets==null||owner.Widgets.CatalogRoot==null||panels==null)return false;foreach(var p in panels)if(p.Root==null||p.Canvas==null)return false;return true;}}
+    // Scene teardown may destroy independent canvases before the owner is disabled.
+    public void AbandonForTeardown(){dragOwner=null;nearDragging=false;creating=false;Editing=false;}
     public Transform WidgetRoot(string key)=>FindPanel(key)?.Root;
     public Button WidgetClose(string key)=>FindPanel(key)?.Close;
     public AeroWindowAnchor MainAnchor=>main.Anchor;
@@ -51,6 +55,9 @@ public class AeroWindowLayout : MonoBehaviour
     bool resizing,depthMoving,handPlane,creating,wasVisible,paused;Snapshot catalogBefore;Pose catalogSpawn;Panel creatingPanel;float handHeight;Vector3 handNormal;Vector3 pivot,diagonal,orbitCenter,radial,startOrigin,orbitHit;Plane resizePlane,orbitPlane;Snapshot before;
     readonly RaycastHit[] hits=new RaycastHit[64];
     Button hoverLeft,hoverRight;
+    bool nearDragging,suppressChanges;
+    Vector3 nearDirection;
+    void Changed(){if(!suppressChanges&&owner.Profiles!=null)owner.Profiles.MarkChanged();}
     bool NeedsRecallFor(Panel p)=>p.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked||Vector3.Angle(eye.transform.forward,p.Root.position-eye.transform.position)>70;
     public void Initialize(PinchHudExperiment hud,Camera camera,Transform detail,Transform sky)
     {
@@ -129,13 +136,14 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     {
         if(Dragging)return;var p=FindPanel(key);if(p==null||p==main||p==small)return;
         if(p.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked){owner.Feedback.Notify("先抬起左手");return;}
+        bool changed=!p.Root.gameObject.activeSelf||!p.Placed||NeedsRecallFor(p);
         if(!Editing){Editing=true;owner.Widgets.SetOpen(true);}
         if(!p.Placed||NeedsRecallFor(p))
         {
             int i=System.Array.IndexOf(panels,p)-2;var slot=new Vector3(i%2==0?.30f:.62f,.24f-(i/2)*.25f,.9f);p.Root.SetPositionAndRotation(eye.transform.TransformPoint(slot),eye.transform.rotation);
             Remember(p);p.Placed=true;
         }
-        owner.Widgets.SetItemVisible(key,true);selected=p;SetEditUI(true);owner.ClearPresses();
+        owner.Widgets.SetItemVisible(key,true);selected=p;SetEditUI(true);owner.ClearPresses();if(changed)Changed();
     }
     public void CloseWidget(string key)
     {
@@ -144,7 +152,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         if(p==main){main.Close.onClick.Invoke();return;}
         owner.Widgets.SetItemVisible(key,false);
         if(selected==p){selected=main;SetEditUI(Editing);}
-        owner.ClearPresses();owner.Widgets.Refresh();
+        owner.ClearPresses();owner.Widgets.Refresh();Changed();
     }
     public void MainHidden()
     {
@@ -216,25 +224,41 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
             else{selected.Follow.RestoreOptions(selected.Follow.Distance,selected.Follow.UserScale,saved,selected.Speed);selected.Follow.ApplyOffset();}
         }
         else if(mode==AeroWindowAnchor.Follow)selected.Follow.CaptureOffset();
-        selected.Follow.CaptureOffset();SetRendering(selected,true);Face(selected);SetEditUI(Editing);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();
+        selected.Follow.CaptureOffset();SetRendering(selected,true);Face(selected);SetEditUI(Editing);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();Changed();
     }
     public void TogglePin()
     {
         if(!IsEnvironment(selected)||Dragging)return;SaveUndo(selected);Remember(selected);
         selected.Pinned=selected.Anchor!=AeroWindowAnchor.World;selected.Anchor=selected.Pinned?AeroWindowAnchor.World:AeroWindowAnchor.Follow;
         selected.Follow.SetMode(selected.Pinned?HudSoftFollow.FollowMode.Fixed:selected.Speed);
-        if(!selected.Pinned)selected.Follow.CaptureOffset();owner.ClearPresses();RefreshEditor();owner.RefreshSettings();
+        if(!selected.Pinned)selected.Follow.CaptureOffset();owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Changed();
     }
-    public void ToggleSpeed(){if(Dragging||selected.Anchor!=AeroWindowAnchor.Follow)return;SaveUndo(selected);selected.Speed=selected.Speed==HudSoftFollow.FollowMode.Soft?HudSoftFollow.FollowMode.Quick:HudSoftFollow.FollowMode.Soft;selected.Follow.SetMode(selected.Speed);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();}
+    public void ToggleSpeed(){if(Dragging||selected.Anchor!=AeroWindowAnchor.Follow)return;SaveUndo(selected);selected.Speed=selected.Speed==HudSoftFollow.FollowMode.Soft?HudSoftFollow.FollowMode.Quick:HudSoftFollow.FollowMode.Soft;selected.Follow.SetMode(selected.Speed);owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Changed();}
+    // Near joints project onto the same frozen manipulation plane as far rays.
+    // The virtual projection is internal geometry; it never redirects the visible ray.
+    public bool StartNearDrag(string hand,AeroDragHandle handle,Vector3 point)
+    {
+        if(Dragging||handle==null||!handle.isActiveAndEnabled||!string.IsNullOrEmpty(handle.CatalogId))return false;
+        var p=FindPanel(handle.PanelId);if(p==null)return false;
+        var direction=handle.Resize?p.Root.forward:p.Anchor==AeroWindowAnchor.Hand
+            ?owner.HandEntry.ContactSurface.rotation*Vector3.forward:(p.Root.position-eye.transform.position).normalized;
+        if(direction.sqrMagnitude<.5f)return false;
+        StartDrag(hand,handle,new Ray(point-direction,direction),1);
+        if(!Dragging||dragOwner!=hand)return false;
+        nearDirection=direction;nearDragging=true;holdTime=.15f;return true;
+    }
+    public void StepNearDrag(bool valid,bool pressed,Vector3 point,float dt)
+    {if(NearDragging)StepDrag(valid,pressed,new Ray(point-nearDirection,nearDirection),null,dt);}
     public void StartDrag(string hand,AeroDragHandle handle,Ray ray,float distance)
     {
-        if(!Editing||Dragging||AeroValueSlider.Active!=null||handle==null||handle.Sky)return;
+        if(!Editing||Dragging||AeroValueSlider.Active!=null||handle==null||handle.Sky||owner.Profiles!=null&&owner.Profiles.ModalOpen)return;
+        nearDragging=false;
         if(!string.IsNullOrEmpty(handle.CatalogId))
         {
             var target=FindPanel(handle.CatalogId);if(target==null)return;
             if(target.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked){owner.Feedback.Notify("先抬起左手");return;}
             catalogBefore=Capture(target);wasVisible=target.Root.gameObject.activeSelf;creatingPanel=target;
-            AddWidget(handle.CatalogId);catalogSpawn=new Pose(selected.Root.position,selected.Root.rotation);if(!catalogBefore.Placed)selected.Root.SetPositionAndRotation(ray.GetPoint(distance),eye.transform.rotation);
+            suppressChanges=true;try{AddWidget(handle.CatalogId);}finally{suppressChanges=false;}catalogSpawn=new Pose(selected.Root.position,selected.Root.rotation);if(!catalogBefore.Placed)selected.Root.SetPositionAndRotation(ray.GetPoint(distance),eye.transform.rotation);
             owner.Widgets.SetOpen(false);creating=true;handle=selected.Move;
         }
         else if(handle.PanelId!=selected.Key)
@@ -242,16 +266,16 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         if(selected.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked)return;
         before=Capture(selected);resizing=handle.Resize;depthMoving=handle.Depth;dragOwner=hand;holdTime=0;
         orbitCenter=eye.transform.position;startRadius=Vector3.Distance(selected.Root.position,orbitCenter);
-        if(startRadius<.01f){dragOwner=null;return;}
+        if(startRadius<.01f){CancelDrag("Invalid drag radius");return;}
         radial=(selected.Root.position-orbitCenter)/startRadius;startOrigin=ray.origin;
         minRadius=Mathf.Min(.55f,startRadius);maxRadius=Mathf.Max(2.2f,startRadius);
         handPlane=selected.Anchor==AeroWindowAnchor.Hand;handNormal=owner.HandEntry.ContactSurface.rotation*Vector3.forward;
         handHeight=Vector3.Dot(selected.Root.position-owner.HandEntry.ContactSurface.position,-handNormal);
         orbitPlane=new Plane(handPlane?handNormal:radial,selected.Root.position);
-        if(!resizing&&!depthMoving){if(!orbitPlane.Raycast(ray,out float hit)||hit<=0||hit>5){dragOwner=null;return;}orbitHit=ray.GetPoint(hit);}
+        if(!resizing&&!depthMoving){if(!orbitPlane.Raycast(ray,out float hit)||hit<=0||hit>5){CancelDrag("Invalid drag plane");return;}orbitHit=ray.GetPoint(hit);}
         var rect=(RectTransform)selected.Root;Vector3 corner=selected.Root.TransformPoint(new Vector3(rect.rect.xMax,rect.rect.yMin,0));
         pivot=selected.Root.TransformPoint(new Vector3(rect.rect.xMin,rect.rect.yMax,0));diagonal=(corner-pivot).normalized;resizePlane=new Plane(selected.Root.forward,selected.Root.position);
-        if(resizing){if(!resizePlane.Raycast(ray,out float d)){dragOwner=null;return;}startProjection=Vector3.Dot(ray.GetPoint(d)-pivot,diagonal);if(startProjection<=.001f){dragOwner=null;return;}}
+        if(resizing){if(!resizePlane.Raycast(ray,out float d)){CancelDrag("Invalid resize plane");return;}startProjection=Vector3.Dot(ray.GetPoint(d)-pivot,diagonal);if(startProjection<=.001f){CancelDrag("Invalid resize projection");return;}}
         if(creating)holdTime=.15f;owner.Widgets.SetOpen(false);RefreshEditor();
     }
     public void StepDrag(bool valid,bool pressed,Ray ray,AeroDockZone unused,float dt)
@@ -262,7 +286,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         {
             if(holdTime<.15f){CancelDrag("");return;}
             if(creating&&!catalogBefore.Placed&&Vector3.Distance(selected.Root.position,before.World.position)<.02f)selected.Root.SetPositionAndRotation(catalogSpawn.position,catalogSpawn.rotation);
-            selected.Undo=creating?catalogBefore:before;selected.HasUndo=true;Remember(selected);dragOwner=null;creating=false;Face(selected);owner.Widgets.SetOpen(Editing);sizeLabel.gameObject.SetActive(false);RefreshEditor();owner.ClearPresses();owner.RefreshSettings();return;
+            selected.Undo=creating?catalogBefore:before;selected.HasUndo=true;Remember(selected);dragOwner=null;nearDragging=false;creating=false;Face(selected);owner.Widgets.SetOpen(Editing);sizeLabel.gameObject.SetActive(false);RefreshEditor();owner.ClearPresses();owner.RefreshSettings();Changed();return;
         }
 #if UNITY_EDITOR
         if(DeltaForChecks>0)dt=DeltaForChecks;
@@ -298,11 +322,11 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         }
         Physics.SyncTransforms();
     }
-    public void CancelDrag(string reason){if(!Dragging)return;dragOwner=null;Restore(selected,creating?catalogBefore:before);if(creating&&!wasVisible)owner.Widgets.SetItemVisible(creatingPanel.Key,false);creating=false;owner.Widgets.SetOpen(Editing&&!paused);sizeLabel.gameObject.SetActive(false);RefreshEditor();}
-    public void Undo(){if(Dragging)CancelDrag("");if(!selected.HasUndo)return;Restore(selected,selected.Undo);selected.HasUndo=false;owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();}
-    public void ResetSelected(){if(Dragging)CancelDrag("");SaveUndo(selected);ResetPanel(selected);SetEditUI(Editing);owner.ClearPresses();owner.RefreshSettings();}
+    public void CancelDrag(string reason){if(!Dragging)return;if(!SurfacesAvailable){AbandonForTeardown();return;}dragOwner=null;nearDragging=false;Restore(selected,creating?catalogBefore:before);if(creating&&!wasVisible)owner.Widgets.SetItemVisible(creatingPanel.Key,false);creating=false;owner.Widgets.SetOpen(Editing&&!paused);sizeLabel.gameObject.SetActive(false);RefreshEditor();}
+    public void Undo(){if(Dragging)CancelDrag("");if(!selected.HasUndo)return;Restore(selected,selected.Undo);selected.HasUndo=false;owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();Changed();}
+    public void ResetSelected(){if(Dragging)CancelDrag("");SaveUndo(selected);ResetPanel(selected);SetEditUI(Editing);owner.ClearPresses();owner.RefreshSettings();Changed();}
     void ResetPanel(Panel p){p.Pinned=false;p.Speed=HudSoftFollow.FollowMode.Soft;p.HasSaved=new bool[4];p.Follow.SetUserScale(1);if(p==main){p.Anchor=AeroWindowAnchor.Follow;p.Follow.ResetOptions();}else if(p==small){p.Anchor=AeroWindowAnchor.View;p.Follow.ConfigureScale(.0009f/1.05f,1.05f);p.Follow.SetUserScale(1);p.Local=new Pose(new Vector3(owner.Compact.Side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(p);}else{p.Anchor=AeroWindowAnchor.Follow;p.Follow.ConfigureScale(.00075f/.85f,.85f);p.Follow.SetUserScale(1);p.Follow.SetMode(HudSoftFollow.FollowMode.Soft);p.Follow.SnapToView();}SetRendering(p,true);}
-    public void ResetAll(){if(Dragging)CancelDrag("");ResetPanel(main);ResetPanel(small);foreach(var p in panels){p.HasUndo=false;if(p!=main&&p!=small){ResetPanel(p);p.Placed=false;}}owner.Widgets.ResetWidgets();if(Editing)SetEditUI(true);Physics.SyncTransforms();}
+    public void ResetAll(){if(Dragging)CancelDrag("");ResetPanel(main);ResetPanel(small);foreach(var p in panels){p.HasUndo=false;if(p!=main&&p!=small){ResetPanel(p);p.Placed=false;}}owner.Widgets.ResetWidgets();if(Editing)SetEditUI(true);Physics.SyncTransforms();Changed();}
     void SetRendering(Panel p,bool show)
     {
         p.Canvas.enabled=show;p.Colliders=p.Root.GetComponentsInChildren<Collider>(true);
@@ -337,6 +361,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
             if(!Dragging)
             {
                 var handle=t.GetComponent<AeroDragHandle>();var button=t.GetComponent<Button>();
+                if(owner.Profiles!=null&&owner.Profiles.ModalOpen&&(button==null||!owner.Profiles.AllowButton(button)))continue;
                 bool control=(handle!=null&&(!string.IsNullOrEmpty(handle.CatalogId)||FindPanel(handle.PanelId)!=null))||(button!=null&&button.IsInteractable()&&(ToolbarButton(button)||button==owner.Compact.OpenButton));
                 if(!control)continue;
             }
@@ -354,7 +379,56 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     {
         if(Editing)EndEdit();ReleaseToFollow();main.Follow.SetDistance(Mathf.Clamp(main.Follow.Distance,.65f,2.2f));main.Follow.SnapToView();
         foreach(var p in panels)if(p!=main&&p!=small&&p.Root.gameObject.activeSelf&&NeedsRecallFor(p))
-        {p.Anchor=AeroWindowAnchor.Follow;p.Pinned=false;p.Follow.SetMode(p.Speed);int i=System.Array.IndexOf(panels,p)-2;p.Root.position=eye.transform.TransformPoint(new Vector3(.30f+(i%2)*.3f,.24f-(i/2)*.25f,.9f));Remember(p);Face(p);p.HasUndo=false;SetRendering(p,true);}
+        {p.Anchor=AeroWindowAnchor.Follow;p.Pinned=false;p.Follow.SetMode(p.Speed);int i=System.Array.IndexOf(panels,p)-2;p.Root.position=eye.transform.TransformPoint(new Vector3(.30f+(i%2)*.3f,.24f-(i/2)*.25f,.9f));Remember(p);Face(p);p.HasUndo=false;SetRendering(p,true);}Changed();
+    }
+    public AeroLayoutState CaptureLayout()
+    {
+        var states=new List<AeroPanelState>(6);
+        foreach(var p in panels)
+        {
+            if(p==small)continue;
+            Vector3 position=p.Anchor==AeroWindowAnchor.Follow?p.Follow.Offset.position
+                :p.Anchor==AeroWindowAnchor.World?eye.transform.InverseTransformPoint(p.Root.position):p.Local.position;
+            states.Add(new AeroPanelState{id=p.Key,visible=p.Root.gameObject.activeSelf,placed=p.Placed,
+                anchor=(int)p.Anchor,position=position,physicalScale=p.Root.localScale.x,userScale=p.Follow.UserScale,
+                followMode=(int)p.Follow.Mode,speed=(int)p.Speed,pinned=p.Pinned});
+        }
+        return new AeroLayoutState{panels=states.ToArray()};
+    }
+    public bool ApplyLayout(AeroLayoutState state)
+    {
+        if(!AeroLayoutProfileStore.ValidateState(state,out _))return false;
+        if(Dragging)CancelDrag("");owner.ClearPresses();
+        suppressChanges=true;
+        try
+        {
+            foreach(var saved in state.panels)
+            {
+                var p=FindPanel(saved.id);p.Anchor=(AeroWindowAnchor)saved.anchor;p.Pinned=saved.pinned;
+                p.Speed=(HudSoftFollow.FollowMode)saved.speed;p.Placed=saved.placed;p.HasUndo=false;
+                p.HasSaved=new bool[4];p.Saved=new Pose[4];
+                p.Local=new Pose(saved.position,Quaternion.identity);
+                var offset=new Pose(saved.position,Quaternion.identity);
+                p.Follow.RestoreOptions(Mathf.Max(.01f,saved.position.magnitude),saved.userScale,offset,
+                    (HudSoftFollow.FollowMode)saved.followMode,saved.physicalScale);
+                if(p.Anchor==AeroWindowAnchor.Follow)p.Follow.ApplyOffset();
+                else if(p.Anchor==AeroWindowAnchor.World)
+                {
+                    p.Root.SetPositionAndRotation(eye.transform.TransformPoint(saved.position),eye.transform.rotation);
+                    p.Follow.CaptureOffset();
+                }
+                else ApplyAttached(p);
+                p.Root.localScale=Vector3.one*saved.physicalScale;
+                if(p==main)owner.RestoreMainVisibility(saved.visible);else owner.Widgets.SetItemVisible(p.Key,saved.visible);
+                p.Tracked=p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked;
+                SetRendering(p,!paused&&p.Tracked);Face(p);
+                p.Saved[(int)p.Anchor]=p.Anchor==AeroWindowAnchor.World?new Pose(p.Root.position,p.Root.rotation)
+                    :p.Anchor==AeroWindowAnchor.Follow?p.Follow.Offset:p.Local;p.HasSaved[(int)p.Anchor]=true;
+            }
+            selected=main;foreach(var p in panels)if(p!=small&&p.Root.gameObject.activeSelf){selected=p;break;}
+            SetEditUI(Editing);owner.Widgets.Refresh();owner.RefreshSettings();Physics.SyncTransforms();return true;
+        }
+        finally{suppressChanges=false;}
     }
     public bool ToolbarButton(Button b){if(b==null)return false;if(b.transform.IsChildOf(toolbar)||b.transform.IsChildOf(owner.Widgets.CatalogRoot))return true;foreach(var p in panels)if(b==p.Close)return true;return false;}
     public bool Owns(Transform t){if(t.IsChildOf(owner.Widgets.CatalogRoot))return true;foreach(var p in panels)if(t.IsChildOf(p.Root))return true;return false;}

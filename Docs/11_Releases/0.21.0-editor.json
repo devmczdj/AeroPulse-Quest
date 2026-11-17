@@ -1,0 +1,131 @@
+{
+  "version": "0.21.0",
+  "unity": "6000.6.9f1",
+  "checks": [
+    {
+      "check": "AeroFinalChecks.Cold",
+      "frame": 40841,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroProfileStore021Checks.Run",
+      "frame": 14037,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroNear021Checks.Run",
+      "frame": 40875,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroLayoutPersistence021Checks.Run",
+      "frame": 40909,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroProfilesUi021Checks.Run",
+      "frame": 40942,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroHandBackChecks.RunGate",
+      "frame": 21266,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroTouchChecks.Run",
+      "frame": 21275,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroWidgets020Checks.Run",
+      "frame": 21050,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSettingsChecks.Run",
+      "frame": 21290,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSettingsChecks.Feedback",
+      "frame": 21297,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSkyChecks.Run",
+      "frame": 21304,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroShortcutChecks.Run",
+      "frame": 21312,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroResponseChecks.Run",
+      "frame": 21327,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroGlassChecks.Run",
+      "frame": 21334,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroFinalChecks.RepeatedJourney",
+      "frame": 21342,
+      "result": "PASS"
+    }
+  ],
+  "compile": {
+    "success": true,
+    "command": "recompile",
+    "data": {
+      "status": "completed",
+      "compiling": false,
+      "failed": false,
+      "compilationFailed": false,
+      "errors": [],
+      "warnings": [],
+      "summary": {
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "runtime_and_active_near_teardown_console": {
+    "entries": [],
+    "cursor": 639,
+    "session": "921035bdcee543cd9658b37c8500d686",
+    "returned": 0,
+    "dropped": false,
+    "reset": false,
+    "counts": {
+      "error": 0,
+      "warn": 0,
+      "log": 88
+    },
+    "groundTruth": {
+      "sampledUtc": "2026-11-17T03:10:38.789159Z",
+      "ageMs": 286,
+      "compilationFailed": false,
+      "compiling": false,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "consoleLogs": 88,
+      "seeded": true
+    }
+  },
+  "capture_frame": 54528,
+  "captures": [
+    "03_布局档案.png",
+    "04_切换前确认.png",
+    "05_近手把手高亮.png",
+    "06_档案命名.png"
+  ],
+  "capture_scope": "Actual Editor camera render, injected eye/hand poses and temporary demo profiles; no physical Quest/real hand tracking acceptance",
+  "quest_validation": "pending"
+}
