@@ -167,7 +167,7 @@ public class PinchHudExperiment : MonoBehaviour
         if (focused && Layout!=null) Layout.Tick(Time.unscaledDeltaTime, FollowPaused);
     }
 
-    public bool FollowPaused => IsCardOpen &&
+    public bool FollowPaused => (IsCardOpen || Layout.HasVisibleWidgets) &&
         ((DirectTouch!=null&&DirectTouch.AnyNear) || (leftPointer.overCard && leftPointer.button != null && leftPointer.pressed) || (rightPointer.overCard && rightPointer.button != null && rightPointer.pressed));
 
     public void ClearPresses(){ResetPresses();if(Near!=null)Near.ResetGates();if(DirectTouch!=null)DirectTouch.ResetGates();if(AeroValueSlider.Active!=null)AeroValueSlider.Active.CancelInteraction();}

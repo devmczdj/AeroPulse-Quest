@@ -1,0 +1,164 @@
+{
+  "checks": [
+    {
+      "check": "AeroInputReview022Checks.Run",
+      "result": {
+        "check": "AeroInputReview022Checks.Run",
+        "frame": 86983,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutReview022Checks.TrackingIsolation",
+      "result": {
+        "check": "AeroLayoutReview022Checks.TrackingIsolation",
+        "frame": 87019,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutReview022Checks.ToolbarRecovery",
+      "result": {
+        "check": "AeroLayoutReview022Checks.ToolbarRecovery",
+        "frame": 87049,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroNear021Checks.Run",
+      "result": {
+        "check": "AeroNear021Checks.Run",
+        "frame": 87081,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroLayoutPersistence021Checks.Run",
+      "result": {
+        "check": "AeroLayoutPersistence021Checks.Run",
+        "frame": 87114,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroProfilesUi021Checks.Run",
+      "result": {
+        "check": "AeroProfilesUi021Checks.Run",
+        "frame": 87147,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroProfileStore021Checks.Run",
+      "result": {
+        "check": "AeroProfileStore021Checks.Run",
+        "frame": 87180,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroTouchChecks.Run",
+      "result": {
+        "check": "AeroTouchChecks.Run",
+        "frame": 87214,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroWidgets020Checks.Run",
+      "result": {
+        "check": "AeroWidgets020Checks.Run",
+        "frame": 87248,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroGlassChecks.Run",
+      "result": {
+        "check": "AeroGlassChecks.Run",
+        "frame": 87282,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSettingsChecks.Run",
+      "result": {
+        "check": "AeroSettingsChecks.Run",
+        "frame": 87315,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSettingsChecks.Feedback",
+      "result": {
+        "check": "AeroSettingsChecks.Feedback",
+        "frame": 87349,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroResponseChecks.Run",
+      "result": {
+        "check": "AeroResponseChecks.Run",
+        "frame": 87383,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroHandBackChecks.RunGate",
+      "result": {
+        "check": "AeroHandBackChecks.RunGate",
+        "frame": 87416,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroSkyChecks.Run",
+      "result": {
+        "check": "AeroSkyChecks.Run",
+        "frame": 87451,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroShortcutChecks.Run",
+      "result": {
+        "check": "AeroShortcutChecks.Run",
+        "frame": 87486,
+        "result": "PASS"
+      }
+    },
+    {
+      "check": "AeroFinalChecks.RepeatedJourney",
+      "result": {
+        "check": "AeroFinalChecks.RepeatedJourney",
+        "frame": 87520,
+        "result": "PASS"
+      }
+    }
+  ],
+  "console": {
+    "entries": [],
+    "cursor": 386,
+    "session": "ab3aae431ba64cf5859e84b6a397ac30",
+    "returned": 0,
+    "dropped": false,
+    "reset": false,
+    "counts": {
+      "error": 0,
+      "warn": 0,
+      "log": 324
+    },
+    "groundTruth": {
+      "sampledUtc": "2026-11-17T06:52:51.614461Z",
+      "ageMs": 73,
+      "compilationFailed": false,
+      "compiling": false,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "consoleLogs": 324,
+      "seeded": true
+    }
+  },
+  "scope": "Editor injected checks, not Quest acceptance"
+}

@@ -49,10 +49,13 @@ public class HudSoftFollow : MonoBehaviour
     public void ApplyOffset(){transform.SetPositionAndRotation(view.position+referenceRotation*Offset.position,view.rotation);SyncView();}
     public void Tick(float delta,bool interacting)
     {
-        if(view==null||!gameObject.activeInHierarchy)return;
+        if(view==null)return;
         float elapsed=Mathf.Clamp(delta,0,.25f);delta=Mathf.Clamp(delta,0,.05f);
         var translation=view.position-previousViewPosition;SyncView();transform.rotation=view.rotation;if(Mode==FollowMode.Fixed)return;
         transform.position+=translation;
+        // Hidden following panels still travel with the viewer. Reopening must not
+        // discard movement accumulated while their Canvas was inactive.
+        if(!gameObject.activeInHierarchy)return;
         pressFreezeTime=interacting?pressFreezeTime+elapsed:0;
         if(interacting&&pressFreezeTime<.6f){outsideTime=0;moving=false;return;}
         var desired=ViewRotation();float angle=Quaternion.Angle(referenceRotation,desired);

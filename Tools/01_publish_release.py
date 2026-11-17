@@ -12,6 +12,17 @@ def digest(path):
         for chunk in iter(lambda:f.read(1048576),b''):h.update(chunk)
     return h.hexdigest()
 
+def verify_source_manifest(root, sources):
+    expected = {str(p.relative_to(root)) for folder in ['Assets', 'Packages', 'ProjectSettings']
+                for p in (root / folder).rglob('*') if p.is_file() and p.name != '.DS_Store'}
+    expected.add('DESIGN.md')
+    if set(sources) != expected:
+        raise RuntimeError('Build source manifest is incomplete or stale: missing=' +
+                           repr(sorted(expected - set(sources))) + ', extra=' + repr(sorted(set(sources) - expected)))
+    for name, sha in sources.items():
+        if digest(root / name) != sha:
+            raise RuntimeError('Source changed after build: ' + name)
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('version');parser.add_argument('--title',required=True)
@@ -34,9 +45,10 @@ def main():
     run([str(args.build_tools/'zipalign'),'-c','-P','16','4',str(apk)],text=True)
     with zipfile.ZipFile(apk) as z:assert z.testzip() is None
     sha=digest(apk);sources=json.loads(args.source_manifest.read_text())
-    for name,h in sources.items():assert digest(root/name)==h,f'Source changed after build: {name}'
-    repo=json.loads(run(['gh','repo','view',args.repo,'--json','visibility,url'],text=True).stdout)
-    assert repo['visibility']==args.expected_visibility,'Release destination visibility changed unexpectedly'
+    verify_source_manifest(root, sources)
+    repo=json.loads(run(['gh','api','repos/'+args.repo],text=True).stdout)
+    visibility='PRIVATE' if repo['private'] else 'PUBLIC'
+    assert visibility==args.expected_visibility,'Release destination visibility changed unexpectedly'
     record={'version':args.version,'versionCode':code,'package':'com.three.aeropulsemvp.glass','apk':apk.name,
             'size_bytes':apk.stat().st_size,'sha256':sha,'signature':signature,'zipalign':'PASS','crc':'PASS',
             'source_files_at_build':sources,'scope':'Editor/automated validation; final user headset acceptance pending'}

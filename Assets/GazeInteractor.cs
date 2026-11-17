@@ -13,20 +13,16 @@ public class GazeInteractor : MonoBehaviour
     GazeHotspot current;
     float timer;
     Transform reticle;
-    SpriteRenderer[] reticleSprites;
 
     void Start()
     {
-        BuildReticle();
-        reticleSprites = reticle.GetComponentsInChildren<SpriteRenderer>();
         if (pinchExperimentEnabled)
         {
-            reticle.gameObject.SetActive(false);
-            reticle.localPosition = new Vector3(0f, 0f, 0.6f);
-            reticle.localScale = Vector3.one * 0.3f;
             pinchExperiment = gameObject.AddComponent<PinchHudExperiment>();
             pinchExperiment.Initialize(GetComponent<Camera>(), maxDistance);
+            return;
         }
+        BuildReticle();
     }
 
     void BuildReticle()
@@ -89,13 +85,7 @@ public class GazeInteractor : MonoBehaviour
 
     void Update()
     {
-        if (pinchExperiment != null)
-        {
-            var color = pinchExperiment.HasTrackedHand ? Color.cyan : Color.gray;
-            foreach (var sprite in reticleSprites)
-                sprite.color = color;
-            return;
-        }
+        if (pinchExperiment != null) return;
         GazeHotspot hit = null;
         var ray = new Ray(transform.position, transform.forward);
         if (Physics.Raycast(ray, out RaycastHit info, maxDistance))

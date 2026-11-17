@@ -50,6 +50,7 @@ public class AeroWindowLayout : MonoBehaviour
     }
     PinchHudExperiment owner;Camera eye;Panel main,small,selected;Panel[] panels;
     RectTransform toolbar;TextMeshProUGUI sizeLabel;
+    Collider[] toolbarColliders;
     readonly List<Button> buttons=new List<Button>();
     string dragOwner;float holdTime,startProjection,startRadius,minRadius,maxRadius;
     bool resizing,depthMoving,handPlane,creating,wasVisible,paused;Snapshot catalogBefore;Pose catalogSpawn;Panel creatingPanel;float handHeight;Vector3 handNormal;Vector3 pivot,diagonal,orbitCenter,radial,startOrigin,orbitHit;Plane resizePlane,orbitPlane;Snapshot before;
@@ -87,6 +88,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         EnvironmentButton=Button(toolbar,"PlaceEnvironment","环境","cube",-144,0,136,()=>SetPlacement(AeroWindowAnchor.Follow));
         HandButton=Button(toolbar,"PlaceHand","手部","hand-open",0,0,136,()=>SetPlacement(AeroWindowAnchor.Hand));
         ViewButton=Button(toolbar,"PlaceView","面前","vr-headset",144,0,136,()=>SetPlacement(AeroWindowAnchor.View));
+        toolbarColliders=toolbar.GetComponentsInChildren<Collider>(true);
         DoneButton=owner.Widgets.DoneButton;
         // Retired sidebar controls remain absent; Done belongs to the shared catalog.
         sizeLabel=AeroHudView.Text(detail,"ResizeValue","",Vector2.zero,new Vector2(140,40),24,AeroUiFonts.Interface,AeroUiTokens.Ink,TextAlignmentOptions.Right,0,0);
@@ -175,7 +177,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         }
         toolbar.SetParent(selected.Root,false);toolbar.anchoredPosition=new Vector2(0,-((RectTransform)selected.Root).rect.height/2-112);
         sizeLabel.transform.SetParent(selected.Root,false);sizeLabel.rectTransform.anchoredPosition=new Vector2(((RectTransform)selected.Root).rect.width/2-140,-((RectTransform)selected.Root).rect.height/2-32);
-        toolbar.gameObject.SetActive(visible);sizeLabel.gameObject.SetActive(false);
+        toolbar.gameObject.SetActive(visible);SetToolbarRendering(!paused&&selected.Canvas.enabled);sizeLabel.gameObject.SetActive(false);
         main.Root.GetComponent<AeroHudView>().SetLayoutEditing(visible);main.Close.interactable=true;var group=main.Close.GetComponent<CanvasGroup>();if(group!=null)group.alpha=1;
         RefreshEditor();Physics.SyncTransforms();
     }
@@ -330,8 +332,11 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     void SetRendering(Panel p,bool show)
     {
         p.Canvas.enabled=show;p.Colliders=p.Root.GetComponentsInChildren<Collider>(true);
-        foreach(var c in p.Colliders)if(c!=null)c.enabled=show;
+        foreach(var c in p.Colliders)if(c!=null&&!c.transform.IsChildOf(toolbar))c.enabled=show;
+        if(p==selected)SetToolbarRendering(show);
     }
+    void SetToolbarRendering(bool enabled)
+    {if(toolbarColliders!=null)foreach(var collider in toolbarColliders)collider.enabled=enabled;}
     public void PrepareFrame()
     {
         if(owner==null||paused)return;
@@ -340,7 +345,14 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
             if(p.Anchor==AeroWindowAnchor.Hand)
             {
                 bool tracked=owner.HandEntry.AnchorTracked;
-                if(p.Tracked!=tracked){p.Tracked=tracked;SetRendering(p,tracked);owner.ClearPresses();if(Dragging&&p==selected)CancelDrag("");}
+                if(p.Tracked!=tracked)
+                {
+                    p.Tracked=tracked;SetRendering(p,tracked);
+                    // A hand anchor only invalidates input belonging to that visible panel.
+                    bool relevant=p.Root.gameObject.activeInHierarchy&&
+                        (Dragging?p==selected:AeroValueSlider.Active!=null?AeroValueSlider.Active.transform.IsChildOf(p.Root):true);
+                    if(relevant){owner.ClearPresses();if(Dragging&&p==selected)CancelDrag("");}
+                }
             }
             if((Dragging&&p==selected)||AeroValueSlider.Active!=null){p.Follow.SyncView();if(Dragging&&p==selected&&!resizing)Face(p);continue;}
             if((p.Anchor==AeroWindowAnchor.Hand&&owner.HandEntry.AnchorTracked)||p.Anchor==AeroWindowAnchor.View)ApplyAttached(p);

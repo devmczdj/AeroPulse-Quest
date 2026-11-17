@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Read-only final audit of Git tags, built sources and private release digests."""
+"""Read-only final audit of Git tags, built sources and release digests."""
 import argparse,hashlib,json,subprocess
 from pathlib import Path
 
 def run(*args): return subprocess.run(args,check=True,capture_output=True).stdout
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--output',type=Path,required=True);ap.add_argument('--versions',nargs='+',default=['0.10.0','0.11.0','0.12.0','0.13.0','0.14.0']);a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--expected-visibility',choices=['PUBLIC','PRIVATE'],default='PUBLIC');ap.add_argument('--output',type=Path,required=True);ap.add_argument('--versions',nargs='+',default=['0.10.0','0.11.0','0.12.0','0.13.0','0.14.0']);a=ap.parse_args()
     root=Path(__file__).resolve().parents[1];repo='devmczdj/AeroPulse-Quest'
-    visibility=json.loads(run('gh','repo','view',repo,'--json','visibility'))['visibility'];assert visibility=='PRIVATE'
+    info=json.loads(run('gh','api','repos/'+repo));visibility='PRIVATE' if info['private'] else 'PUBLIC';assert visibility==a.expected_visibility,'Repository visibility differs from the requested audit scope'
     result=[]
     for v in a.versions:
         tag='v'+v;commit=run('git','-C',str(root),'rev-parse',tag+'^{commit}').decode().strip()
