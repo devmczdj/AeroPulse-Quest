@@ -61,7 +61,7 @@ public class PinchHudExperiment : MonoBehaviour
         public PinchPressGate gate;
         public PinchSourceLatch pinch;
         public float lastDiagnostic;
-        public bool wasValid,wasNear;
+        public bool wasValid,wasNear,controllerSource;
         public bool pendingPress;
         public float pressStarted;
     }
@@ -102,6 +102,29 @@ public class PinchHudExperiment : MonoBehaviour
         var flags = (MetaAimFlags)hand.aimFlags.ReadValue();
         if ((flags & MetaAimFlags.Valid) == 0 ||
             (flags & (MetaAimFlags.SystemGesture | MetaAimFlags.MenuPressed)) != 0) return false;
+        return true;
+    }
+
+    readonly UnityEngine.XR.InputDevice[] controllers = new UnityEngine.XR.InputDevice[2];
+    bool ControllerRay(bool left, out Vector3 position, out Quaternion rotation, out bool trigger)
+    {
+        position=default;rotation=Quaternion.identity;trigger=false;
+        int index=left?0:1;
+        var device=controllers[index];
+        if(!device.isValid)
+        {
+            var node=left?UnityEngine.XR.XRNode.LeftHand:UnityEngine.XR.XRNode.RightHand;
+            var all=new System.Collections.Generic.List<UnityEngine.XR.InputDevice>();
+            UnityEngine.XR.InputDevices.GetDevicesAtXRNode(node,all);
+            if(all.Count==0)return false;
+            device=all[0];controllers[index]=device;
+        }
+        if(!device.isValid||!device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.isTracked,out bool tracked)||!tracked||
+           !device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.devicePosition,out position)||
+           !device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceRotation,out rotation))return false;
+        device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.triggerButton,out trigger);
+        var space=view.transform.parent;
+        if(space!=null){position=space.TransformPoint(position);rotation=space.rotation*rotation;}
         return true;
     }
 
@@ -303,7 +326,11 @@ public class PinchHudExperiment : MonoBehaviour
         bool near=(DirectTouch!=null&&(pointer==leftPointer?DirectTouch.NearLeft:DirectTouch.NearRight))
             ||(Near!=null&&(pointer==leftPointer?Near.NearLeft:Near.NearRight));
         if(pointer.wasNear!=near){pointer.gate=default;pointer.pinch=default;pointer.pendingPress=false;pointer.wasNear=near;}
-        valid = ReadHand(hand) && focused && !Profiles.KeyboardInputActive && !near;
+        bool handValid=ReadHand(hand)&&focused&&!Profiles.KeyboardInputActive&&!near;
+        Vector3 controlPos=default;Quaternion controlRot=Quaternion.identity;bool trigger=false;
+        bool controller=!handValid&&ControllerRay(pointer==leftPointer,out controlPos,out controlRot,out trigger)&&
+            focused&&!Profiles.KeyboardInputActive&&!near;
+        valid = handValid||controller;
         if (pointer.wasValid != valid && Time.unscaledTime < diagnosticsUntil)
         {
             Debug.Log("[AeroPulse Hands] TRACK " + pointer.line.name + " valid=" + valid +
@@ -324,7 +351,7 @@ public class PinchHudExperiment : MonoBehaviour
             pointer.pinch = default;pointer.pendingPress=false;
             return false;
         }
-        float strength = hand.pinchStrengthIndex.ReadValue();
+        float strength = controller?0f:hand.pinchStrengthIndex.ReadValue();
         float jointStrength = -1f;
         if (handSubsystem != null && handSubsystem.running)
         {
@@ -340,16 +367,17 @@ public class PinchHudExperiment : MonoBehaviour
                 }
             }
         }
-        bool pressed = pointer.pinch.Step(strength, hand.indexPressed.isPressed,jointStrength,out bool sourceChanged);
-        if(sourceChanged){pointer.gate=default;pointer.pendingPress=false;}
+        bool sourceChanged=false;
+        bool pressed = controller?trigger:pointer.pinch.Step(strength, hand.indexPressed.isPressed,jointStrength,out sourceChanged);
+        if(sourceChanged||pointer.controllerSource!=controller){pointer.gate=default;pointer.pendingPress=false;pointer.controllerSource=controller;}
         pointer.pressed = pressed;
         bool select = pointer.gate.Step(true, pressed);
         if(!pressed)pointer.pendingPress=false;
         if(select){pointer.pendingPress=true;pointer.pressStarted=Time.unscaledTime;}
         // Meta Aim is in the same tracking space as the HMD pose driver.
         var space = view.transform.parent;
-        Vector3 position = hand.devicePosition.ReadValue();
-        Quaternion rotation = hand.deviceRotation.ReadValue();
+        Vector3 position = controller?controlPos:hand.devicePosition.ReadValue();
+        Quaternion rotation = controller?controlRot:hand.deviceRotation.ReadValue();
         if (space != null)
         {
             position = space.TransformPoint(position);
@@ -377,7 +405,7 @@ public class PinchHudExperiment : MonoBehaviour
         {
             pointer.lastDiagnostic = Time.unscaledTime;
             Debug.Log("[AeroPulse Hands] INPUT " + pointer.line.name +
-                      " strength=" + hand.pinchStrengthIndex.ReadValue().ToString("F2") +
+                      " strength=" + (controller?"controller":hand.pinchStrengthIndex.ReadValue().ToString("F2")) +
                       " joints=" + jointStrength.ToString("F2") +
                       " native=" + hand.indexPressed.isPressed + " pressed=" + pressed +
                       " target=" + (pointer.target != null ? pointer.target.label : "none"));
