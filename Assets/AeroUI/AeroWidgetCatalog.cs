@@ -30,6 +30,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     public UnityEngine.UI.Button PreviewButton { get; private set; }
     public UnityEngine.UI.Button KeepOpenButton { get; private set; }
     public Transform LayerControls { get; private set; }
+    public UnityEngine.UI.Button CloseButton { get; private set; }
     public Action<AeroEditLayer> LayerRequested;
     public Action PreviewRequested;
     public Action PageChanged;
@@ -39,6 +40,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     Canvas catalogCanvas;
     public Action<string> Requested;
     public Action Finished;
+    public Action Hidden;
 
     readonly List<Item> items = new List<Item>();
     Camera viewCamera;
@@ -67,6 +69,10 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         catalogCanvas=CatalogRoot.GetComponent<Canvas>();catalogCanvas.sortingOrder=100;
         CatalogRoot.gameObject.AddComponent<BoxCollider>().size=new Vector3(400,560,3);
         Backing(CatalogRoot, new Vector2(400, 560),true);
+        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(170, 246),
+            new Vector2(44, 44), new Vector3(52, 52, 8));
+        AeroUiIcons.Apply(CloseButton, "close", 28);
+        CloseButton.onClick.AddListener(() => { if (!modal) Hidden?.Invoke(); });
         CreateLayerControls();
         ComponentsTab = Tab("ComponentsTab", "组件", -90, false);
         ProfilesTab = Tab("ProfilesTab", "档案", 90, true);

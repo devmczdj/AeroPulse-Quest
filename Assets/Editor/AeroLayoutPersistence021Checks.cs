@@ -90,7 +90,7 @@ public static class AeroLayoutPersistence021Checks
             if (layout.Editing) layout.EndEdit();
             eye.transform.parent.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             eye.transform.SetPositionAndRotation(new Vector3(0, 1.6f, 0), Quaternion.identity);
-            hud.ResetViewOptions(); hud.OpenDataFromShortcut(); layout.BeginEdit(false); widgets.SetPage(false);
+            hud.ResetViewOptions(); hud.OpenDataFromShortcut(); layout.BeginEdit(false); layout.OpenTools(); widgets.SetPage(false);
             foreach (var item in widgets.Items) layout.AddWidget(item.Id);
             var palm = eye.transform.position + new Vector3(-.15f, -.25f, .45f);
             var handRotation = Quaternion.Euler(-65, 25, 32);

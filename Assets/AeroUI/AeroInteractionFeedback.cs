@@ -17,7 +17,7 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
     static readonly Color PressColor = new Color(0.10f, 0.42f, 0.33f, 1f);
     const string TouchIntro = "左手手背打开 HUD\n设置 / 布局 / 编辑布局，才会显示工具";
     const string FrontIntro = "用手射线指向前方入口\n松开手指后，再捏合打开 HUD";
-    const string HelpText = "从设置 / 布局进入编辑布局\n编辑时右手打开工具，完成后收起";
+    const string HelpText = "从设置 / 布局进入编辑布局\n工具默认收起，右手工具键打开";
 
     struct Flash
     {
@@ -96,11 +96,11 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(message)) Notify(message);
     }
 
-    public void Notify(string message)
+    public void Notify(string message, float duration = 2.4f)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
         notice = message;
-        noticeRemaining = 2.4f;
+        noticeRemaining = Mathf.Max(.5f, duration);
         if (wasFocused) SetText(notice);
     }
 

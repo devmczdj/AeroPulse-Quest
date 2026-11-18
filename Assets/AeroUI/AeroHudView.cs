@@ -69,7 +69,7 @@ public class AeroHudView : MonoBehaviour
     public void SetLayoutEditing(bool editing)
     {
         layoutEditing=editing;hoverInitialized=false;
-        foreach(var button in new[]{CloseButton,MapButton,SettingsButton,SkyButton})
+        foreach(var button in new[]{MapButton,SettingsButton,SkyButton})
         {
             button.interactable=!editing;
             var group=button.GetComponent<CanvasGroup>();if(group==null)group=button.gameObject.AddComponent<CanvasGroup>();group.alpha=editing?.25f:1;
@@ -163,7 +163,7 @@ public class AeroHudView : MonoBehaviour
         Text(dataBody, "DistanceUnit", "KM", new Vector2(208f, -109f), new Vector2(60f, 24f),
              16f, AeroUiFonts.Medium, AeroUiTokens.Secondary, TextAlignmentOptions.Left, 10f, 0f);
 
-        var close = new GameObject("Close", typeof(RectTransform), typeof(Image), typeof(Button), typeof(BoxCollider));
+        var close = new GameObject("MainClose", typeof(RectTransform), typeof(Image), typeof(Button), typeof(BoxCollider));
         close.transform.SetParent(card.transform, false);
         var closeRect = (RectTransform)close.transform;
         closeRect.sizeDelta = new Vector2(176f, 64f);
@@ -191,7 +191,7 @@ public class AeroHudView : MonoBehaviour
         SettingsButton = ActionButton(card.transform,"ToggleSettings","SETTINGS",new Vector2(-232,-172),
                                       new Vector2(224,64),new Vector3(224,82,8));
         settingsLabel = SettingsButton.GetComponentInChildren<TextMeshProUGUI>();
-        AeroUiIcons.Apply(SettingsButton,"settings",40);AeroUiIcons.Apply(CloseButton,"eye-off",40);AeroUiIcons.Apply(MapButton,"map",40);
+        AeroUiIcons.Apply(SettingsButton,"settings",40);AeroUiIcons.Apply(MapButton,"map",40);
         AeroUiIcons.Apply(MapView.AdvanceButton,"arrow-right",36);
         foreach(var text in new[]{settingsLabel,mapButtonLabel,closeLabel,SkyButton.GetComponentInChildren<TextMeshProUGUI>()}){text.font=AeroUiFonts.Interface;text.characterSpacing=0;}
         closeLabel.text="收起HUD";

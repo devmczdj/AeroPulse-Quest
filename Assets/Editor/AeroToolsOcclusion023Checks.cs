@@ -14,7 +14,7 @@ public static class AeroToolsOcclusion023Checks
         try
         {
             driver.enabled=false;h.HandEntry.enabled=false;h.ToolsEntry.enabled=false;h.DirectInputForChecks=true;h.SendMessage("OnApplicationFocus",true);
-            c.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);if(l.Editing)l.EndEdit();h.ResetViewOptions();h.OpenDataFromShortcut();l.BeginEdit(false);w.SetKeepOpen(true);w.SetPage(false);
+            c.transform.SetPositionAndRotation(new Vector3(0,1.6f,0),Quaternion.identity);if(l.Editing)l.EndEdit();h.ResetViewOptions();h.OpenDataFromShortcut();l.BeginEdit(false);l.OpenTools();w.SetKeepOpen(true);w.SetPage(false);
             var main=h.Follow.transform;main.SetPositionAndRotation(c.transform.TransformPoint(new Vector3(0,-.05f,.35f)),c.transform.rotation);h.Follow.CaptureOffset();l.PrepareFrame();Physics.SyncTransforms();
             var row=w.Items[0].EntryButton;var ray=new Ray(c.transform.position,(row.transform.position-c.transform.position).normalized);
             Require(l.Raycast(ray,2,out var hit)&&hit.collider.gameObject==row.gameObject,"Nearer panel stole catalog button ray");

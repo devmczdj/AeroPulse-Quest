@@ -82,8 +82,9 @@ public class AeroWindowLayout : MonoBehaviour
         panels=all.ToArray();
         foreach(var panel in panels){panel.Move.PanelId=panel.Depth.PanelId=panel.Resize.PanelId=panel.Key;}
         main.Close=main.Root.GetComponent<AeroHudView>().CloseButton;
-        var mainClose=(RectTransform)main.Close.transform;mainClose.anchoredPosition=new Vector2(348,184);mainClose.sizeDelta=new Vector2(44,44);main.Close.GetComponent<BoxCollider>().size=new Vector3(52,52,8);AeroUiIcons.Apply(main.Close,"close",28);
+        var mainClose=(RectTransform)main.Close.transform;mainClose.anchoredPosition=new Vector2(-348,184);mainClose.sizeDelta=new Vector2(44,44);main.Close.GetComponent<BoxCollider>().size=new Vector3(52,52,8);AeroUiIcons.Apply(main.Close,"close",28);
         owner.Widgets.Requested=AddWidget;owner.Widgets.Finished=EndEdit;
+        owner.Widgets.Hidden=HideTools;
         owner.Widgets.LayerRequested=SetEditingLayer;owner.Widgets.PreviewRequested=()=>SetPreview(!IsPreviewing);
 owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;ResizeHandle=main.Resize;CompactHandle=small.Move;CompactResizeHandle=small.Resize;DepthHandle=main.Depth;CompactDepthHandle=small.Depth;
         WorldZone=LegacyZone(AeroWindowAnchor.World);ViewZone=LegacyZone(AeroWindowAnchor.View);HandZone=LegacyZone(AeroWindowAnchor.Hand);
@@ -144,12 +145,23 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         selected=main;
     }
     void RefreshTools(bool reposition=false)=>owner.Widgets.SetOpen(Editing&&toolsRequested&&!paused&&!Dragging,reposition);
-    public void ToggleTools(){if(!Editing)return;if(owner.Profiles!=null&&owner.Profiles.ModalOpen||Dragging)return;if(owner.Widgets.IsOpen){toolsRequested=false;RefreshTools();owner.ClearPresses();}else BeginEdit(false);}
+    void HideTools(){if(!Editing||Dragging)return;toolsRequested=false;RefreshTools();owner.ClearPresses();}
+    public void ToggleTools(){if(!Editing)return;if(owner.Profiles!=null&&owner.Profiles.ModalOpen||Dragging)return;if(owner.Widgets.IsOpen){toolsRequested=false;RefreshTools();owner.ClearPresses();}else OpenTools();}
+    public void OpenTools()
+    {
+        if(!Editing||owner.Profiles!=null&&owner.Profiles.ModalOpen||Dragging)return;
+        toolsRequested=true;IsPreviewing=false;RefreshTools(true);SetEditUI(true);
+        if(owner.Compact!=null)owner.Compact.SetFallbackVisible(false);
+        owner.ClearPresses();
+    }
     public void BeginEdit(bool isSky)
     {
         if(isSky){owner.RecenterSky();return;}if(Dragging)CancelDrag("");
         if(!Editing&&owner.IsCardOpen){owner.ShowDetailForLayout();EditingLayer=LayerOf(main);selected=main;}
-        Editing=true;toolsRequested=true;EnsureSelection();SetEditUI(true);RefreshTools(true);owner.ClearPresses();
+        bool entered=!Editing;Editing=true;toolsRequested=false;EnsureSelection();SetEditUI(true);RefreshTools(true);owner.ClearPresses();
+        if(owner.Widgets!=null)owner.Widgets.SetOpen(false);
+        if(entered&&owner.Widgets!=null)owner.Widgets.SetKeepOpen(false);
+        if(entered&&owner.Feedback!=null)owner.Feedback.Notify("组件工具已收起\n左手手背轻触设置，右手抬起后打开",6f);
     }
     public void EndEdit(){if(Dragging)CancelDrag("");Editing=false;IsPreviewing=false;toolsRequested=false;if(owner.Profiles!=null)owner.Profiles.EndEditing();RefreshTools();SetEditUI(false);owner.ClearPresses();owner.RefreshSettings();}
     public void SetEditingLayer(AeroEditLayer layer)
@@ -381,7 +393,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     public void ResetAll(){if(Dragging)CancelDrag("");EditingLayer=AeroEditLayer.Environment;IsPreviewing=false;selected=main;ResetPanel(main);ResetPanel(small);foreach(var p in panels){p.HasUndo=false;if(p!=main&&p!=small){ResetPanel(p);p.Placed=false;}}owner.Widgets.ResetWidgets();if(Editing)SetEditUI(true);Physics.SyncTransforms();Changed();}
     void SetRendering(Panel p,bool show)
     {
-        show&=!Editing||IsPreviewing||LayerOf(p)==EditingLayer;p.Canvas.enabled=show;
+        show&=!Editing||IsPreviewing||LayerOf(p)==EditingLayer||p==main;p.Canvas.enabled=show;
         if(p.Colliders==null)p.Colliders=p.Root.GetComponentsInChildren<Collider>(true);
         foreach(var c in p.Colliders)if(c!=null&&!c.transform.IsChildOf(toolbar))c.enabled=show&&(Editing||p==main||p==small);
         if(p==selected)SetToolbarRendering(show);
@@ -528,11 +540,18 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         foreach(var p in panels)if(t.IsChildOf(p.Root))return p.Canvas.enabled&&(!Editing||!IsPreviewing);
         return true;
     }
+    public bool IsOwnPanel(Transform t)
+    {
+        if(t==null)return false;
+        foreach(var p in panels)if(t.IsChildOf(p.Root))return true;
+        return false;
+    }
     public bool ToolbarButton(Button b)
     {
         if(b==null)return false;
         if(owner.ToolsEntry!=null&&b==owner.ToolsEntry.Button)return true;
         if(b.transform.IsChildOf(owner.Widgets.CatalogRoot))return true;
+        if(b.transform.IsChildOf(owner.Widgets.LayerControls))return true;
         if(IsPreviewing)return false;
         if(b.transform.IsChildOf(toolbar))return true;
         foreach(var p in panels)if(p.Canvas.enabled&&(b==p.Close||b==p.Body))return true;return false;

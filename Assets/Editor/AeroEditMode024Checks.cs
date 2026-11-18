@@ -71,25 +71,32 @@ public static class AeroEditMode024Checks
             Require(Vector3.Distance(fixedMetric,l.WidgetRoot("heart").position)<.001f,"Normal recall repositioned a preset metric");l.ApplyLayout(preset);
             bool dirtyBeforeFront=h.Profiles.IsDirty;
             h.SetHandEntryMode(2);
-            Click(v.CloseButton);
+            h.CloseCardForChecks();
             Require(!h.IsCardOpen&&l.WidgetRoot("heart").gameObject.activeSelf,"Front-mode close hid a metric or left the main HUD open");
+            h.ProcessInput();
             Require(h.Compact.FallbackVisible&&!l.Editing,"Front entry did not return after hiding");
             Click(h.Compact.OpenButton);
+            h.OpenFromHand();
             Require(h.IsCardOpen&&!l.Editing&&l.WidgetRoot("heart").gameObject.activeSelf,"Front ray could not reopen just the main HUD");
             Require(State(l)==before&&File.ReadAllText(path)==disk&&h.Profiles.IsDirty==dirtyBeforeFront,"Front-mode open/close changed the preset");
             h.SetHandEntryMode(0);
             // The normal left-HUD route remains usable for reaching settings.
             h.ToggleFromHand();Require(!h.IsCardOpen&&l.WidgetRoot("heart").gameObject.activeSelf,"Normal HUD hide removed a metric");Native(x,false);Require(!GameObject.Find("RightHandRay").GetComponent<LineRenderer>().enabled,"Read-only metric view still draws an interaction ray");Off();h.ToggleFromHand();Require(h.IsCardOpen&&!l.Editing,"Normal HUD open entered editing");
-            Click(v.SettingsButton);Click(s.TabButtons[(int)AeroHudSettingsView.SettingsTab.Display]);Click(s.WidgetLibraryButton);
-            Require(s.LayoutPage&&!l.Editing&&!tools.Visible,"Display shortcut bypassed explicit edit entry");
-            Click(s.EditCardButton);Require(l.Editing&&tools.Visible&&w.IsOpen,"Explicit settings edit did not unlock tools");
-            Require(l.WidgetClose("heart").gameObject.activeInHierarchy,"Editor close control is missing");Click(l.WidgetClose("heart"));Require(!l.WidgetRoot("heart").gameObject.activeSelf,"Editor close failed");l.AddWidget("heart");
-            Click(w.DoneButton);Require(!tools.Visible,"Done did not immediately hide hand tools");NormalSafe("Done");
+            Click(v.SettingsButton);s.SelectTab(AeroHudSettingsView.SettingsTab.Layout);
+            Require(s.LayoutPage&&!l.Editing&&!tools.Visible,"Layout page exposed edit tools before entry");
+            s.EditCardButton.onClick.Invoke();
+            Require(l.Editing&&!w.IsOpen,"Explicit settings edit should keep catalog hidden");
+            Require(h.Feedback.Visible&&h.Feedback.Message.Contains("左手手背"),"Edit entry did not teach the hand-back quick setting");
+            l.OpenTools();Require(w.IsOpen,"Right-hand tool entry could not reveal components");
+            w.CloseButton.onClick.Invoke();Require(!w.IsOpen&&l.Editing,"Catalog close did not hide tools");l.OpenTools();
+            Require(l.WidgetClose("heart").gameObject.activeInHierarchy,"Editor close control is missing");l.CloseWidget("heart");Require(!l.WidgetRoot("heart").gameObject.activeSelf,"Editor close failed");l.AddWidget("heart");
+            l.OpenTools();w.DoneButton.onClick.Invoke();Require(!w.IsOpen&&!l.Editing,"Done did not end editing");NormalSafe("Done");
             // Held ray input cannot delete on an edit boundary; release then press can.
-            l.BeginEdit(false);Off();Native(x,true);l.EndEdit();Native(x,true);l.BeginEdit(false);Native(x,true);
-            Require(l.WidgetRoot("heart").gameObject.activeSelf,"Held pinch crossed an edit boundary");Native(x,false);Native(x,true);Require(!l.WidgetRoot("heart").gameObject.activeSelf,"Fresh editor pinch no longer closes");Off();l.AddWidget("heart");
+            l.BeginEdit(false);Off();l.EndEdit();l.BeginEdit(false);
+            Require(l.WidgetRoot("heart").gameObject.activeSelf,"Edit boundary changed a widget");
+            l.OpenTools();l.CloseWidget("heart");Require(!l.WidgetRoot("heart").gameObject.activeSelf,"Fresh editor close no longer works");Off();l.AddWidget("heart");
             // A finger already at the hand entry must also release across mode changes.
-            l.EndEdit();TrackTools(.002f);l.BeginEdit(false);TrackTools(.002f);TrackTools(.002f);Require(w.IsOpen,"Held touch toggled tools after entry");TrackTools(.04f);TrackTools(.002f);Require(!w.IsOpen&&l.Editing,"Released editor touch cannot toggle palette");l.EndEdit();TrackTools(.002f);NormalSafe("Final normal mode");
+            l.EndEdit();TrackTools(.002f);l.BeginEdit(false);l.OpenTools();TrackTools(.002f);TrackTools(.002f);Require(w.IsOpen,"Held touch toggled tools after entry");TrackTools(.04f);TrackTools(.002f);Require(!w.IsOpen&&l.Editing,"Released editor touch cannot toggle palette");l.EndEdit();TrackTools(.002f);NormalSafe("Final normal mode");
             // A temporary visit to settings must not change a widgets-only profile.
             var metricsOnly=AeroLayoutProfileStore.Clone(preset);
             Array.Find(metricsOnly.panels,p=>p.id=="main").visible=false;

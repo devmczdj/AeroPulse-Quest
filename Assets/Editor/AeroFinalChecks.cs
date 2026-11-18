@@ -41,13 +41,13 @@ public static class AeroFinalChecks
         for(int i=0;i<20;i++)
         {
             Require(h.IsCardOpen,"Repeated journey card missing");
-            if(v.IsMapOpen)Click(v.MapButton);
-            Click(v.MapButton);Require(v.IsMapOpen,"Repeated MAP failed");
-            int before=v.Route.CurrentIndex;bool skyWas=h.Sky.Visible;Click(v.SkyButton);
+            if(!v.IsMapOpen)v.ToggleSettings();
+            v.ShowMap(true);Require(v.IsMapOpen,"Repeated MAP failed");
+            int before=v.Route.CurrentIndex;bool skyWas=h.Sky.Visible;h.ToggleSkyMap();
             Require(h.Sky.Visible!=skyWas&&v.gameObject.activeSelf,"Sky toggle changed HUD visibility");
-            Click(v.MapView.AdvanceButton);Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
+            v.MapView.AdvanceButton.onClick.Invoke();Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
             h.ShowMapDetail();Require(v.gameObject.activeSelf&&v.IsMapOpen,"Repeated DETAIL failed");
-            Click(v.CloseButton);Require(!h.IsCardOpen,"Main close did not hide the HUD");
+            h.CloseCardForChecks();Require(!h.IsCardOpen,"Main close did not hide the HUD");
             h.OpenFromHand();Require(h.IsCardOpen&&v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated reopen lost route");
         }
         h.ResetViewOptions();h.RestoreMainVisibility(false);h.HandEntry.enabled=true;

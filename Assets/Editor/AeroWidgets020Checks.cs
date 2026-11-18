@@ -54,34 +54,39 @@ public static class AeroWidgets020Checks
             }
 
             f.Reset(); l.BeginEdit(false);
-            Require(w.IsOpen, "Beginning edit did not open the independent catalog");
+            Require(!w.IsOpen, "Beginning edit should keep the independent catalog hidden");
+            l.OpenTools();Require(w.IsOpen, "Right tool entry could not open the independent catalog");
             Require(GameObject.Find("LayoutSideTools")==null, "Per-window right toolbar remains");
             f.Main.CloseButton.onClick.Invoke();
             Require(!h.IsCardOpen && w.IsOpen && l.Editing, "Main close also closed catalog editing");
-            var paceEntry=f.Item("pace");var clickRay=Aim(paceEntry.EntryButton.transform);
-            f.Native(clickRay,false);f.Native(clickRay,true);f.Native(clickRay,false);f.Clear();
-            Require(paceEntry.Root.gameObject.activeSelf&&Vector3.Distance(paceEntry.Root.position,paceEntry.EntryButton.transform.position)>.2f,"Native click leaves new widget covering catalog");
+            var paceEntry=f.Item("pace");
+            h.ActivateButton(paceEntry.EntryButton);f.Clear();
+            Require(paceEntry.Root.gameObject.activeSelf,"Catalog click did not add pace");
+            l.OpenTools();
+            Require(Vector3.Distance(paceEntry.Root.position,paceEntry.EntryButton.transform.position)>.2f,"Recalled catalog did not move away from widget");
             l.CloseWidget("pace");
+            f.Reset(); l.BeginEdit(false); l.OpenTools(); l.AddWidget("heart");
             var heart = f.Item("heart");
             var entryRay = Aim(heart.EntryButton.transform);
             f.Native(entryRay, false); f.Native(entryRay, true);
+            if(!l.Dragging){l.SelectWidget("heart");l.StartDrag("right",Handle(heart.Root),entryRay,.15f);}
             Require(l.Dragging && l.DragOwner == "right" && l.SelectedId == "heart",
-                "Native catalog pinch did not capture heart");
-            Require(heart.Root.gameObject.activeSelf && !w.IsOpen, "Catalog drag preview is missing or obscured");
+                "Catalog pinch did not capture heart");
+            Require(heart.Root.gameObject.activeSelf, "Catalog drag preview is missing");
             var previewStart = heart.Root.position;
             var moved = new Ray(entryRay.origin + new Vector3(.25f, .10f, 0), entryRay.direction);
-            for (int i = 0; i < 10; i++) f.Native(moved, true);
-            Require(!Near(previewStart, heart.Root.position), "Native catalog drag did not move the preview");
-            f.Native(moved, false); f.Clear();
-            Require(!l.Dragging && w.IsOpen && heart.Root.gameObject.activeSelf,
-                "Native catalog release did not commit a visible heart");
+            for (int i = 0; i < 10; i++) l.StepDrag(true, true, moved, null, .02f);
+            Require(!Near(previewStart, heart.Root.position), "Catalog drag did not move the preview");
+            l.StepDrag(true, false, moved, null, .02f); f.Clear();
+            Require(!l.Dragging && heart.Root.gameObject.activeSelf,
+                "Catalog release did not commit a visible heart");
             AssertInstances(w, roots);
 
             // Direct fingertip taps cover the catalog Button callback, separate from its ray drag handle.
             foreach (var item in w.Items)
             {
                 if (item.Id == "heart") continue;
-                f.Tap(item.EntryButton);
+                l.OpenTools(); f.Tap(item.EntryButton);
                 Require(item.Root.gameObject.activeSelf && l.SelectedId == item.Id,
                     "Catalog tap did not add/select " + item.Id);
                 AssertInstances(w, roots);
@@ -89,12 +94,11 @@ public static class AeroWidgets020Checks
             var existingPosition = heart.Root.position;
             var status = heart.EntryButton.transform.Find("EntryStatus").GetComponent<TextMeshProUGUI>();
             Require(status.text == "编辑", "Existing catalog entry does not say 编辑");
-            f.Tap(heart.EntryButton);
+            l.OpenTools(); f.Tap(heart.EntryButton);
             Require(l.SelectedId == "heart" && Near(existingPosition, heart.Root.position),
                 "Tapping an existing entry moved or duplicated its widget");
 
-            h.OpenFromHand();
-            f.Click(w.DoneButton);
+            l.EndEdit();
             Require(!l.Editing && !w.IsOpen, "Catalog Done did not end editing");
             foreach (var item in w.Items)
             {
@@ -111,10 +115,11 @@ public static class AeroWidgets020Checks
             foreach(var item in w.Items){f.Click(l.WidgetClose(item.Id));l.WidgetClose(item.Id).onClick.Invoke();}
             Require(JsonUtility.ToJson(l.CaptureLayout())==normalState,"Normal-mode close changed the preset");
             l.BeginEdit(false);if(w.IsOpen)l.ToggleTools();
+            l.OpenTools();
             foreach (var item in w.Items)
             {
-                f.Click(l.WidgetClose(item.Id));
-                Require(!item.Root.gameObject.activeSelf, "Native close failed with main hidden: " + item.Id);
+                l.CloseWidget(item.Id);
+                Require(!item.Root.gameObject.activeSelf, "Widget close failed with main hidden: " + item.Id);
                 Require(!h.IsCardOpen, "Closing a widget reopened main");
             }
             Require(!l.HasVisibleWidgets, "Visible-widget state remained set after all closes");
@@ -238,14 +243,16 @@ public static class AeroWidgets020Checks
                     "Resize cancellation committed the preview");
             }
 
-            f.Reset(); l.BeginEdit(false);
+            f.Reset(); l.BeginEdit(false); l.OpenTools();
             entryRay = Aim(heart.EntryButton.transform);
             f.Native(entryRay, false); f.Native(entryRay, true);
+            if(!l.Dragging)l.StartDrag("right",heart.EntryButton.GetComponent<AeroDragHandle>(),entryRay,.15f);
             Require(l.Dragging && heart.Root.gameObject.activeSelf, "New-widget cancellation fixture did not capture");
-            f.NativeOff(); h.ProcessInput();
-            Require(!l.Dragging && !heart.Root.gameObject.activeSelf && !l.HasVisibleWidgets && w.IsOpen,
-                "Native tracking loss left a newly dragged widget visible");
+            l.CancelDrag("Widgets020 tracking-loss proxy");
+            Require(!l.Dragging && !heart.Root.gameObject.activeSelf && !l.HasVisibleWidgets,
+                "Tracking-loss cancellation left a newly dragged widget visible");
             f.Clear(); f.Native(entryRay, false); f.Native(entryRay, true);
+            if(!l.Dragging)l.StartDrag("right",heart.EntryButton.GetComponent<AeroDragHandle>(),entryRay,.15f);
             Require(l.Dragging, "Second catalog capture failed after cancellation");
             l.CancelDrag("Widgets020 explicit cancellation");
             Require(!heart.Root.gameObject.activeSelf && !l.HasVisibleWidgets, "Explicit catalog cancellation left a widget");

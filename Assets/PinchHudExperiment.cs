@@ -123,7 +123,7 @@ public class PinchHudExperiment : MonoBehaviour
         SampleDirectHands();
         // Batch all hand/layout transforms before the two ray queries.
         Physics.SyncTransforms();
-        bool recoverTools=focused&&Layout.Editing&&!Widgets.IsOpen&&!ToolsEntry.Visible&&!Layout.Dragging&&AeroValueSlider.Active==null&&!Profiles.ModalOpen;
+        bool recoverTools=false;
         bool recoverHud=!Layout.Editing&&!legacyEntry&&focused&&((!HandEntry.EnabledForEntry&&!IsCardOpen)||Layout.NeedsRecall);
         Compact.SetFallbackVisible(recoverTools||recoverHud,!recoverTools&&Layout.NeedsRecall,recoverTools);
         ClearHover(leftPointer);
@@ -189,7 +189,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         if(button==null||!button.isActiveAndEnabled||!button.IsInteractable()||AeroValueSlider.Active!=null||Layout.Dragging)return;
         if(Profiles!=null&&!Profiles.AllowButton(button)||!Layout.CanInteract(button.transform))return;
-        if(Layout.Editing&&!Layout.ToolbarButton(button)&&button!=Compact.OpenButton)return;
+        if(Layout.Editing&&!Layout.ToolbarButton(button)&&button!=Compact.OpenButton&&button!=hudView.CloseButton)return;
         button.onClick.Invoke();ResetPresses();Feedback.Confirm(button);
     }
     bool JointAllowed(MetaAimHand hand)
@@ -229,6 +229,7 @@ public class PinchHudExperiment : MonoBehaviour
         if(visible)hudView.PlayReveal();
     }
 #if UNITY_EDITOR
+    public void CloseCardForChecks() => CloseCard();
     public bool DirectInputForChecks;
 #endif
     public void OpenOrRecall() { if(Compact.ToolsFallbackVisible){Layout.ToggleTools();return;}if(Layout.NeedsRecall){if(!IsCardOpen)OpenFromHand();Recenter();}else if(IsCardOpen)Recenter();else OpenFromHand(); }
@@ -366,7 +367,7 @@ public class PinchHudExperiment : MonoBehaviour
             if (pointer.overCard || (Compact.FallbackVisible && hit.collider.gameObject == Compact.OpenButton.gameObject) || (HandEntry.ShortcutsVisible && hit.collider.transform.IsChildOf(HandEntry.ShortcutRoot)))
             {
                 var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
-                if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button) || button==Compact.OpenButton)) pointer.button = button;
+                if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button) || button==Compact.OpenButton || Layout.IsOwnPanel(button.transform))) pointer.button = button;
             }
         }
         // A cursor is meaningful only at a real surface, never at an arbitrary depth.
