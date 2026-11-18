@@ -15,9 +15,9 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
     const float FlashDuration = 0.14f;
     const float LostDelay = 1.2f;
     static readonly Color PressColor = new Color(0.10f, 0.42f, 0.33f, 1f);
-    const string TouchIntro = "左手手背打开 HUD，右手手背打开工具\n近处食指点按，编辑把手可捏住调整";
+    const string TouchIntro = "左手手背打开 HUD\n设置 / 布局 / 编辑布局，才会显示工具";
     const string FrontIntro = "用手射线指向前方入口\n松开手指后，再捏合打开 HUD";
-    const string HelpText = "左手手背打开 HUD，右手手背打开工具\n近处点按或捏住把手，远处射线捏合";
+    const string HelpText = "从设置 / 布局进入编辑布局\n编辑时右手打开工具，完成后收起";
 
     struct Flash
     {

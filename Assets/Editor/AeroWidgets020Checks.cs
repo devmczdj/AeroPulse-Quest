@@ -100,13 +100,17 @@ public static class AeroWidgets020Checks
             {
                 foreach (var handle in item.Root.GetComponentsInChildren<AeroDragHandle>(true))
                     Require(!handle.gameObject.activeInHierarchy, "A manipulation handle survived Done");
-                Require(l.WidgetClose(item.Id).gameObject.activeInHierarchy && l.WidgetClose(item.Id).IsInteractable(),
-                    "Done hid or disabled the permanent widget close control");
+                Require(!l.WidgetClose(item.Id).gameObject.activeSelf && !l.WidgetClose(item.Id).IsInteractable(),
+                    "Done left a widget close control active");
             }
-            f.Main.CloseButton.onClick.Invoke();
+            h.ToggleFromHand();
             Require(!h.IsCardOpen && l.HasVisibleWidgets, "Closing main also closed the metric widgets");
             foreach (var item in w.Items)
                 Require(item.Root.gameObject.activeSelf, "Main close removed " + item.Id);
+            var normalState=JsonUtility.ToJson(l.CaptureLayout());
+            foreach(var item in w.Items){f.Click(l.WidgetClose(item.Id));l.WidgetClose(item.Id).onClick.Invoke();}
+            Require(JsonUtility.ToJson(l.CaptureLayout())==normalState,"Normal-mode close changed the preset");
+            l.BeginEdit(false);if(w.IsOpen)l.ToggleTools();
             foreach (var item in w.Items)
             {
                 f.Click(l.WidgetClose(item.Id));
@@ -351,7 +355,7 @@ public static class AeroWidgets020Checks
                 if (Hud.Layout.Dragging) Hud.Layout.CancelDrag("Widgets020 cleanup");
                 if (Hud.Layout.Editing) Hud.Layout.EndEdit();
                 NativeOff(); Hud.ClearPresses();
-                Hud.ResetViewOptions(); Main.ShowMap(false); Main.CloseButton.onClick.Invoke();
+                Hud.ResetViewOptions(); Main.ShowMap(false); Hud.RestoreMainVisibility(false);
                 for (int i = 0; i < Main.Route.Count && Main.Route.CurrentIndex != routeIndex; i++) Main.Route.Advance();
             }
             finally

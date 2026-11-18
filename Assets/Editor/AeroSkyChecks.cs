@@ -17,7 +17,7 @@ public static class AeroSkyChecks
         Require(sky.transform.Find("SkyTitle")==null&&sky.transform.Find("SkyGrabHandle")==null,"Sky still has HUD title/handle");
         Require(sky.GetComponentsInChildren<Graphic>(true).Length<25,"Sky still builds hundreds of line UI objects");
         var pos=sky.transform.position;var rot=sky.transform.rotation;
-        view.CloseButton.onClick.Invoke();Require(sky.Visible&&!hud.IsCardOpen,"HUD HIDE closed sky");
+        if(hud.IsCardOpen)hud.ToggleFromHand();Require(sky.Visible&&!hud.IsCardOpen,"HUD HIDE closed sky");
         hud.OpenFromHand();Require(sky.Visible&&hud.IsCardOpen,"Hand SHOW altered independent sky");
         hud.ShowMapDetail();Require(sky.Visible&&view.IsMapOpen,"Detail view consumed sky");
         hud.Recenter();Require(Vector3.Distance(pos,sky.transform.position)<0.001f,"HUD recenter moved sky");
@@ -30,12 +30,12 @@ public static class AeroSkyChecks
         int start=view.Route.CurrentIndex;var current=sky.CurrentMarker.localPosition;view.Route.Advance();
         Require(sky.Route.CurrentIndex==(start+1)%5&&Vector3.Distance(current,sky.CurrentMarker.localPosition)>0.01f,"Shared current marker stale");
         bool cardOpen=hud.IsCardOpen;hud.ToggleSkyMap();Require(!sky.Visible&&hud.IsCardOpen==cardOpen,"Sky toggle altered HUD");
-        view.CloseButton.onClick.Invoke();hud.OpenFromHand();Require(!sky.Visible,"HUD reopen resurrected disabled sky");
+        if(hud.IsCardOpen)hud.ToggleFromHand();hud.OpenFromHand();Require(!sky.Visible,"HUD reopen resurrected disabled sky");
         hud.ToggleSkyMap();hud.SendMessage("OnApplicationFocus",false);hud.SendMessage("OnApplicationFocus",true);
         Require(sky.Visible,"Focus recovery lost sky preference");
         hud.ToggleSkyMap();hud.SendMessage("OnApplicationFocus",false);hud.SendMessage("OnApplicationFocus",true);
         Require(!sky.Visible,"Focus recovery reopened disabled sky");
-        c.transform.rotation=Quaternion.identity;hud.ShowSkyMap();hud.RecenterSky();hud.ResetViewOptions();view.ShowMap(false);view.CloseButton.onClick.Invoke();
+        c.transform.rotation=Quaternion.identity;hud.ShowSkyMap();hud.RecenterSky();hud.ResetViewOptions();view.ShowMap(false);if(hud.IsCardOpen)hud.ToggleFromHand();
         Debug.Log("[AeroPulse Sky015] PASS independent HUD/toggles/focus, no buttons/colliders/window chrome, curved batched geometry, body translation, stable heading and sustained-turn recovery, shared route");
     }
 }

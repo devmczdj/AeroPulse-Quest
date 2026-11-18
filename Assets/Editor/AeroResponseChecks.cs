@@ -26,10 +26,10 @@ public static class AeroResponseChecks
         Require(v.IsMapOpen,"Tracking recovery held pinch clicked");Point(v.MapButton.transform,false);Point(v.MapButton.transform,true);Require(!v.IsMapOpen,"Fresh press after recovery failed");
         // A press waiting for aim cannot cross an open/close or other-hand UI transition.
         h.ToggleHandEntry();h.ToggleHandEntry(); // FRONT backup
-        Point(miss.transform,false);Point(miss.transform,true);v.CloseButton.onClick.Invoke();h.ProcessInput();
+        Point(miss.transform,false);Point(miss.transform,true);if(h.IsCardOpen)h.ToggleFromHand();h.ProcessInput();
         Point(h.Compact.OpenButton.transform,true);Require(!h.IsCardOpen,"Pending press crossed HUD hide and reopened it");
         Point(h.Compact.OpenButton.transform,false);Point(h.Compact.OpenButton.transform,true);Require(h.IsCardOpen,"Fresh backup press failed");
-        v.CloseButton.onClick.Invoke();Point(miss.transform,false);Point(miss.transform,true);h.OpenFromHand();Point(v.MapButton.transform,true);
+        if(h.IsCardOpen)h.ToggleFromHand();Point(miss.transform,false);Point(miss.transform,true);h.OpenFromHand();Point(v.MapButton.transform,true);
         Require(!v.IsMapOpen,"Pending press clicked newly shown HUD");
         h.ResetViewOptions();
         // Hover alone must not freeze follow; holding an actual button still stabilizes rotation.
@@ -47,7 +47,7 @@ public static class AeroResponseChecks
         follow.SetMode(HudSoftFollow.FollowMode.Fixed);first=panel.transform.position;eye.transform.position+=Vector3.right*2;follow.SetMode(HudSoftFollow.FollowMode.Soft);follow.Tick(.02f,false);
         Require(Vector3.Distance(first,panel.transform.position)<.01f,"Fixed-to-soft carries stale walking delta");
         UnityEngine.Object.DestroyImmediate(panel);UnityEngine.Object.DestroyImmediate(eye);
-        UnityEngine.Object.DestroyImmediate(miss);h.ResetViewOptions();v.ShowMap(false);v.CloseButton.onClick.Invoke();h.HandEntry.enabled=true;
+        UnityEngine.Object.DestroyImmediate(miss);h.ResetViewOptions();v.ShowMap(false);if(h.IsCardOpen)h.ToggleFromHand();h.HandEntry.enabled=true;
         Debug.Log("[AeroPulse Response015] PASS 30 same-frame native-ray clicks, early-edge pose arrival, no held repeat/recovery click, hover follows, translation while pressing");
     }
 }

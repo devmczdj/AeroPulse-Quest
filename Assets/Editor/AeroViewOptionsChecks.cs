@@ -84,7 +84,7 @@ public static class AeroViewOptionsChecks
         Require(Vector3.Distance(held,follow.transform.position)<0.001f,"Fixed mode follows head");
         hud.Recenter();
         Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*follow.Distance)<0.02f,"Manual recenter failed in fixed mode");
-        hud.ResetViewOptions(); view.ShowMap(false); view.CloseButton.onClick.Invoke();
+        hud.ResetViewOptions(); view.ShowMap(false); if(hud.IsCardOpen)hud.ToggleFromHand();
         hud.HandEntry.enabled=true;
         Debug.Log("[AeroPulse ViewOptions] PASS: real ray settings, distance/height/reset, data/map return, empty-card and pinch follow recovery, button pause/escape, quick/fixed/recenter");
     }

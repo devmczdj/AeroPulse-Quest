@@ -70,7 +70,7 @@ public static class AeroHandBackChecks
         Require(hud.IsCardOpen,"Third fresh touch cannot reopen HUD");
         var view = GameObject.Find("PinchHudCard").GetComponent<AeroHudView>();
         view.ShowMap(true); view.Route.Advance();
-        view.CloseButton.onClick.Invoke();
+        if(hud.IsCardOpen)hud.ToggleFromHand();
         for(int i=0;i<6;i++) Sample(near);
         Require(!hud.IsCardOpen, "Held contact reopened after HIDE");
         Sample(far); Sample(near, false);
@@ -83,7 +83,7 @@ public static class AeroHandBackChecks
         Require(!hud.IsCardOpen, "Lost right tracking remained armed");
         Sample(far); for(int i=0;i<4;i++) Sample(near);
         Require(hud.IsCardOpen && view.IsMapOpen, "Map state lost on hand reopen");
-        view.CloseButton.onClick.Invoke();
+        if(hud.IsCardOpen)hud.ToggleFromHand();
         entry.Sample(true,palm,Quaternion.Euler(90,0,0),true,far,0.02f);
         Require(!entry.Visible, "Palm-side tile visible");
         entry.SendMessage("OnApplicationFocus",false); Sample(far);

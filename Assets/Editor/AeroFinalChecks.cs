@@ -18,6 +18,8 @@ public static class AeroFinalChecks
         Require(h.HandEntry.EnabledForEntry&&!h.HandEntry.ShortcutsEnabled&&Mathf.Abs(h.HandEntry.HeightOffset-0.035f)<0.0001f,"Cold hand defaults incorrect");
         Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&h.Compact.Side==AeroCompactHud.Placement.Hidden&&h.Layout.MainAnchor==AeroWindowAnchor.Follow,"Cold placement defaults incorrect");
         Require(v.Route.CurrentIndex==0&&ReferenceEquals(v.Route,h.Sky.Route)&&ReferenceEquals(v.Route,h.Compact.Route),"Cold route state not fresh/shared");
+        Require(!h.ToolsEntry.Visible&&!h.Widgets.IsOpen,"Cold scene exposes editing tools");
+        foreach(var item in h.Widgets.Items)Require(!h.Layout.WidgetClose(item.Id).gameObject.activeSelf&&!h.Layout.WidgetClose(item.Id).IsInteractable(),"Cold scene exposes widget close");
         foreach(var text in All<TextMeshProUGUI>()){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Text overflow: "+text.name);}
         Debug.Log("[AeroPulse Final] PASS cold/reloaded scene: one owner/window set, defaults, shared fresh route, text fit");
     }
@@ -45,10 +47,10 @@ public static class AeroFinalChecks
             Require(h.Sky.Visible!=skyWas&&v.gameObject.activeSelf,"Sky toggle changed HUD visibility");
             Click(v.MapView.AdvanceButton);Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
             h.ShowMapDetail();Require(v.gameObject.activeSelf&&v.IsMapOpen,"Repeated DETAIL failed");
-            Click(v.CloseButton);Require(!h.IsCardOpen,"Repeated HIDE failed");
+            Require(!v.CloseButton.gameObject.activeSelf,"Normal journey exposes editor close");h.ToggleFromHand();Require(!h.IsCardOpen,"Repeated hand HIDE failed");
             h.OpenFromHand();Require(h.IsCardOpen&&v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated reopen lost route");
         }
-        h.ResetViewOptions();v.CloseButton.onClick.Invoke();h.HandEntry.enabled=true;
+        h.ResetViewOptions();h.RestoreMainVisibility(false);h.HandEntry.enabled=true;
         Debug.Log("[AeroPulse Final] PASS 20 native-ray journeys: MAP/SKY/ADVANCE/DETAIL/HIDE/reopen and shared route");
     }
 }

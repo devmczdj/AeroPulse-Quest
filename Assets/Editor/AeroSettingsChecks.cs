@@ -27,7 +27,8 @@ public static class AeroSettingsChecks
         Click(v.SettingsButton);Require(v.IsMapOpen&&v.Route.CurrentIndex==route,"Return lost previous route page");Click(v.SettingsButton);
         Click(s.TabButtons[0]);Click(s.SkyOptions[0]);Click(s.SkyOptions[0]);Require(!h.Sky.Visible&&h.IsCardOpen,"Explicit sky off cycled");
         Click(s.SkyOptions[1]);Click(s.SkyOptions[1]);Require(h.Sky.Visible,"Explicit sky on cycled");
-        Require(s.WidgetLibraryButton.gameObject.activeInHierarchy&&!s.CompactOptions[2].gameObject.activeInHierarchy,"Widget catalog did not replace legacy compact choices");
+        Require(s.WidgetLibraryButton.gameObject.activeInHierarchy&&!s.CompactOptions[2].gameObject.activeInHierarchy,"Layout settings shortcut is missing");
+        Click(s.WidgetLibraryButton);Require(s.LayoutPage&&!h.Layout.Editing,"Display shortcut entered edit instead of opening layout settings");
         Click(s.TabButtons[1]);Click(s.EntryOptions[2]);Click(s.EntryOptions[2]);Require(!h.HandEntry.EnabledForEntry&&!h.Feedback.HandEntryEnabled,"Front entry state/help diverged");
         h.SetHandHeight(.045f);h.SetHandHeight(.045f);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
         Click(s.SoundOptions[1]);Require(h.Feedback.SoundEnabled,"Sound selection not bound");Click(s.HelpButton);Require(h.Feedback.Visible&&h.Feedback.Message.Contains("前方"),"Front help teaches hidden hand entry");
@@ -55,7 +56,7 @@ public static class AeroSettingsChecks
         Click(v.SettingsButton);Click(s.TabButtons[2]);Require(!s.DistanceOptions[0].IsInteractable()&&s.CurrentModeLabel.text.Contains("随左手"),"Attached distance/status not reflected");
         var handPosition=v.transform.position;Require(!h.SetPanelDistance(1.4f)&&l.MainAnchor==AeroWindowAnchor.Hand&&Vector3.Distance(handPosition,v.transform.position)<.001f,"Disabled distance detaches window");
         Click(s.RecenterButton);Require(l.MainAnchor==AeroWindowAnchor.Follow&&s.DistanceOptions[0].IsInteractable()&&string.IsNullOrEmpty(s.CurrentModeLabel.text),"Recenter did not refresh actual mode");
-        l.DeltaForChecks=0;h.ResetViewOptions();h.ShowSkyMap();v.ShowMap(false);v.CloseButton.onClick.Invoke();h.HandEntry.enabled=true;
+        l.DeltaForChecks=0;h.ResetViewOptions();h.ShowSkyMap();v.ShowMap(false);h.RestoreMainVisibility(false);h.HandEntry.enabled=true;
         Debug.Log("[AeroPulse Settings016] PASS fixed tabs, actual-ray explicit/idempotent choices, return state, scoped reset/cancel, no hidden inputs, adaptive targets, attached distance guard and recenter status, Chinese glyphs/fit");
     }
     public static void Feedback()

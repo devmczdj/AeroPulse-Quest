@@ -40,7 +40,10 @@ public static class AeroHandTools023Checks
             if (layout.Dragging) layout.CancelDrag("Check setup"); if (layout.Editing) layout.EndEdit();
             widgets.SetOpen(false); NativeOff(); h.ClearPresses();
             Sample(Vector3.zero, true, false);
-            Require(tools.Visible && tools.Button.GetComponent<Collider>().enabled, "Right-hand entry is not visible/hittable");
+            Require(!tools.Visible&&!tools.Button.IsInteractable(),"Normal mode exposes wrist tools");
+            tools.Button.onClick.Invoke();layout.ToggleTools();Require(!layout.Editing&&!widgets.IsOpen,"Normal wrist action entered editing");
+            layout.BeginEdit(false);if(widgets.IsOpen)layout.ToggleTools();Sample(Vector3.zero,true,false);
+            Require(tools.Visible && tools.Button.GetComponent<Collider>().enabled, "Editor right-hand entry is not visible/hittable");
             bool mainOpen = h.IsCardOpen;
             var point = tools.Button.transform.position; var aim = Quaternion.LookRotation(tools.Button.transform.forward);
             // Test far rays before touch activation marks this frame as consumed.

@@ -164,7 +164,7 @@ public static class AeroNear021Checks
         {
             near.SetPaused(false); near.ResetGates(); NativeOff();
             if (layout.Editing) layout.EndEdit();
-            hud.ResetViewOptions(); main.ShowMap(false); main.CloseButton.onClick.Invoke();
+            hud.ResetViewOptions(); main.ShowMap(false); if(hud.IsCardOpen)hud.ToggleFromHand();
             hud.DirectInputForChecks = direct; hud.HandEntry.enabled = handEnabled; layout.DeltaForChecks = checkDelta;
             eye.transform.parent.SetPositionAndRotation(parentPose.position, parentPose.rotation);
             eye.transform.SetLocalPositionAndRotation(localEye.position, localEye.rotation);

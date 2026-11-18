@@ -33,7 +33,7 @@ public static class AeroToolsOcclusion023Checks
             Require(h.DirectTouch.PressedButtonThisSample==close&&!h.IsCardOpen,"Exposed child close stopped responding");
             h.OpenFromHand();l.ToggleTools();h.Near.ResetGates();grip=l.CardHandle.transform.position-l.CardHandle.transform.forward*.008f;
             h.Near.Sample(false,Vector3.zero,Vector3.zero,true,grip+Vector3.up*.028f,grip-Vector3.up*.028f,.02f);h.Near.Sample(false,Vector3.zero,Vector3.zero,true,grip+Vector3.up*.009f,grip-Vector3.up*.009f,.02f);
-            Require(l.NearDragging,"Closing tools did not restore near editing");h.Near.ResetGates();l.EndEdit();
+            Require(l.NearDragging,"Closing tools did not restore near editing");h.Near.ResetGates();
             h.ToolsEntry.SetPaused(false);h.ToolsEntry.Sample(true,new Vector3(.22f,1.35f,.5f),Quaternion.Euler(-90,0,0),false,Vector3.zero,.02f);
             Require(h.ToolsEntry.Visible,"Right entry setup failed");var entry=h.ToolsEntry.Button;
             main.SetPositionAndRotation(entry.transform.position-entry.transform.forward*.05f,entry.transform.rotation);Physics.SyncTransforms();

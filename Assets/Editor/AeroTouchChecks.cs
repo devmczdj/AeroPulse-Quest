@@ -144,7 +144,7 @@ public static class AeroTouchChecks
             }
 
             // The left-hand entry uses its visible surface, confirming an index tap without pinch.
-            v.ShowMap(false);v.CloseButton.onClick.Invoke();h.ResetViewOptions();NativeOff();Clear();
+            v.ShowMap(false);h.RestoreMainVisibility(false);h.ResetViewOptions();NativeOff();Clear();
             Vector3 palm=c.transform.position+new Vector3(-.15f,-.25f,.45f);Quaternion back=Quaternion.Euler(-90,0,0);Vector3 normal=back*Vector3.up;
             h.HandEntry.Sample(true,palm,back,false,Vector3.zero,.02f);var surface=h.HandEntry.Surface.position;
             h.HandEntry.Sample(true,palm,back,true,surface+normal*.04f,.02f);
@@ -173,7 +173,7 @@ public static class AeroTouchChecks
         {
             v.MapButton.onClick.RemoveListener(count);v.MapButton.interactable=true;
             h.SendMessage("OnApplicationFocus",true);h.ClearPresses();NativeOff();touch.Sample(false,Vector3.zero,false,Vector3.zero,.02f);
-            h.DirectInputForChecks=false;h.HandEntry.enabled=true;h.ResetViewOptions();h.ShowSkyMap();v.ShowMap(false);v.CloseButton.onClick.Invoke();
+            h.DirectInputForChecks=false;h.HandEntry.enabled=true;h.ResetViewOptions();h.ShowSkyMap();v.ShowMap(false);h.RestoreMainVisibility(false);
         }
     }
 }

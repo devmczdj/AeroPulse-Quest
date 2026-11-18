@@ -25,7 +25,7 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
     int activatedFrame = -1;
 
     bool Blocked => paused || owner == null || !owner.isActiveAndEnabled || owner.Layout == null ||
-        owner.Layout.Dragging || AeroValueSlider.Active != null ||
+        !owner.Layout.Editing || owner.Layout.Dragging || AeroValueSlider.Active != null ||
         owner.Profiles != null && (owner.Profiles.ModalOpen || owner.Profiles.KeyboardInputActive);
 
     public void Initialize(Camera camera, PinchHudExperiment hud)
@@ -109,6 +109,13 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
         Paint();
     }
 
+    public void RefreshAvailability()
+    {
+        if(Root==null||Button==null)return;
+        bool show=AnchorTracked&&!Blocked;Root.gameObject.SetActive(show);Button.interactable=show;
+        if(show)Root.SetPositionAndRotation(Surface.position,Surface.rotation);
+        RequireRelease();Paint();
+    }
     public void RequireRelease() { gate = default; touchHover = false; }
     public void SetPaused(bool value)
     {

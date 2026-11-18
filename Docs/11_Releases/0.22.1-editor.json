@@ -1,0 +1,150 @@
+{
+  "version": "0.22.1",
+  "editor": "6000.6.9f1",
+  "checks": [
+    {
+      "check": "AeroFinalChecks.Cold",
+      "frame": 1726,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroEditMode024Checks.Run",
+      "frame": 1760,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroHandTools023Checks.Run",
+      "frame": 1794,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroWidgets020Checks.Run",
+      "frame": 1827,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroInputReview022Checks.Run",
+      "frame": 1861,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroToolsOcclusion023Checks.Run",
+      "frame": 1894,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSettingsChecks.Run",
+      "frame": 1928,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroTouchChecks.Run",
+      "frame": 1962,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroResponseChecks.Run",
+      "frame": 1996,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroLayers023Checks.Run",
+      "frame": 2029,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroNativeKeyboard023Checks.Run",
+      "frame": 2063,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroProfilesUi021Checks.Run",
+      "frame": 2097,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroNear021Checks.Run",
+      "frame": 2131,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroLayoutPersistence021Checks.Run",
+      "frame": 2165,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroLayoutReview022Checks.TrackingIsolation",
+      "frame": 2199,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroLayoutReview022Checks.ToolbarRecovery",
+      "frame": 2233,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSettingsChecks.Feedback",
+      "frame": 2267,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroHandBackChecks.RunGate",
+      "frame": 2301,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroSkyChecks.Run",
+      "frame": 2335,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroShortcutChecks.Run",
+      "frame": 2369,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroGlassChecks.Run",
+      "frame": 2403,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroCatalog023Checks.Run",
+      "frame": 2436,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroProfileStore021Checks.Run",
+      "frame": 2470,
+      "result": "PASS"
+    },
+    {
+      "check": "AeroFinalChecks.RepeatedJourney",
+      "frame": 2503,
+      "result": "PASS"
+    }
+  ],
+  "console": {
+    "entries": [],
+    "cursor": 444,
+    "session": "d599df9737c54b0c818b2f0cf80574d3",
+    "returned": 0,
+    "dropped": false,
+    "reset": false,
+    "counts": {
+      "error": 0,
+      "warn": 0,
+      "log": 441
+    },
+    "groundTruth": {
+      "sampledUtc": "2026-11-18T02:28:15.716561Z",
+      "ageMs": 122,
+      "compilationFailed": false,
+      "compiling": false,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "consoleLogs": 441,
+      "seeded": true
+    }
+  },
+  "hardware": "Quest 2 acceptance pending"
+}

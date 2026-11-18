@@ -74,9 +74,9 @@ public class AeroHudSettingsView : MonoBehaviour
         }
         foreach(var old in view.CompactOptions)old.gameObject.SetActive(false);
         display.Find("CompactHeading").GetComponent<TextMeshProUGUI>().text="组件";
-        view.WidgetLibraryButton=view.Button(display,"WidgetLibrary","组件列表",new Vector2(-16,8),new Vector2(296,44));
-        AeroUiIcons.Label(view.WidgetLibraryButton,"picture-in-picture","组件列表");
-        view.WidgetLibraryButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.Layout.BeginEdit(false);});
+        view.WidgetLibraryButton=view.Button(display,"WidgetLibrary","布局设置",new Vector2(-16,8),new Vector2(296,44));
+        AeroUiIcons.Label(view.WidgetLibraryButton,"picture-in-picture","布局设置");
+        view.WidgetLibraryButton.onClick.AddListener(()=>view.SelectTab(SettingsTab.Layout));
         view.Heading(display,"SkyRecallHeading","天空位置",-68);
         view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(-16,-68),new Vector2(296,44));
         view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.RecenterSky();});

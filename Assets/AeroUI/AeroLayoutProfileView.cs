@@ -128,7 +128,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public bool SaveCurrent()
     {
-        if (owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardInputActive) return false;
         var profile = Store.Find(Store.Data.activeId);
         if (profile == null) { OpenName(false); return false; }
         if (!Store.TryReplace(profile.id, owner.Layout.CaptureLayout())) { Failure("保存失败；原档案保持"); return false; }
@@ -138,7 +138,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public bool SaveAs(string name)
     {
-        if (owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardInputActive) return false;
         if (!NameValid(name, null, out string error)) { Failure(error); return false; }
         if (!Store.TryAdd(name, owner.Layout.CaptureLayout(), out var profile)) { Failure("保存失败；当前布局保持"); return false; }
         IsDirty = false; page = (Store.Data.profiles.Length - 1) / rows.Length; message = "已保存并启用 " + profile.name;
@@ -148,7 +148,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     public bool RenameCurrent(string name)
     {
         var profile = Store.Find(Store.Data.activeId);
-        if (profile == null || owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || profile == null || owner.Layout.Dragging || KeyboardInputActive) return false;
         if (!NameValid(name, profile.id, out string error)) { Failure(error); return false; }
         if (!Store.TryRename(profile.id, name)) { Failure("改名失败；原名称保持"); return false; }
         message = "名称已更新"; Refresh(); CompleteToolAction(); return true;
@@ -156,7 +156,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public void RequestActivate(string id)
     {
-        if (ModalOpen || owner.Layout.Dragging || Store.Find(id) == null || id == Store.Data.activeId) return;
+        if (!owner.Layout.Editing || ModalOpen || owner.Layout.Dragging || Store.Find(id) == null || id == Store.Data.activeId) return;
         pendingId = id;
         if (IsDirty)
         {
@@ -206,7 +206,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void OpenName(bool rename, bool keepPending = false)
     {
-        if (owner.Layout.Dragging) return;
+        if (!owner.Layout.Editing || owner.Layout.Dragging) return;
         if (!rename && Store.Data.profiles.Length >= AeroLayoutProfileStore.MaxProfiles) { Failure("最多保存 12 个档案"); return; }
         var active = Store.Find(Store.Data.activeId);
         if (rename && active == null) return;
@@ -234,6 +234,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void CompleteToolAction()
     { if (!ModalOpen && !KeyboardInputActive) owner.Layout.ToolActionCompleted(); }
+
+    public void EndEditing()=>CancelModal();
 
     void CancelModal()
     {

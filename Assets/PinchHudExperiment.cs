@@ -306,7 +306,7 @@ public class PinchHudExperiment : MonoBehaviour
                       " flags=" + (hand != null ? hand.aimFlags.ReadValue().ToString() : "none"));
             pointer.wasValid = valid;
         }
-        bool showRay = ToolsEntry!=null&&ToolsEntry.Visible || IsCardOpen || Layout.Editing || Layout.HasVisibleWidgets || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
+        bool showRay = ToolsEntry!=null&&ToolsEntry.Visible || IsCardOpen || Layout.Editing || Compact.FallbackVisible || (HandEntry != null && (!HandEntry.EnabledForEntry || HandEntry.ShortcutsVisible));
         pointer.line.enabled = valid && showRay;
         pointer.tip.gameObject.SetActive(false);
         pointer.target = null;
@@ -561,7 +561,7 @@ public class PinchHudExperiment : MonoBehaviour
         closeButton = hudView.CloseButton;
         follow = card.AddComponent<HudSoftFollow>();
         follow.Initialize(view.transform);
-        closeButton.onClick.AddListener(CloseCard);
+        closeButton.onClick.AddListener(()=>{if(Layout!=null&&Layout.Editing&&!Layout.IsPreviewing)CloseCard();});
         card.SetActive(false);
     }
 

@@ -82,7 +82,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         nextValue.fontSize = 30;
         timerValue = AddItem("timer", "会话计时", "rotate-ccw", "00:00", "应用运行时长");
 
-        DoneButton = AeroHudView.ActionButton(CatalogRoot, "CatalogDone", "完成",
+        DoneButton = AeroHudView.ActionButton(CatalogRoot, "CatalogDone", "完成编辑",
             new Vector2(0, -238), new Vector2(352, 52), new Vector3(352, 52, 8));
         var doneLabel = DoneButton.GetComponentInChildren<TextMeshProUGUI>(true);
         doneLabel.font = AeroUiFonts.Interface;

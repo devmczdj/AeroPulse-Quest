@@ -57,17 +57,8 @@ public static class AeroInputReview022Checks
         void WidgetOnly()
         {
             ResetLayout(); l.BeginEdit(false); l.AddWidget("heart"); l.EndEdit();
-            v.CloseButton.onClick.Invoke(); Clear();
+            h.ToggleFromHand(); Clear();
             Require(!h.IsCardOpen && l.HasVisibleWidgets, "Widget-only arrangement missing");
-        }
-        void CheckSteadyWidget(string context)
-        {
-            Require(h.FollowPaused, context + ": hidden main card disabled interaction pause");
-            var root = l.WidgetRoot("heart"); var position = root.position;
-            c.transform.rotation = Quaternion.Euler(0, 45, 0);
-            // Above the0.32s follow delay, below the0.6s hold timeout.
-            for (int i = 0; i < 20; i++) l.Tick(.02f, h.FollowPaused);
-            Require(Close(root.position, position), context + ": widget moved away during interaction");
         }
         try
         {
@@ -76,33 +67,27 @@ public static class AeroInputReview022Checks
             h.SendMessage("OnApplicationFocus", true);
 
             WidgetOnly(); var close = l.WidgetClose("heart");
-            var point = close.transform.position - close.transform.forward * .03f;
-            h.DirectTouch.Sample(false, Vector3.zero, true, point, .02f); h.ProcessInput();
-            Require(h.DirectTouch.HoverRight == close && h.DirectTouch.NearRight, "Near widget target not acquired");
-            CheckSteadyWidget("Direct touch");
-
-            WidgetOnly(); close = l.WidgetClose("heart");
-            // Recover already pinched so the ray holds the target but cannot activate its X.
-            AeroHandRayChecks.Frame(MetaAimHand.right, close.transform.position - close.transform.forward * .15f,
-                Quaternion.LookRotation(close.transform.forward), true, parent);
-            h.ProcessInput();
-            Require(l.WidgetRoot("heart").gameObject.activeSelf, "Held recovery pinch unexpectedly closed widget");
-            CheckSteadyWidget("Held ray");
+            Require(!close.gameObject.activeSelf&&!close.IsInteractable(),"Normal widget still offers close input");
+            var unchanged=JsonUtility.ToJson(l.CaptureLayout());var point=close.transform.position;
+            foreach(float depth in new[]{.03f,.001f,.03f}){h.DirectTouch.Sample(false,Vector3.zero,true,point-close.transform.forward*depth,.02f);h.ProcessInput();}
+            Require(h.DirectTouch.HoverRight!=close&&h.DirectTouch.PressedButtonThisSample!=close,"Normal widget accepted direct input");
+            Clear();foreach(bool pressed in new[]{false,true,false}){AeroHandRayChecks.Frame(MetaAimHand.right,point-close.transform.forward*.15f,Quaternion.LookRotation(close.transform.forward),pressed,parent);h.ProcessInput();}
+            Require(JsonUtility.ToJson(l.CaptureLayout())==unchanged,"Normal widget ray altered layout");
 
             ResetLayout(); var before = h.Follow.transform.position;
-            v.CloseButton.onClick.Invoke(); var walk = Vector3.right * 2;
+            h.ToggleFromHand(); var walk = Vector3.right * 2;
             c.transform.position += walk; l.Tick(.02f, false); h.OpenFromHand(); l.Tick(.02f, false);
             Require(Close(h.Follow.transform.position, before + walk), "Hidden soft panel reopened at its old room position");
 
             ResetLayout(); h.SetFollowMode(HudSoftFollow.FollowMode.Fixed);
-            before = h.Follow.transform.position; v.CloseButton.onClick.Invoke();
+            before = h.Follow.transform.position; h.ToggleFromHand();
             c.transform.position += walk; l.Tick(.02f, false); h.OpenFromHand(); l.Tick(.02f, false);
             Require(Close(h.Follow.transform.position, before), "Hidden world-fixed panel traveled with the viewer");
 
             Require(c.GetComponent<GazeInteractor>().pinchExperimentEnabled && c.transform.Find("GazeReticle") == null,
                 "Pinch scene still builds the unused gaze reticle");
             CheckLegacyReticle();
-            Debug.Log("[AeroPulse InputReview022] PASS widget-only direct/ray stabilization, hidden soft translation/reopen, fixed-world control, no hidden pinch reticle and legacy gaze fallback. Quest latency and comfort not measured.");
+            Debug.Log("[AeroPulse InputReview022] PASS normal widget input lock, hidden soft translation/reopen, fixed-world control, no hidden pinch reticle and legacy gaze fallback. Quest latency and comfort not measured.");
         }
         finally
         {
