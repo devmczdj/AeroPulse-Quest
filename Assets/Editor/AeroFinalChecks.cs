@@ -47,7 +47,7 @@ public static class AeroFinalChecks
             Require(h.Sky.Visible!=skyWas&&v.gameObject.activeSelf,"Sky toggle changed HUD visibility");
             Click(v.MapView.AdvanceButton);Require(v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated ADVANCE failed");
             h.ShowMapDetail();Require(v.gameObject.activeSelf&&v.IsMapOpen,"Repeated DETAIL failed");
-            Require(!v.CloseButton.gameObject.activeSelf,"Normal journey exposes editor close");h.ToggleFromHand();Require(!h.IsCardOpen,"Repeated hand HIDE failed");
+            Click(v.CloseButton);Require(!h.IsCardOpen,"Main close did not hide the HUD");
             h.OpenFromHand();Require(h.IsCardOpen&&v.Route.CurrentIndex==(before+1)%v.Route.Count,"Repeated reopen lost route");
         }
         h.ResetViewOptions();h.RestoreMainVisibility(false);h.HandEntry.enabled=true;

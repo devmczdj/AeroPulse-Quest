@@ -219,8 +219,17 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         toolbar.SetParent(selected.Root,false);toolbar.anchoredPosition=new Vector2(0,-((RectTransform)selected.Root).rect.height/2-112);
         sizeLabel.transform.SetParent(selected.Root,false);sizeLabel.rectTransform.anchoredPosition=new Vector2(((RectTransform)selected.Root).rect.width/2-140,-((RectTransform)selected.Root).rect.height/2-32);
         toolbar.gameObject.SetActive(visible&&!IsPreviewing&&ActiveInScope(selected));SetToolbarRendering(!paused&&selected.Canvas.enabled);sizeLabel.gameObject.SetActive(false);
-        main.Root.GetComponent<AeroHudView>().SetLayoutEditing(visible);main.Close.interactable=visible&&!IsPreviewing;var group=main.Close.GetComponent<CanvasGroup>();if(group!=null)group.alpha=1;
-        foreach(var p in panels){if(p.Close!=null){p.Close.interactable=visible&&!IsPreviewing;p.Close.gameObject.SetActive(visible&&!IsPreviewing);}SetRendering(p,!paused&&(p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked));}
+        main.Root.GetComponent<AeroHudView>().SetLayoutEditing(visible);var group=main.Close.GetComponent<CanvasGroup>();if(group!=null)group.alpha=1;
+        foreach (var p in panels)
+        {
+            if (p.Close != null)
+            {
+                bool showClose = !IsPreviewing && (p == main || visible);
+                p.Close.interactable = showClose;
+                p.Close.gameObject.SetActive(showClose);
+            }
+            SetRendering(p,!paused&&(p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked));
+        }
         owner.Widgets.SetEditingView(EditingLayer,IsPreviewing);if(owner.ToolsEntry!=null)owner.ToolsEntry.RefreshAvailability();RefreshEditor();Physics.SyncTransforms();
     }
     static bool IsEnvironment(Panel p)=>p.Anchor==AeroWindowAnchor.Follow||p.Anchor==AeroWindowAnchor.World;
@@ -465,7 +474,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
             if(p==small)continue;
             Vector3 position=p.Anchor==AeroWindowAnchor.Follow?p.Follow.Offset.position
                 :p.Anchor==AeroWindowAnchor.World?eye.transform.InverseTransformPoint(p.Root.position):p.Local.position;
-            states.Add(new AeroPanelState{id=p.Key,visible=p.Root.gameObject.activeSelf,placed=p.Placed,
+            states.Add(new AeroPanelState{id=p.Key,visible=p==main?owner.PreferredMainVisibility:p.Root.gameObject.activeSelf,placed=p.Placed,
                 anchor=(int)p.Anchor,position=position,physicalScale=p.Root.localScale.x,userScale=p.Follow.UserScale,
                 followMode=(int)p.Follow.Mode,speed=(int)p.Speed,pinned=p.Pinned});
         }
@@ -495,7 +504,12 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
                 }
                 else ApplyAttached(p);
                 p.Root.localScale=Vector3.one*saved.physicalScale;
-                if(p==main)owner.RestoreMainVisibility(saved.visible);else owner.Widgets.SetItemVisible(p.Key,saved.visible);
+                if (p == main)
+                {
+                    owner.MainVisibilityPreference = saved.visible;
+                    owner.RestoreMainVisibility(saved.visible);
+                }
+                else owner.Widgets.SetItemVisible(p.Key,saved.visible);
                 p.Tracked=p.Anchor!=AeroWindowAnchor.Hand||owner.HandEntry.AnchorTracked;
                 SetRendering(p,!paused&&p.Tracked);Face(p);
                 p.Saved[(int)p.Anchor]=p.Anchor==AeroWindowAnchor.World?new Pose(p.Root.position,p.Root.rotation)

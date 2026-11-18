@@ -11,6 +11,9 @@ public class PinchHudExperiment : MonoBehaviour
     public bool HasTrackedHand { get; private set; }
     public bool IsCardOpen => card != null && card.activeSelf;
     public bool IsCardVisible => IsCardOpen&&cardCanvas!=null&&cardCanvas.enabled;
+    // Before the first layout is saved, use the current card state as its default.
+    internal bool? MainVisibilityPreference { get; set; }
+    internal bool PreferredMainVisibility => MainVisibilityPreference ?? IsCardOpen;
     Canvas cardCanvas;
     public AeroSkyMap Sky { get; private set; }
     bool legacyEntry;
@@ -247,7 +250,7 @@ public class PinchHudExperiment : MonoBehaviour
     }
     public void ShowDetailForLayout()
     {
-        if(hudView.IsSettingsOpen)hudView.ToggleSettings();bool wasOpen=card.activeSelf;card.SetActive(true);Layout.PlaceOpenedCard();if(!wasOpen&&Profiles!=null)Profiles.MarkChanged();
+        if(hudView.IsSettingsOpen)hudView.ToggleSettings();card.SetActive(true);Layout.PlaceOpenedCard();
     }
     public void ToggleHandEntry()
     {
@@ -470,23 +473,31 @@ public class PinchHudExperiment : MonoBehaviour
 
     void OpenCard(GazeHotspot target)
     {
-        bool wasOpen=card.activeSelf;
+        RecordMainVisibilityEdit(true);
         card.SetActive(true);
         if(Layout!=null)Layout.PlaceOpenedCard();else follow.SnapToView();
         if (hudView != null) hudView.PlayReveal();
         if (target != null) target.SetGazed(false);
         entry.gameObject.SetActive(false);
-        if(!wasOpen&&Profiles!=null)Profiles.MarkChanged();
         Debug.Log("[AeroPulse Hands] OPEN " + (target != null ? target.label : "HAND BACK"));
+    }
+
+    void RecordMainVisibilityEdit(bool visible)
+    {
+        if (Layout == null || !Layout.Editing) return;
+        bool changed = visible != PreferredMainVisibility;
+        MainVisibilityPreference = visible;
+        if (changed) Profiles.MarkChanged();
     }
 
     void CloseCard()
     {
+        if (!IsCardOpen || Layout.IsPreviewing || Layout.Dragging || Profiles.ModalOpen) return;
+        RecordMainVisibilityEdit(false);
         ClearPresses();
 
         if (HandEntry != null) HandEntry.RequireRelease();
         card.SetActive(false);if(Layout!=null)Layout.MainHidden();
-        if(Profiles!=null)Profiles.MarkChanged();
         var forward = Vector3.ProjectOnPlane(view.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
         entry.transform.position = view.transform.position + forward * 3f - Vector3.up * 0.2f;
@@ -561,7 +572,7 @@ public class PinchHudExperiment : MonoBehaviour
         closeButton = hudView.CloseButton;
         follow = card.AddComponent<HudSoftFollow>();
         follow.Initialize(view.transform);
-        closeButton.onClick.AddListener(()=>{if(Layout!=null&&Layout.Editing&&!Layout.IsPreviewing)CloseCard();});
+        closeButton.onClick.AddListener(CloseCard);
         card.SetActive(false);
     }
 
