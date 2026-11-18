@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.XR.Hands;
 
 public static class AeroHandBackChecks
@@ -32,9 +30,8 @@ public static class AeroHandBackChecks
     {
         RunGate();
         var hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
-        hud.LegacyEntryForChecks(true);
-        try { AeroHandRayChecks.Run(); AeroHandRayChecks.RunMap(); }
-        finally { hud.LegacyEntryForChecks(false); }
+        AeroHandRayChecks.Run();
+        AeroHandRayChecks.RunMap();
         var entry = hud.HandEntry;
         // Disable the live reader while injecting samples into the same processing method.
         entry.enabled = false;
@@ -47,12 +44,13 @@ public static class AeroHandBackChecks
         Sample(Vector3.zero, true, false);
         Require(entry.Visible, "Hand-back tile missing");
         Require(GameObject.Find("Hotspot-SPORTS-HUD") == null, "Old orb still visible");
-        Vector3 center = entry.ContactSurface.position, normal = root * Vector3.up;
-        Vector3 far = center + normal * 0.05f, near = center + normal * 0.005f;
+        Vector3 center = entry.Surface.position, normal = root * Vector3.up;
+        Vector3 contactAnchor = entry.ContactSurface.position;
+        Vector3 far = center + normal * 0.05f, near = center + normal * 0.002f;
         for (int i=0;i<6;i++) Sample(near);
         Require(!hud.IsCardOpen, "Initial overlapping finger auto-opened");
         Sample(far);
-        for (int i=0;i<4;i++) Sample(center - normal * 0.03f);
+        for (int i=0;i<4;i++) Sample(center - normal * 0.04f);
         Require(!hud.IsCardOpen, "Backside contact opened");
         Sample(far);
         for (int i=0;i<4;i++) Sample(near + Vector3.right * 0.1f);
@@ -94,26 +92,13 @@ public static class AeroHandBackChecks
         var localPalm = space.InverseTransformPoint(palm);
         var localRoot = Quaternion.Inverse(space.rotation) * root;
         entry.SampleTracking(true, localPalm, localRoot, false, Vector3.zero, space, 0.02f);
-        Require(Vector3.Distance(entry.ContactSurface.position, center)<0.001f, "Tracking translation wrong");
+        Require(Vector3.Distance(entry.ContactSurface.position, contactAnchor)<0.001f, "Tracking translation wrong");
         Require(Quaternion.Angle(entry.Surface.rotation, Quaternion.LookRotation(-normal,root*Vector3.forward))<0.01f,
                 "Tracking rotation wrong");
         // A held pinch may not click HIDE in the same frame as hand-touch opening.
         Vector3 origin = new Vector3(0.25f,1.3f,0.2f);
         Quaternion aim = Quaternion.LookRotation(view.CloseButton.transform.position-origin);
-        void RightAim(bool pressed)
-        {
-            var hand = MetaAimHand.right;
-            using (StateEvent.From(hand,out var e))
-            {
-                hand.isTracked.WriteValueIntoEvent(1f,e);
-                hand.aimFlags.WriteValueIntoEvent((int)(MetaAimFlags.Valid|MetaAimFlags.Computed),e);
-                hand.indexPressed.WriteValueIntoEvent(pressed?1f:0f,e);
-                hand.pinchStrengthIndex.WriteValueIntoEvent(pressed?1f:0f,e);
-                hand.devicePosition.WriteValueIntoEvent(space.InverseTransformPoint(origin),e);
-                hand.deviceRotation.WriteValueIntoEvent(Quaternion.Inverse(space.rotation)*aim,e);
-                InputState.Change(hand,e,InputUpdateType.Editor);
-            }
-        }
+        void RightAim(bool pressed) => AeroHandRayChecks.Frame(MetaAimHand.right,origin,aim,pressed,space);
         RightAim(false); hud.ProcessInput();
         Sample(far);
         RightAim(true);

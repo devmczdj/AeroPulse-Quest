@@ -132,6 +132,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         var profile = Store.Find(Store.Data.activeId);
         if (profile == null) { OpenName(false); return false; }
         if (!Store.TryReplace(profile.id, owner.Layout.CaptureLayout())) { Failure("保存失败；原档案保持"); return false; }
+        owner.MainVisibilityPreference = owner.PreferredMainVisibility;
         IsDirty = false; message = "已保存"; Refresh(); CompleteToolAction();
         return true;
     }
@@ -141,6 +142,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardInputActive) return false;
         if (!NameValid(name, null, out string error)) { Failure(error); return false; }
         if (!Store.TryAdd(name, owner.Layout.CaptureLayout(), out var profile)) { Failure("保存失败；当前布局保持"); return false; }
+        owner.MainVisibilityPreference = owner.PreferredMainVisibility;
         IsDirty = false; page = (Store.Data.profiles.Length - 1) / rows.Length; message = "已保存并启用 " + profile.name;
         Refresh(); CompleteToolAction(); return true;
     }
@@ -182,6 +184,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         var target = Store.Find(id);
         if (target == null) { Failure("档案不存在"); return false; }
         var previous = owner.Layout.CaptureLayout();
+        bool wasOpen = owner.IsCardOpen;
+        var previousPreference = owner.MainVisibilityPreference;
         bool applied;
         applying = true;
         try
@@ -190,6 +194,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
             if (applied && !Store.TryActivate(id))
             {
                 owner.Layout.ApplyLayout(previous);
+                owner.MainVisibilityPreference = previousPreference;
+                owner.RestoreMainVisibility(wasOpen);
                 applied = false;
             }
         }
@@ -442,18 +448,21 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         readonly AeroLayoutProfileView view;
         readonly AeroLayoutProfileStore previous;
         readonly bool dirty, restored;
+        readonly bool? visibilityPreference;
         readonly string priorMessage;
         readonly int priorPage;
         public CheckStoreScope(AeroLayoutProfileView view, string path)
         {
             if (view.ModalOpen) throw new InvalidOperationException("Close profile dialog before running checks");
             this.view = view; previous = view.Store; dirty = view.IsDirty; restored = view.restoreAttempted;
+            visibilityPreference = view.owner.MainVisibilityPreference;view.owner.MainVisibilityPreference = null;
             priorMessage = view.message; priorPage = view.page;
             view.Store = new AeroLayoutProfileStore(path); view.Store.Load(); view.IsDirty = false;
             view.restoreAttempted = false; view.message = ""; view.page = 0; view.Refresh();
         }
         public void Dispose()
         {
+            view.owner.MainVisibilityPreference = visibilityPreference;
             view.CancelModal(); view.Store = previous; view.IsDirty = dirty; view.restoreAttempted = restored;
             view.message = priorMessage; view.page = priorPage; view.Refresh();
         }

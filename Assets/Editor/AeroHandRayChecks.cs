@@ -7,25 +7,47 @@ using UnityEngine.XR.Hands;
 // Editor-only input injection: verify ray geometry without a connected headset.
 public static class AeroHandRayChecks
 {
-    public static void Run()
+    public static void Run() => WithFrontEntry(CheckRays);
+    public static void RunMap() => WithFrontEntry(CheckMap);
+
+    static void WithFrontEntry(Action<PinchHudExperiment> check)
     {
-        if (!Application.isPlaying) throw new InvalidOperationException("Enter Play Mode first");
+        Require(Application.isPlaying, "Enter Play Mode first");
         var hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
+        var entry = hud.HandEntry;
+        int originalMode = !entry.EnabledForEntry ? 2 : entry.ShortcutsEnabled ? 1 : 0;
+        try
+        {
+            if (MetaAimHand.left == null) MetaAimHand.left = MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Left);
+            if (MetaAimHand.right == null) MetaAimHand.right = MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Right);
+            hud.SetHandEntryMode(2);
+            hud.RestoreMainVisibility(false);
+            check(hud);
+        }
+        finally
+        {
+            hud.SetHandEntryMode(originalMode);
+            hud.ClearPresses();
+        }
+    }
+
+    static void CheckRays(PinchHudExperiment hud)
+    {
         var camera = Camera.main;
         camera.GetComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>().enabled = false;
         camera.transform.parent.SetPositionAndRotation(new Vector3(1, 0, 1), Quaternion.Euler(0, 20, 0));
         camera.transform.SetPositionAndRotation(new Vector3(0, 1.6f, 0), Quaternion.identity);
-        var left = MetaAimHand.left ?? MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Left);
-        var right = MetaAimHand.right ?? MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Right);
-        MetaAimHand.left = left;
-        MetaAimHand.right = right;
+        var left = MetaAimHand.left;
+        var right = MetaAimHand.right;
+        var view = hud.Follow.GetComponent<AeroHudView>();
+        view.ShowMap(false);
+        var target = hud.Compact.OpenButton.gameObject;
         hud.SendMessage("OnApplicationFocus", true);
         foreach (var hand in new[] { left, right })
         {
             Set(left, false, false, Vector3.zero, Quaternion.identity);
             Set(right, false, false, Vector3.zero, Quaternion.identity);
             hud.ProcessInput();
-            var target = GameObject.Find("Hotspot-SPORTS-HUD");
             Vector3 origin = new Vector3(hand == left ? -0.25f : 0.25f, 1.3f, 0.2f);
             Quaternion aim = Quaternion.LookRotation(target.transform.position - origin);
             Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
@@ -43,7 +65,7 @@ public static class AeroHandRayChecks
             }
             hud.ProcessInput();
             Require(hud.IsCardOpen, "Held pinch repeated");
-            aim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
+            aim = Quaternion.LookRotation(view.CloseButton.transform.position - origin);
             Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(hud.IsCardOpen, "Held pinch clicked Close");
             Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
@@ -52,7 +74,7 @@ public static class AeroHandRayChecks
             Set(hand, false, false, Vector3.zero, Quaternion.identity); hud.ProcessInput();
             Require(!GameObject.Find(hand == left ? "LeftHandRay" : "RightHandRay").GetComponent<LineRenderer>().enabled,
                     "Tracking loss left a visible beam");
-            Require(target.activeInHierarchy && target.transform.Find("HudEntryLabel").gameObject.activeInHierarchy,
+            Require(target.activeInHierarchy && hud.Compact.OpenButton.IsInteractable(),
                     "HUD entry disappeared after closing");
             aim = Quaternion.LookRotation(target.transform.position - origin);
             Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
@@ -64,7 +86,7 @@ public static class AeroHandRayChecks
                     GameObject.Find("Pace").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("5:20") &&
                     GameObject.Find("Distance").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("3.20"),
                     "Reopening changed fixed demo data");
-            aim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
+            aim = Quaternion.LookRotation(view.CloseButton.transform.position - origin);
             Frame(hand, origin, aim, false, camera.transform.parent); hud.ProcessInput();
             Frame(hand, origin, aim, true, camera.transform.parent); hud.ProcessInput();
             Require(!hud.IsCardOpen, "Cannot hide reopened HUD");
@@ -73,7 +95,6 @@ public static class AeroHandRayChecks
         foreach (bool inside in new[] { true, false })
         {
             Vector3 origin = new Vector3(-0.25f, 1.3f, 0.2f);
-            var target = GameObject.Find("Hotspot-SPORTS-HUD");
             var direct = Quaternion.LookRotation(target.transform.position - origin);
             var aim = Quaternion.AngleAxis(inside ? 2f : 20f, Vector3.up) * direct;
             Frame(left, origin, aim, false, camera.transform.parent); hud.ProcessInput();
@@ -88,14 +109,14 @@ public static class AeroHandRayChecks
             Require(hud.IsCardOpen == inside, inside ? "Expanded collider did not accept near-edge aim" : "Out-of-range pinch incorrectly retained an old target");
             if (inside)
             {
-                var closeAim = Quaternion.LookRotation(GameObject.Find("Close").transform.position - origin);
+                var closeAim = Quaternion.LookRotation(view.CloseButton.transform.position - origin);
                 Frame(left, origin, closeAim, false, camera.transform.parent); hud.ProcessInput();
                 Frame(left, origin, closeAim, true, camera.transform.parent); hud.ProcessInput();
                 Require(!hud.IsCardOpen, "Close after expanded-collider selection failed");
             }
         }
         var rollOrigin = new Vector3(-0.25f, 1.3f, 0.2f);
-        var rollAim = Quaternion.LookRotation(GameObject.Find("Hotspot-SPORTS-HUD").transform.position - rollOrigin);
+        var rollAim = Quaternion.LookRotation(target.transform.position - rollOrigin);
         foreach (float roll in new[] { -90f, 0f, 90f })
         {
             Frame(left, rollOrigin, rollAim * Quaternion.Euler(0, 0, roll), false, camera.transform.parent);
@@ -110,11 +131,9 @@ public static class AeroHandRayChecks
         Debug.Log("[AeroPulse Hands] PASS: both hand rays open/close, held pinch, tracking loss, translated/rotated tracking space");
     }
 
-    public static void RunMap()
+    static void CheckMap(PinchHudExperiment hud)
     {
-        Require(Application.isPlaying, "Enter Play Mode first");
-        var hud = UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();
-        var view = UnityEngine.Object.FindObjectsByType<AeroHudView>(FindObjectsInactive.Include)[0];
+        var view = hud.Follow.GetComponent<AeroHudView>();
         var camera = Camera.main;
         var expected = new[] { "TRAILHEAD", "RIDGE", "LOOKOUT", "SPRING", "FINISH" };
         foreach (var hand in new[] { MetaAimHand.left, MetaAimHand.right })
@@ -132,7 +151,7 @@ public static class AeroHandRayChecks
                 hud.ProcessInput();
             }
             void Click(GameObject target) { Point(target, false); Point(target, true); }
-            Click(GameObject.Find("Hotspot-SPORTS-HUD"));
+            Click(hud.Compact.OpenButton.gameObject);
             Require(hud.IsCardOpen, "Map flow cannot open HUD");
             Click(view.MapButton.gameObject);
             Require(view.IsMapOpen && !GameObject.Find("HeartRate"), "Map/data visibility conflicts");
@@ -181,7 +200,7 @@ public static class AeroHandRayChecks
             Require(view.Route.CurrentIndex == 2, "Fresh pinch after recovery failed");
             Click(view.CloseButton.gameObject);
             Require(!hud.IsCardOpen, "Cannot hide map");
-            Click(GameObject.Find("Hotspot-SPORTS-HUD"));
+            Click(hud.Compact.OpenButton.gameObject);
             Require(hud.IsCardOpen && view.IsMapOpen && view.Route.CurrentIndex == 2,
                     "Reopening map lost mode or position");
             view.ShowMap(false);

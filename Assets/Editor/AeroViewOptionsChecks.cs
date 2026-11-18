@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR.Hands;
@@ -57,24 +56,31 @@ public static class AeroViewOptionsChecks
         Click(view.SettingsButton); Click(view.SettingsButton);
         Require(view.IsMapOpen && view.Route.CurrentIndex==position,"Settings lost map mode/state");
         var follow=hud.Follow;
-        var pointerField=typeof(PinchHudExperiment).GetField("rightPointer",BindingFlags.NonPublic|BindingFlags.Instance);
-        var pointer=pointerField.GetValue(hud); var type=pointer.GetType();
-        void Pointer(bool over,bool pressed,UnityEngine.UI.Button button)
-        { type.GetField("overCard").SetValue(pointer,over); type.GetField("pressed").SetValue(pointer,pressed); type.GetField("button").SetValue(pointer,button); }
+        void Aim(Vector3 origin, Vector3 direction, bool pressed)
+        {
+            AeroHandRayChecks.Frame(MetaAimHand.right,origin,Quaternion.LookRotation(direction),pressed,camera.transform.parent);
+            hud.ProcessInput();
+        }
         camera.transform.rotation=Quaternion.identity; follow.SnapToView();
         camera.transform.rotation=Quaternion.Euler(0,70,0);
-        Pointer(true,true,null);
+        var hand = camera.transform.position + Vector3.down * .15f;
+        Aim(hand, Vector3.up, false); Aim(hand, Vector3.up, true);
         Require(!hud.FollowPaused,"Blank card / idle pinch still freezes follow");
         for(int i=0;i<300;i++) follow.Tick(0.02f,hud.FollowPaused);
         Require(Vector3.Distance(follow.transform.position,camera.transform.position+camera.transform.forward*follow.Distance)<0.02f,"Soft follow did not return");
-        Pointer(true,true,view.CloseButton); var held=follow.transform.position;
+        // A button under a pressed ray holds the panel steady while the head turns.
+        Aim(hand, Vector3.up, false);
+        Aim(hand, view.MapButton.transform.position-hand, false);
+        Aim(hand, view.MapButton.transform.position-hand, true);
+        var held=follow.transform.position;
         camera.transform.rotation=Quaternion.Euler(0,95,0);
         Require(hud.FollowPaused,"Active button press no longer pauses");
         for(int i=0;i<20;i++) follow.Tick(0.02f,hud.FollowPaused);
         Require(Vector3.Distance(held,follow.transform.position)<0.001f,"Active button press moved panel");
         camera.transform.rotation=Quaternion.Euler(0,150,0);
-        Require(!hud.FollowPaused,"Offscreen button target blocks recovery");
-        Pointer(false,false,null);
+        Aim(hand, camera.transform.forward, true);
+        Require(!hud.FollowPaused,"Ray leaving the button still blocks recovery");
+        Aim(hand, camera.transform.forward, false);
         follow.CycleMode(); // Quick
         follow.SnapToView(); camera.transform.rotation=Quaternion.Euler(0,220,0);
         for(int i=0;i<300;i++) follow.Tick(0.02f,false);
