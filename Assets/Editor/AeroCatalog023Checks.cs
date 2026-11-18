@@ -20,6 +20,13 @@ public static class AeroCatalog023Checks
             catalog = AeroWidgetCatalog.Build(camera, new AeroRouteDemo());
             Require(!catalog.IsOpen && !catalog.KeepOpen, "Tools must begin closed in single-action mode");
             Require(catalog.LayerButtons.Length == 3, "Expected the three edit-layer controls");
+            var tabs=(RectTransform)catalog.ComponentsTab.transform;var hint=(RectTransform)catalog.CatalogRoot.Find("ComponentsPage/CatalogHint");
+            Canvas.ForceUpdateCanvases();
+            float tabBottom=tabs.anchoredPosition.y-tabs.sizeDelta.y*.5f;
+            float hintTop=((RectTransform)hint.parent).anchoredPosition.y+hint.anchoredPosition.y+hint.sizeDelta.y*.5f;
+            Require(tabBottom>hintTop+4,"Catalog hint overlaps component tabs");
+            var mainClose=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>()?.Follow?.GetComponent<AeroHudView>()?.CloseButton;
+            if(mainClose!=null)Require(((RectTransform)mainClose.transform).anchoredPosition.x>0,"Main close should stay on the right");
             int requests = 0;
             catalog.LayerRequested = layer => { requests++; };
             catalog.SetOpen(true);
