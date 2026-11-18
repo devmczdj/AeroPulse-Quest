@@ -24,15 +24,15 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     public RectTransform ProfilesPage { get; private set; }
     public bool ShowingProfiles { get; private set; }
     public bool KeepOpen { get; private set; }
-    public AeroEditLayer EditingLayer { get; private set; }
-    public bool IsPreviewing { get; private set; }
+    public int LayerMask { get; private set; } = 7;
     public UnityEngine.UI.Button[] LayerButtons { get; private set; }
-    public UnityEngine.UI.Button PreviewButton { get; private set; }
     public UnityEngine.UI.Button KeepOpenButton { get; private set; }
+    public UnityEngine.UI.Button RecallButton { get; private set; }
+    public bool PlacementFixed { get; private set; }
     public Transform LayerControls { get; private set; }
     public UnityEngine.UI.Button CloseButton { get; private set; }
     public Action<AeroEditLayer> LayerRequested;
-    public Action PreviewRequested;
+    public Action RecallRequested;
     public Action PageChanged;
     bool modal,handAvailable;
     TextMeshProUGUI catalogHint;
@@ -69,7 +69,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         catalogCanvas=CatalogRoot.GetComponent<Canvas>();catalogCanvas.sortingOrder=100;
         CatalogRoot.gameObject.AddComponent<BoxCollider>().size=new Vector3(400,560,3);
         Backing(CatalogRoot, new Vector2(400, 560),true);
-        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(170, 246),
+        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(170, 264),
             new Vector2(44, 44), new Vector3(52, 52, 8));
         AeroUiIcons.Apply(CloseButton, "close", 28);
         CloseButton.onClick.AddListener(() => { if (!modal) Hidden?.Invoke(); });
@@ -102,6 +102,9 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         LayerControls = AeroHudView.NewRect("EditorToolsHeader", CatalogRoot, new Vector2(0, 350), new Vector2(400, 124));
         Backing(LayerControls, new Vector2(400, 124),true);
         LayerControls.gameObject.AddComponent<BoxCollider>().size=new Vector3(400,124,3);
+        var handleImage=AeroHudView.AddPanelImage(LayerControls,"CatalogMove",AeroUiSprites.Pill,new Vector2(0,54),new Vector2(128,18),AeroUiTokens.ButtonHover);
+        handleImage.gameObject.AddComponent<BoxCollider>().size=new Vector3(136,24,8);
+        var move=handleImage.gameObject.AddComponent<AeroDragHandle>();move.CatalogMove=true;move.gameObject.SetActive(true);
         LayerButtons = new UnityEngine.UI.Button[3];
         string[] names = { "环境", "手部", "面前" }, icons = { "cube", "hand-open", "vr-headset" };
         for (int i = 0; i < LayerButtons.Length; i++)
@@ -111,8 +114,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
                 () => { if (!modal) LayerRequested?.Invoke(layer); });
             AeroUiIcons.Label(LayerButtons[i], icons[i], names[i], 26);
         }
-        PreviewButton = ToolButton("PreviewAllLayers", "全部预览", new Vector2(-90, -28), new Vector2(172, 44),
-            () => { if (!modal) PreviewRequested?.Invoke(); });
+        RecallButton = ToolButton("RecallCatalog", "回到面前", new Vector2(-90, -28), new Vector2(172, 44),
+            () => { if (!modal) RecallRequested?.Invoke(); });
         KeepOpenButton = ToolButton("KeepToolsOpen", "保持打开", new Vector2(90, -28), new Vector2(172, 44),
             () => { if (!modal) SetKeepOpen(!KeepOpen); });
         AeroUiIcons.Label(KeepOpenButton, "pushpin-off", "保持打开", 26);
@@ -127,16 +130,16 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         return button;
     }
 
-    public void SetEditingView(AeroEditLayer layer, bool preview)
+    public void SetEditingView(int mask)
     {
-        EditingLayer = layer; IsPreviewing = preview;
+        LayerMask = mask;
         RefreshHint();RefreshTabs(null, null);
     }
 
     public void SetHandAvailable(bool value)
     {if(handAvailable==value)return;handAvailable=value;RefreshHint();}
     void RefreshHint()
-    {if(catalogHint!=null)catalogHint.text=!IsPreviewing&&EditingLayer==AeroEditLayer.Hand&&!handAvailable?"手部未追踪，请抬起左手":"点按添加，捏合拖出";}
+    {if(catalogHint!=null)catalogHint.text=(LayerMask&4)!=0&&!handAvailable?"手部未追踪，请抬起左手":"点按添加，捏合拖出";}
 
     public void SetKeepOpen(bool value)
     {
@@ -147,7 +150,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     UnityEngine.UI.Button Tab(string name, string title, float x, bool profiles)
     {
-        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 242), new Vector2(172, 48), new Vector3(172, 48, 8));
+        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 210), new Vector2(172, 48), new Vector3(172, 48, 8));
         var text = button.GetComponentInChildren<TextMeshProUGUI>(true);
         text.font = AeroUiFonts.Interface; text.characterSpacing = 0;
         button.onClick.AddListener(() => SetPage(profiles));
@@ -173,7 +176,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         DoneButton.gameObject.SetActive(!value);
         LayerControls.gameObject.SetActive(!value);
         foreach (var button in LayerButtons) button.interactable = !value;
-        PreviewButton.interactable = KeepOpenButton.interactable = !value;
+        RecallButton.interactable = KeepOpenButton.interactable = !value;
         RefreshTabs(null, null);
     }
 
@@ -184,8 +187,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         PaintButton(DoneButton, false, left, right);
         if (LayerButtons == null) return;
         for (int i = 0; i < LayerButtons.Length; i++)
-            PaintButton(LayerButtons[i], !IsPreviewing && (int)EditingLayer == i, left, right);
-        PaintButton(PreviewButton, IsPreviewing, left, right);
+            PaintButton(LayerButtons[i], (LayerMask & (1 << i)) != 0, left, right);
+        PaintButton(RecallButton, false, left, right);
         PaintButton(KeepOpenButton, KeepOpen, left, right);
     }
 
@@ -265,7 +268,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         if (CatalogRoot == null) return;
         if (open)
         {
-            if (reposition) PlaceCatalog();
+            if (reposition && !PlacementFixed) PlaceCatalog();
             Refresh();
             PageChanged?.Invoke();
         }
@@ -318,6 +321,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
             : $"{seconds / 60:00}:{seconds % 60:00}";
     }
 
+    public void RecallPlacement(){PlacementFixed=false;PlaceCatalog();}
+    public void FixPlacement(){PlacementFixed=true;}
     void PlaceCatalog()
     {
         if (viewCamera == null || CatalogRoot == null) return;

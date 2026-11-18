@@ -23,8 +23,9 @@ public static class AeroLayers023Checks
         Require(!l.Dragging && !h.Profiles.ModalOpen, "Finish current manipulation/modal first");
         var original = l.CaptureLayout(); var poses = new Dictionary<string, Pose>();
         foreach (var p in original.panels) { var t = l.WidgetRoot(p.id); poses[p.id] = new Pose(t.position, t.rotation); }
-        bool editing = l.Editing, preview = l.IsPreviewing, open = w.IsOpen, keep = w.KeepOpen, page = w.ShowingProfiles, direct = h.DirectInputForChecks, handEnabled = h.HandEntry.enabled, dirty = h.Profiles.IsDirty;
-        string selected = l.SelectedId; var layerBefore = l.EditingLayer;
+        bool editing = l.Editing, open = w.IsOpen, keep = w.KeepOpen, page = w.ShowingProfiles, direct = h.DirectInputForChecks, handEnabled = h.HandEntry.enabled, dirty = h.Profiles.IsDirty;
+        int mask = l.LayerMask;
+        string selected = l.SelectedId;
         var driver = eye.GetComponent<TrackedPoseDriver>(); bool driven = driver.enabled;
         var eyePose = new Pose(eye.transform.localPosition, eye.transform.localRotation); var parentPose = new Pose(eye.transform.parent.position, eye.transform.parent.rotation);
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -73,45 +74,44 @@ public static class AeroLayers023Checks
             l.AddWidget("heart"); l.AddWidget("pace"); l.SetPlacement(AeroWindowAnchor.Hand); l.AddWidget("distance"); l.SetPlacement(AeroWindowAnchor.View); l.AddWidget("next"); l.SetPlacement(AeroWindowAnchor.Follow); l.TogglePin();
             l.SelectWidget("main");h.RestoreMainVisibility(true);
             var filterState=l.CaptureLayout();foreach(var pnl in filterState.panels)if(pnl.id=="main")pnl.visible=true;l.ApplyLayout(filterState);
-            l.SetEditingLayer(AeroEditLayer.Environment); var beforeFilter = State(l); var stored = l.CaptureLayout();
-            foreach (AeroEditLayer layer in Enum.GetValues(typeof(AeroEditLayer)))
+            l.SetLayerMask(7); var beforeFilter = State(l); var stored = l.CaptureLayout();
+            foreach (int filterMask in new[]{7,0,1,2,4,3,5,6})
             {
-                l.SetEditingLayer(layer); l.PrepareFrame();
+                l.SetLayerMask(filterMask); l.PrepareFrame();
                 Require(State(l) == beforeFilter, "Layer filtering changed a persisted layout field");
                 foreach (var p in stored.panels)
                 {
                     var root = l.WidgetRoot(p.id);
                     Require(root.gameObject.activeSelf == p.visible, "Filtering changed real visibility for " + p.id);
                     if (!p.visible) continue;
-                    bool shown = p.id == "main" || Layer(p) == layer; Require(root.GetComponent<Canvas>().enabled == shown, "Wrong layer rendered: " + p.id);
+                    bool shown = p.id == "main" || (filterMask & (1 << (int)Layer(p))) != 0; Require(root.GetComponent<Canvas>().enabled == shown, "Wrong layer rendered: " + p.id);
                     Require(l.CanInteract(root) == shown, "Filtered body remained interactable: " + p.id);
                     if (!shown) foreach (var col in root.GetComponentsInChildren<Collider>(true)) Require(!col.enabled, "Filtered collider remained enabled: " + col.name);
                     foreach (var handle in root.GetComponentsInChildren<AeroDragHandle>(true)) Require(handle.gameObject.activeInHierarchy == (shown && l.SelectedId == p.id), "Unselected component exposes manipulation handles");
                 }
             }
-            l.SetEditingLayer(AeroEditLayer.Hand);
+            l.SetLayerMask(7);
             using (h.Profiles.UseStoreForChecks(Path.Combine(temp, "profiles.json")))
             {
                 Require(h.Profiles.SaveAs("LAYER CHECK"), "Saving under a layer filter failed"); var reloaded = new AeroLayoutProfileStore(Path.Combine(temp, "profiles.json")); Require(reloaded.Load(), "Saved layout cannot reload");
                 Require(JsonUtility.ToJson(reloaded.Find(reloaded.Data.activeId).layout) == beforeFilter, "Saved filter became permanent hidden components");
             }
-            l.SetEditingLayer(AeroEditLayer.View); route.Advance();
+            l.SetLayerMask(7); route.Advance();
             Require(l.WidgetRoot("next").Find("Value").GetComponent<TextMeshProUGUI>().text == route.NextName && Equals(clockStart, session.GetValue(w)), "Filtering reset/paused data controller state");
-            l.SelectWidget("heart"); string chosen = l.SelectedId; var chosenLayer = l.EditingLayer; var beforePreview = State(l);
-            l.SetPreview(true); Require(l.IsPreviewing && !w.IsOpen, "All-preview did not close tools");
+            l.SelectWidget("heart"); string chosen = l.SelectedId; var beforeHidden = State(l);
+            l.SetLayerMask(0); Require(!l.HasVisibleWidgets, "Hiding all layers left a component visible");
+            l.SelectWidget("heart");
             foreach (var p in l.CaptureLayout().panels)
             {
-                var root = l.WidgetRoot(p.id); if (p.visible) Require(root.GetComponent<Canvas>().enabled, "Preview omitted enabled component " + p.id);
-                foreach (var handle in root.GetComponentsInChildren<AeroDragHandle>(true)) Require(!handle.gameObject.activeInHierarchy, "Preview exposes a drag handle");
-                Require(!l.CanInteract(root), "Preview allows component editing");
+                if (p.id == "main" || p.id == "legacy") continue;
+                var root = l.WidgetRoot(p.id);
+                Require(!root.GetComponent<Canvas>().enabled, "Hiding all layers left a component canvas on");
+                foreach (var handle in root.GetComponentsInChildren<AeroDragHandle>(true)) Require(!handle.gameObject.activeInHierarchy, "Hidden layer exposes a drag handle");
+                Require(!l.CanInteract(root), "Hidden layer remains interactable");
             }
-            Require(!l.CanInteract(h.Compact.OpenButton.transform), "Preview still allows layout-changing recall");
-            h.ActivateButton(l.WidgetClose("heart")); h.ToggleFromHand(); l.SetPlacement(AeroWindowAnchor.Hand);
-            Require(State(l) == beforePreview, "Preview mutated layout through background control");
-            l.OpenTools(); Require(w.IsOpen && !l.IsPreviewing, "Tools could not reopen from preview");
-            l.SetPreview(false); Require(l.SelectedId == chosen && l.EditingLayer == chosenLayer, "Returning from preview lost current selection/layer");
-            l.SetEditingLayer(AeroEditLayer.Hand); Require(!l.IsPreviewing && l.EditingLayer == AeroEditLayer.Hand, "Layer control failed");
-            l.SetEditingLayer(AeroEditLayer.Environment); if (w.IsOpen) l.ToggleTools();
+            Require(State(l) == beforeHidden, "Layer hide mutated layout through background control");
+            l.OpenTools(); Require(w.IsOpen, "Tools could not reopen after hiding all layers");
+            l.SetLayerMask(7); Require(l.SelectedId == chosen, "Restoring all layers lost current selection");
             l.SelectWidget("next"); Require(l.SelectedId == "next", "Body selection failed");
             l.SelectWidget("heart"); Require(l.SelectedId == "heart", "Second body selection failed");
             Tap(l.WidgetClose("heart")); Require(!l.WidgetRoot("heart").gameObject.activeSelf, "Coplanar body swallowed child close poke");
@@ -134,12 +134,12 @@ public static class AeroLayers023Checks
                 Require(!h.Profiles.SaveAs("FAILED SAVE")&&w.IsOpen,"Failed save closed tools");
                 Directory.Delete(singlePath+".tmp");
             }
-            l.SetPreview(true);h.ToolsEntry.Sample(false,Vector3.zero,Quaternion.identity,false,Vector3.zero,.02f);Off();h.ProcessInput();
+            l.SetLayerMask(7);h.ToolsEntry.Sample(false,Vector3.zero,Quaternion.identity,false,Vector3.zero,.02f);Off();h.ProcessInput();
             Require(!h.Compact.ToolsFallbackVisible,"Right tracking loss should not create a front tool entry");
             var recoveryBefore=State(l);l.OpenTools();Require(w.IsOpen&&State(l)==recoveryBefore,"Explicit tool reopen changed the preview layout");
-            l.SetEditingLayer(AeroEditLayer.Hand);var beforeReveal=State(l);l.SelectWidget("main");h.RestoreMainVisibility(true);
+            l.SetLayerMask(7);var beforeReveal=State(l);l.SelectWidget("main");h.RestoreMainVisibility(true);
             Require(h.IsCardVisible&&State(l)==beforeReveal,"Main reveal changed hidden persistence");
-            l.SetEditingLayer(AeroEditLayer.Hand); var beforeDone = State(l); l.EndEdit();
+            l.SetLayerMask(7); var beforeDone = State(l); l.EndEdit();
             Require(!w.IsOpen && !l.Editing && State(l) == beforeDone, "Done altered real layout or left tools open");
             foreach (var p in l.CaptureLayout().panels) if (p.visible) Require(l.WidgetRoot(p.id).GetComponent<Canvas>().enabled, "Done failed to restore enabled layer " + p.id);
             Debug.Log("[AeroPulse Layers023] PASS temporary filters/save isolation, selected handles, preview read-only, layer/body ray selection and child-close poke, single/continuous commit/cancel, closed-tools focus restore and independent live data. Quest hand feel remains pending.");
@@ -150,7 +150,7 @@ public static class AeroLayers023Checks
             eye.transform.parent.SetPositionAndRotation(parentPose.position, parentPose.rotation); eye.transform.SetLocalPositionAndRotation(eyePose.position, eyePose.rotation);
             trackedField.SetValue(h.HandEntry, tracked); contactField.SetValue(h.HandEntry, contact); l.ApplyLayout(original);
             while (route.CurrentIndex != routeIndex) route.Advance();
-            if (editing) { l.BeginEdit(false); l.SetEditingLayer(layerBefore); l.SelectWidget(selected); l.SetPreview(preview); if (!open && w.IsOpen) l.ToggleTools(); else if (open && !w.IsOpen) l.ToggleTools(); }
+            if (editing) { l.BeginEdit(false); l.SetLayerMask(mask); l.SelectWidget(selected); if (!open && w.IsOpen) l.ToggleTools(); else if (open && !w.IsOpen) l.ToggleTools(); }
             foreach (var p in original.panels) { var t = l.WidgetRoot(p.id); var pose = poses[p.id]; t.SetPositionAndRotation(pose.position, pose.rotation); t.GetComponent<HudSoftFollow>().SyncView(); }
             w.SetKeepOpen(keep); w.SetPage(page); h.DirectInputForChecks = direct; h.HandEntry.enabled = handEnabled; driver.enabled = driven;
             typeof(AeroLayoutProfileView).GetProperty("IsDirty").SetValue(h.Profiles, dirty); h.Profiles.Refresh(); Directory.Delete(temp, true); Physics.SyncTransforms();

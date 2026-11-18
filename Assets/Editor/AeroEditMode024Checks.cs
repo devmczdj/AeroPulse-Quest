@@ -17,8 +17,8 @@ public static class AeroEditMode024Checks
         var h=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();var l=h.Layout;var w=h.Widgets;var v=h.Follow.GetComponent<AeroHudView>();var s=v.SettingsView;var c=Camera.main;var tools=h.ToolsEntry;
         var original=l.CaptureLayout();var poses=new Dictionary<string,Pose>();foreach(var p in original.panels){var t=l.WidgetRoot(p.id);poses[p.id]=new Pose(t.position,t.rotation);}
         var eyePose=new Pose(c.transform.localPosition,c.transform.localRotation);var parentPose=new Pose(c.transform.parent.position,c.transform.parent.rotation);
-        var driver=c.GetComponent<TrackedPoseDriver>();bool driven=driver.enabled,direct=h.DirectInputForChecks,leftReader=h.HandEntry.enabled,rightReader=tools.enabled,editing=l.Editing,preview=l.IsPreviewing,open=w.IsOpen,keep=w.KeepOpen;
-        var layer=l.EditingLayer;string selection=l.SelectedId;bool map=v.IsMapOpen,settings=v.IsSettingsOpen;var tab=s.CurrentTab;
+        var driver=c.GetComponent<TrackedPoseDriver>();bool driven=driver.enabled,direct=h.DirectInputForChecks,leftReader=h.HandEntry.enabled,rightReader=tools.enabled,editing=l.Editing,open=w.IsOpen,keep=w.KeepOpen;int mask=l.LayerMask;
+        string selection=l.SelectedId;bool map=v.IsMapOpen,settings=v.IsSettingsOpen;var tab=s.CurrentTab;
         bool mainOpen=h.IsCardOpen, profilePage=w.ShowingProfiles, resetConfirm=s.ResetConfirmationOpen;
         int entryMode=!h.HandEntry.EnabledForEntry?2:h.HandEntry.ShortcutsEnabled?1:0;
         var compactSide=h.Compact.Side;
@@ -115,7 +115,7 @@ public static class AeroEditMode024Checks
             Off();if(l.Dragging)l.CancelDrag("");if(l.Editing)l.EndEdit();c.transform.parent.SetPositionAndRotation(parentPose.position,parentPose.rotation);c.transform.SetLocalPositionAndRotation(eyePose.position,eyePose.rotation);l.ApplyLayout(original);h.RestoreMainVisibility(mainOpen);
             h.SetHandEntryMode(entryMode);h.SetCompactPlacement(compactSide);
             foreach(var p in original.panels){var t=l.WidgetRoot(p.id);var saved=poses[p.id];t.SetPositionAndRotation(saved.position,saved.rotation);t.GetComponent<HudSoftFollow>().SyncView();}
-            if(editing){l.BeginEdit(false);l.SetEditingLayer(layer);l.SelectWidget(selection);l.SetPreview(preview);if(!open&&w.IsOpen)l.ToggleTools();else if(open&&!w.IsOpen)l.ToggleTools();}
+            if(editing){l.BeginEdit(false);l.SetLayerMask(mask);l.SelectWidget(selection);if(!open&&w.IsOpen)l.ToggleTools();else if(open&&!w.IsOpen)l.ToggleTools();}
             v.ShowMap(map);if(settings&&!v.IsSettingsOpen)v.ToggleSettings();s.SelectTab(tab);if(resetConfirm)s.RequestReset();w.SetKeepOpen(keep);w.SetPage(profilePage);tools.Sample(false,Vector3.zero,Quaternion.identity,false,Vector3.zero,.02f);
             h.HandEntry.enabled=leftReader;tools.enabled=rightReader;h.DirectInputForChecks=direct;driver.enabled=driven;Directory.Delete(directory,true);
         }

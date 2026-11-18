@@ -319,7 +319,7 @@ public class PinchHudExperiment : MonoBehaviour
 
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 
-    public void ToggleFromHand() { if(Layout.IsPreviewing||Layout.Dragging||Profiles!=null&&Profiles.ModalOpen)return;if(Layout.Editing&&IsCardOpen&&!IsCardVisible){Layout.SelectWidget("main");return;}if (IsCardOpen) CloseCard(); else OpenFromHand(); }
+    public void ToggleFromHand() { if(Layout.Dragging||Profiles!=null&&Profiles.ModalOpen)return;if(Layout.Editing&&IsCardOpen&&!IsCardVisible){Layout.SelectWidget("main");return;}if (IsCardOpen) CloseCard(); else OpenFromHand(); }
 
     bool UpdatePointer(HandPointer pointer, MetaAimHand hand, out bool valid)
     {
@@ -521,7 +521,7 @@ public class PinchHudExperiment : MonoBehaviour
 
     void CloseCard()
     {
-        if (!IsCardOpen || Layout.IsPreviewing || Layout.Dragging || Profiles.ModalOpen) return;
+        if (!IsCardOpen || Layout.Dragging || Profiles.ModalOpen) return;
         RecordMainVisibilityEdit(false);
         ClearPresses();
 

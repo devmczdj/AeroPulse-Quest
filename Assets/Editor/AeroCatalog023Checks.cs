@@ -21,8 +21,7 @@ public static class AeroCatalog023Checks
             Require(!catalog.IsOpen && !catalog.KeepOpen, "Tools must begin closed in single-action mode");
             Require(catalog.LayerButtons.Length == 3, "Expected the three edit-layer controls");
             int requests = 0;
-            catalog.LayerRequested = layer => { requests++; catalog.SetEditingView(layer, false); };
-            catalog.PreviewRequested = () => { requests++; catalog.SetEditingView(catalog.EditingLayer, true); };
+            catalog.LayerRequested = layer => { requests++; };
             catalog.SetOpen(true);
             Require(Close(catalog.CatalogRoot.position, camera.transform.TransformPoint(new Vector3(0, -.05f, .55f))), "Explicit open did not place tools in front");
             var initialPosition = catalog.CatalogRoot.position; var initialRotation = catalog.CatalogRoot.rotation;
@@ -36,16 +35,15 @@ public static class AeroCatalog023Checks
             Require(Close(catalog.CatalogRoot.position, camera.transform.TransformPoint(new Vector3(0, -.05f, .55f))), "Explicit reopen did not recall palette");
 
             catalog.LayerButtons[(int)AeroEditLayer.Hand].onClick.Invoke();
-            Require(requests == 1 && catalog.EditingLayer == AeroEditLayer.Hand && !catalog.IsPreviewing, "Layer callback/state mismatch");
-            catalog.PreviewButton.onClick.Invoke();
-            Require(requests == 2 && catalog.IsPreviewing && catalog.EditingLayer == AeroEditLayer.Hand, "All-preview lost last edit layer");
+            Require(requests == 1, "Layer callback missing");
+            catalog.SetEditingView(1);Require(catalog.LayerMask == 1, "Layer mask did not change");
             catalog.KeepOpenButton.onClick.Invoke();
             Require(catalog.KeepOpen, "Keep-open control did not enable continuous mode");
             catalog.SetModal(true);
             Require(!catalog.LayerControls.gameObject.activeInHierarchy && !catalog.ComponentsTab.gameObject.activeInHierarchy &&
                 !catalog.DoneButton.gameObject.activeInHierarchy, "Modal leaves layer/tool controls visible");
-            catalog.LayerButtons[0].onClick.Invoke(); catalog.PreviewButton.onClick.Invoke(); catalog.KeepOpenButton.onClick.Invoke();
-            Require(requests == 2 && catalog.KeepOpen, "Hidden modal controls still dispatched actions");
+            catalog.LayerButtons[0].onClick.Invoke(); catalog.KeepOpenButton.onClick.Invoke();
+            Require(requests == 1 && catalog.KeepOpen, "Hidden modal controls still dispatched actions");
             catalog.SetModal(false);
             Require(catalog.LayerControls.gameObject.activeInHierarchy && catalog.ComponentsTab.gameObject.activeInHierarchy &&
                 catalog.DoneButton.gameObject.activeInHierarchy && catalog.KeepOpen, "Modal exit lost controls or keep-open preference");
