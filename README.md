@@ -2,7 +2,7 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前源码 v0.24.0（Android code 39）：指向设置面板时射线和落点光标在面板前可见；工具面板支持独立拖动条与“回到面前”召回。** [上一版 v0.22.1 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.22.1) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前源码 v0.24.0（Android code 39）：工具面板加宽并新增小窗“关闭/召回”，避免小窗拖远后失去入口。** [v0.24.0 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.24.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![v0.22.1 日常查看预设读数，Unity 编辑器画面](Docs/11_Releases/0.22.1-normal.png)
 
@@ -99,3 +99,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 
 
 [30_按需工具与分层编辑](Docs/30_按需工具与分层编辑.md) · [全部预览](Docs/11_Releases/0.22.0-preview.png) · [中文名称](Docs/11_Releases/0.22.0-name.png)
+
+[31_历史APK补归档](Docs/31_历史APK补归档.md)：v0.22.2–v0.24.0 共16个原始APK的版本、源码对应关系、SHA-256与远程下载核验。
