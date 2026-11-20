@@ -336,7 +336,7 @@ public class PinchHudExperiment : MonoBehaviour
         Layout.InvalidateMainUndo();follow.CaptureOffset();follow.SetDistance(distance);follow.ApplyOffset();Physics.SyncTransforms();RefreshSettings("面板距离已更新");Profiles.MarkChanged();return true;
     }
     public void ShowHelp(){if(Feedback!=null)Feedback.ShowHelp();}
-    public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SoundEnabled=enabled;RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
+    public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SetSoundEnabled(enabled);RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
 
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 

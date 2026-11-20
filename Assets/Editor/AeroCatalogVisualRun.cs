@@ -71,7 +71,7 @@ public static class AeroCatalogVisualRun
             {
                 Canvas.ForceUpdateCanvases();
                 Physics.SyncTransforms();
-                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.6-catalog-components.png"));
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.7-catalog-components.png"));
                 phase = 2;
                 phaseAt = EditorApplication.timeSinceStartup;
                 return;
@@ -88,7 +88,7 @@ public static class AeroCatalogVisualRun
                     widgets.SetPage(true);
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.6-catalog-profiles.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.7-catalog-profiles.png"));
                     UnityEngine.UI.Button rename = null;
                     foreach (var button in widgets.CatalogRoot.GetComponentsInChildren<UnityEngine.UI.Button>(true))
                         if (button.name == "RenameProfile") { rename = button; break; }
@@ -97,7 +97,7 @@ public static class AeroCatalogVisualRun
                     experiment.Profiles.BeginKeyboardOpeningForChecks();
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.6-keyboard-opening.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.7-keyboard-opening.png"));
                 }
                 if (File.Exists(storePath)) File.Delete(storePath);
                 phase = 3;
@@ -109,6 +109,7 @@ public static class AeroCatalogVisualRun
                 AeroCatalog023Checks.Run();
                 AeroProfilesUi021Checks.Run();
                 AeroNativeKeyboard023Checks.Run();
+                AeroFeedback024Checks.Run();
                 AeroEditMode024Checks.Run();
                 Debug.Log("[AeroPulse CatalogVisualRun] PASS captures and catalog/profile/edit checks");
                 SessionState.SetBool(ActiveKey, false);

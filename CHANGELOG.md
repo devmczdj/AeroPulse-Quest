@@ -1,3 +1,12 @@
+## v0.24.7 — 2026-11-20（Android code 46，提示音与中文键盘提示）
+
+- 确认提示音恢复为默认开启，音量由0.12提高到0.18。
+- 提示音开关写入PlayerPrefs，重启应用后保持。
+- 新增Feedback024回归，验证默认开启、持久化和音量下限。
+- 名称弹窗加入“地球键切换中文”提示；说明Unity无法替用户启用Quest系统输入语言。
+- 保持UnityPlayerActivity和v0.24.5键盘恢复路径。
+- Android构建成功：0错误/7个既有Editor警告，APK SHA-256 `e28cabeba7b038ddc439ba1ca639bcff3d389416f2ff1483f78e54e5092568bb`；签名、ZIP与zipalign通过。已安装并启动Quest 2。
+
 ## v0.24.6 — 2026-11-20（Android code 45，GameActivity键盘兼容修复）
 
 - 根据Quest OS 2.7 + Unity 6的已复现兼容问题，将Android入口从GameActivity切换到UnityPlayerActivity。

@@ -6,11 +6,15 @@ using UnityEngine;
 // this component never changes HUD, sky, tracking, or input-gate state.
 public sealed class AeroInteractionFeedback : MonoBehaviour
 {
+public const string SoundPreferenceKey = "AeroPulse.FeedbackSoundEnabled";
     public bool SoundEnabled { get; set; }
     public bool HandEntryEnabled { get; set; } = true;
     public bool RecoveryControlVisible { get; set; }
     public string Message => label != null ? label.text : string.Empty;
     public bool Visible => feedbackCanvas != null && feedbackCanvas.enabled;
+#if UNITY_EDITOR
+public float AudioVolumeForChecks => source != null ? source.volume : 0f;
+#endif
 
     const float FlashDuration = 0.14f;
     const float LostDelay = 1.2f;
@@ -63,11 +67,17 @@ public sealed class AeroInteractionFeedback : MonoBehaviour
         feedback.source = go.GetComponent<AudioSource>();
         feedback.source.playOnAwake = false;
         feedback.source.spatialBlend = 0f;
-        feedback.source.volume = 0.12f;
-        // Sound is opt-in; visual acknowledgement is always available.
-        feedback.SoundEnabled = false;
+        feedback.source.volume = 0.18f;
+        feedback.SoundEnabled = PlayerPrefs.GetInt(SoundPreferenceKey, 1) != 0;
         canvas.enabled = true;
         return feedback;
+    }
+
+    public void SetSoundEnabled(bool enabled)
+    {
+        SoundEnabled = enabled;
+        PlayerPrefs.SetInt(SoundPreferenceKey, enabled ? 1 : 0);
+        PlayerPrefs.Save();
     }
 
     public void Confirm(UnityEngine.UI.Button button, string message = null)

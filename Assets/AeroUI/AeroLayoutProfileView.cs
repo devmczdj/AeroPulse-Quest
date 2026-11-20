@@ -81,7 +81,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         nameLabel = input.GetComponentInChildren<TextMeshProUGUI>(true); nameLabel.name = "NameValue";
         nameLabel.enableAutoSizing = false; nameLabel.fontSize = 16; nameLabel.overflowMode = TextOverflowModes.Ellipsis;
         nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
-        Label(namePanel, "KeyboardHint", "点按名称，使用系统键盘", new Vector2(0, 46), new Vector2(448, 32), 20);
+        Label(namePanel, "KeyboardHint", "点名称打开键盘；地球键切换中文", new Vector2(0, 46), new Vector2(448, 32), 20);
         string[] presets = { "日常", "运动", "演示" };
         for (int i = 0; i < presets.Length; i++)
         {
