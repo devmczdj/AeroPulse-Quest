@@ -86,6 +86,9 @@ public static class AeroProfilesUi021Checks
                 var doneRect = LocalRect((RectTransform)w.DoneButton.transform, rootRect);
                 Require(!Overlaps(listRect, tabsRect) && !Overlaps(listRect, headerRect) && !Overlaps(listRect, doneRect),
                     "Profile content overlaps page chrome");
+                Require(Mathf.Abs(listRect.xMin - headerRect.xMin) <= 1f &&
+                        Mathf.Abs(listRect.xMax - headerRect.xMax) <= 1f,
+                    "Profile content does not align with the layer controls");
                 var saveRect = LocalRect((RectTransform)Find(w, "SaveCurrentProfile").transform, rootRect);
                 var newRect = LocalRect((RectTransform)Find(w, "SaveNewProfile").transform, rootRect);
                 var renameRect = LocalRect((RectTransform)Find(w, "RenameProfile").transform, rootRect);

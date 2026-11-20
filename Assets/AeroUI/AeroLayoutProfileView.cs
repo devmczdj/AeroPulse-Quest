@@ -45,7 +45,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void Create()
     {
-        listPanel = AeroHudView.NewRect("ProfileList", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 320));
+        listPanel = AeroHudView.NewRect("ProfileList", catalog.ProfilesPage, Vector2.zero, new Vector2(460, 320));
         activeLabel = Label(listPanel, "ActiveProfile", "", new Vector2(0, 132), new Vector2(448, 32), 23);
         stateLabel = Label(listPanel, "ProfileStatus", "", new Vector2(0, 100), new Vector2(448, 30), 19);
         for (int i = 0; i < rows.Length; i++)
@@ -69,8 +69,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void CreateNaming()
     {
-        namePanel = AeroHudView.NewRect("ProfileNameDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 360));
-        Backing(namePanel, new Vector2(500, 360));
+        namePanel = AeroHudView.NewRect("ProfileNameDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(460, 360));
+        Backing(namePanel, new Vector2(460, 360));
         nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 136), new Vector2(448, 40), 26);
         var input = Button(namePanel, "EditProfileName", "", new Vector2(0, 84), new Vector2(448, 52), OpenKeyboard);
         nameLabel = input.GetComponentInChildren<TextMeshProUGUI>(true); nameLabel.name = "NameValue";
@@ -91,8 +91,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void CreateConfirmation()
     {
-        confirmPanel = AeroHudView.NewRect("UnsavedProfileDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 320));
-        Backing(confirmPanel, new Vector2(500, 320));
+        confirmPanel = AeroHudView.NewRect("UnsavedProfileDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(460, 320));
+        Backing(confirmPanel, new Vector2(460, 320));
         Label(confirmPanel, "UnsavedTitle", "当前布局未保存", new Vector2(0, 106), new Vector2(448, 42), 27);
         confirmLabel = Label(confirmPanel, "SwitchTarget", "", new Vector2(0, 58), new Vector2(448, 38), 22);
         Button(confirmPanel, "SaveThenSwitch", "保存并切换", new Vector2(0, 4), new Vector2(448, 46), () => ResolveSwitch(true));

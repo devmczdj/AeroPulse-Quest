@@ -41,7 +41,8 @@ public static class AeroCatalog023Checks
             Require(!catalog.IsOpen && !catalog.KeepOpen, "Tools must begin closed in single-action mode");
             Require(catalog.LayerButtons.Length == 3, "Expected the three edit-layer controls");
             var root = (RectTransform)catalog.CatalogRoot;
-            var tabs=(RectTransform)catalog.ComponentsTab.transform;
+            var componentsTab=(RectTransform)catalog.ComponentsTab.transform;
+            var profilesTab=(RectTransform)catalog.ProfilesTab.transform;
             var hint=(RectTransform)catalog.CatalogRoot.Find("ComponentsPage/CatalogHint");
             var header=(RectTransform)catalog.CatalogRoot.Find("EditorToolsHeader");
             var move=(RectTransform)catalog.CatalogRoot.Find("CatalogMove");
@@ -65,13 +66,20 @@ public static class AeroCatalog023Checks
             Require(scale.GetComponent<Collider>()!=null,"Catalog scale handle has no hit target");
             Require(scale.anchoredPosition.x>root.rect.width*.4f&&scale.anchoredPosition.y<-root.rect.height*.4f,
                 "Catalog scale handle is not at the lower right");
-            var tabsRect=LocalRect(tabs,root);var hintRect=LocalRect(hint,root);
+            var componentsTabRect=LocalRect(componentsTab,root);var profilesTabRect=LocalRect(profilesTab,root);
+            var tabsRect=Rect.MinMaxRect(componentsTabRect.xMin,Mathf.Min(componentsTabRect.yMin,profilesTabRect.yMin),
+                profilesTabRect.xMax,Mathf.Max(componentsTabRect.yMax,profilesTabRect.yMax));
+            var hintRect=LocalRect(hint,root);var pageRect=LocalRect(catalog.ComponentsPage,root);
             var headerRect=LocalRect(header,root);var moveRect=LocalRect(move,root);
             var depthRect=LocalRect(depth,root);
             var closeRect=LocalRect(close,root);var firstRect=LocalRect(firstEntry,root);
             var firstRowRect=LocalRect(firstRow,root);var firstStatusRect=LocalRect(firstStatus,root);
             var firstCloseRect=LocalRect(firstClose,root);var firstRecallRect=LocalRect(firstRecall,root);
             var doneRect=LocalRect(done,root);
+            var layer0Rect=LocalRect((RectTransform)catalog.LayerButtons[0].transform,root);
+            var layer2Rect=LocalRect((RectTransform)catalog.LayerButtons[2].transform,root);
+            var recallControlRect=LocalRect((RectTransform)catalog.RecallButton.transform,root);
+            var keepOpenRect=LocalRect((RectTransform)catalog.KeepOpenButton.transform,root);
             foreach (var button in new[]{catalog.LayerButtons[0],catalog.LayerButtons[1],catalog.LayerButtons[2],catalog.RecallButton,catalog.KeepOpenButton})
             {
                 var parent=(RectTransform)button.transform;
@@ -112,6 +120,18 @@ public static class AeroCatalog023Checks
             Require(tabsRect.yMax<=headerRect.yMin+1f,"Component tabs should follow the five layer controls");
             Require(!Overlaps(closeRect,tabsRect),"Close button overlaps the tab row");
             Require(!Overlaps(closeRect,headerRect),"Close button overlaps the layer controls");
+            Require(Mathf.Abs(headerRect.xMin-pageRect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-pageRect.xMax)<=1f,
+                "Layer controls and content page use different side boundaries");
+            Require(Mathf.Abs(headerRect.xMin-layer0Rect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-layer2Rect.xMax)<=1f,
+                "Layer buttons do not align with the header boundary");
+            Require(Mathf.Abs(headerRect.xMin-recallControlRect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-keepOpenRect.xMax)<=1f,
+                "Secondary controls do not align with the header boundary");
+            Require(Mathf.Abs(headerRect.xMin-tabsRect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-tabsRect.xMax)<=1f,
+                "Layer controls and tabs use different side boundaries");
+            Require(Mathf.Abs(headerRect.xMin-firstRowRect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-firstRowRect.xMax)<=1f,
+                "Layer controls and component rows use different side boundaries");
+            Require(Mathf.Abs(headerRect.xMin-doneRect.xMin)<=1f&&Mathf.Abs(headerRect.xMax-doneRect.xMax)<=1f,
+                "Done button does not align with the content boundary");
             foreach(var text in catalog.CatalogRoot.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
                 text.ForceMeshUpdate();
