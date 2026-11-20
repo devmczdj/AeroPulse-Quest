@@ -1,3 +1,11 @@
+## v0.24.8 — 2026-11-20（Android code 47，系统键盘语言说明）
+
+- 修正名称输入提示：不再承诺地球键可以切换中文，改为说明语言由系统键盘决定。
+- 设备检查确认系统语言为zh-CN但Oculus Keyboard仅有英语（美国）subtype；当前虚拟键盘页面无语言子设置。
+- 提示音默认开启与PlayerPrefs持久化保持有效。
+- Catalog、档案、NativeKeyboard、Feedback和编辑模式回归通过。
+- Android构建成功：0错误/7个既有Editor警告，APK SHA-256 `eddb7ffb3403de71ffb1cf0a4849a6cc4d138344ef6d098f14b35fa1d0ce7316`；签名、ZIP与zipalign通过。已安装并启动Quest 2。
+
 ## v0.24.7 — 2026-11-20（Android code 46，提示音与中文键盘提示）
 
 - 确认提示音恢复为默认开启，音量由0.12提高到0.18。

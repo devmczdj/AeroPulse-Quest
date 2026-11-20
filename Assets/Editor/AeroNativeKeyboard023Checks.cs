@@ -37,6 +37,9 @@ public static class AeroNativeKeyboard023Checks
                 l.BeginEdit(false);w.SetKeepOpen(true);l.OpenTools();w.SetPage(true);
                 Require(!v.SaveCurrent()&&v.ModalOpen,"First save should ask for a name");
                 var edit=Find(w,"EditProfileName");var save=Find(w,"ConfirmProfileName");var cancel=Find(w,"CancelProfileName");
+                var keyboardHint=w.CatalogRoot.Find("ProfilesPage/ProfileNameDialog/KeyboardHint").GetComponent<TextMeshProUGUI>();
+                Require(keyboardHint!=null&&keyboardHint.text.Contains("系统键盘决定"),
+                    "Keyboard hint incorrectly claims a language can be forced by the app");
                 Require(v.enabled&&v.AppFocusedForChecks&&v.UseKeyboardStubForChecks&&edit.gameObject.activeInHierarchy&&
                     edit.IsInteractable()&&v.AllowButton(edit),
                     $"Keyboard edit entry state enabled={v.enabled} focused={v.AppFocusedForChecks} stub={v.UseKeyboardStubForChecks} active={edit.gameObject.activeInHierarchy} interactable={edit.IsInteractable()} allowed={v.AllowButton(edit)}");
