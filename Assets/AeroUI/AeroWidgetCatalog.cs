@@ -256,6 +256,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
             Vector2.zero, new Vector2(460, 52), AeroUiTokens.ToolSectionFill);
         rowBacking.type = UnityEngine.UI.Image.Type.Sliced;
         rowBacking.pixelsPerUnitMultiplier = 8;
+        rowBacking.gameObject.AddComponent<AeroGlassSurface>().Initialize(rowBacking.color);
         var entry = AeroHudView.ActionButton(row, "CatalogEntry_" + id, title,
             new Vector2(-70, 0), new Vector2(288, 46), new Vector3(288, 52, 8));
         var titleLabel = entry.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -322,6 +323,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
             Vector2.zero, size, opaque?AeroUiTokens.ToolPanelFill:AeroUiTokens.ToolSectionFill);
         backing.type = UnityEngine.UI.Image.Type.Sliced;
         backing.pixelsPerUnitMultiplier = 4;
+        backing.gameObject.AddComponent<AeroGlassSurface>().Initialize(backing.color);
     }
 
     static TextMeshProUGUI Label(Transform parent, string name, string text, Vector2 position, Vector2 size, float fontSize, Color color)

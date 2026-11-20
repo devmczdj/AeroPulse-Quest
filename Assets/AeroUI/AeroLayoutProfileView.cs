@@ -490,6 +490,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         var image = AeroHudView.AddPanelImage(parent, "ModalBacking",
             Resources.Load<Sprite>("JetStyle/RoundedRect"), Vector2.zero, size, AeroUiTokens.ToolPanelFill);
         image.type = UnityEngine.UI.Image.Type.Sliced; image.pixelsPerUnitMultiplier = 4;
+        image.gameObject.AddComponent<AeroGlassSurface>().Initialize(image.color);
     }
 
 #if UNITY_EDITOR

@@ -24,6 +24,7 @@ public class AeroCompactHud : MonoBehaviour
         var widget=go.AddComponent<AeroCompactHud>();widget.Route=route;
         var backing=AeroHudView.AddPanelImage(go.transform,"ReadoutBacking",Resources.Load<Sprite>("JetStyle/RoundedRect"),Vector2.zero,new Vector2(320,132),new Color(0.025f,0.06f,0.07f,0.84f));
         backing.type=UnityEngine.UI.Image.Type.Sliced;backing.pixelsPerUnitMultiplier=4;
+        backing.gameObject.AddComponent<AeroGlassSurface>().Initialize(backing.color);
         AeroHudView.Text(go.transform,"CompactDisclosure","SIM DATA",new Vector2(-140,45),new Vector2(280,29),18,AeroUiFonts.SemiBold,AeroUiTokens.Secondary,TextAlignmentOptions.Left,0,0);
         AeroHudView.Text(go.transform,"CompactMetrics","142 BPM   5:20",new Vector2(-140,7),new Vector2(280,45),28,AeroUiFonts.SemiBold,AeroUiTokens.Ink,TextAlignmentOptions.Left,0,0);
         widget.NextLabel=AeroHudView.Text(go.transform,"CompactNext","",new Vector2(-140,-34),new Vector2(280,34),20,AeroUiFonts.SemiBold,AeroUiTokens.Mint,TextAlignmentOptions.Left,0,0);

@@ -1,3 +1,12 @@
+## v0.24.10 — 2026-11-21（Android code 49，玻璃透明度自动与手动）
+
+- 设置 → 显示新增“玻璃：自动 / 手动”和 5%–60% 透明度滑杆，手动值通过 PlayerPrefs 持久保存。
+- 自动模式按当前视线方向采样 `AeroGlassPanorama` 环境立方体贴图亮度，在约 6%–38% 间调整；亮背景更实、暗背景更透。该模式不读取 Quest Passthrough 摄像头。
+- 统一调整主卡、组件行、组件工具、名称/未保存弹窗、小读数、移动工具栏和反馈底板的玻璃 alpha；文字与按钮颜色不随透明度一起淡出。
+- 设置页重新排布并增加显示页视觉证据；截图入口新增主卡可见、设置页激活、视口居中和 Canvas alpha 断言。
+- Catalog023、ProfilesUI021、NativeKeyboard023、Feedback024、GlassOpacity026、Settings016 和 EditMode024 回归通过；Impeccable 变更扫描无发现。
+- Android构建成功：0错误/7个既有Editor警告，APK 50,180,925字节，SHA-256 `29c3fe6d9587d41f179cf9390ae72b468b971d0f6901980ddd1cae0c1db536a3`；签名、ZIP与zipalign通过。ADB未检测到设备，Quest安装待连接。
+
 ## v0.24.9 — 2026-11-20（Android code 48，名称弹窗半透明）
 
 - 档案名称编辑框和未保存切换确认框由alpha 1.0实心底板改为alpha 0.78半透明圆角玻璃。

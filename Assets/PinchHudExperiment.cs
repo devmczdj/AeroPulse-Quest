@@ -26,6 +26,7 @@ public class PinchHudExperiment : MonoBehaviour
     public AeroDirectTouch DirectTouch { get; private set; }
     public AeroNearManipulation Near { get; private set; }
     public AeroLayoutProfileView Profiles { get; private set; }
+    public AeroGlassOpacityController GlassOpacity { get; private set; }
     public AeroHandToolsEntry ToolsEntry { get; private set; }
     bool wasKeyboardActive;
     bool directLeftValid,directRightValid;
@@ -86,6 +87,7 @@ public class PinchHudExperiment : MonoBehaviour
         Feedback=AeroInteractionFeedback.Build(view);
         hudView.BindControls(this);
         Profiles=AeroLayoutProfileView.Build(view,this,Widgets);
+        GlassOpacity=AeroGlassOpacityController.Build(view,transform);
         ToolsEntry=gameObject.AddComponent<AeroHandToolsEntry>();ToolsEntry.Initialize(view,this);
         leftPointer = BuildPointer("LeftHandRay");
         rightPointer = BuildPointer("RightHandRay");
@@ -291,7 +293,10 @@ public class PinchHudExperiment : MonoBehaviour
     public void ResetViewOptions()
     {
         HandEntry.ResetHeight();HandEntry.EnabledForEntry=true;HandEntry.ShortcutsEnabled=false;legacyEntry=false;entry.gameObject.SetActive(false);
-        Compact.SetPlacement(AeroCompactHud.Placement.Hidden);Layout.ResetAll();if(Feedback!=null)Feedback.SoundEnabled=false;Physics.SyncTransforms();RefreshSettings("HUD默认设置已恢复，天空状态保持");
+        Compact.SetPlacement(AeroCompactHud.Placement.Hidden);Layout.ResetAll();
+        if(Feedback!=null)Feedback.SetSoundEnabled(true);
+        if(GlassOpacity!=null)GlassOpacity.ResetDefaults();
+        Physics.SyncTransforms();RefreshSettings("HUD默认设置已恢复，天空状态保持");
     }
     public void ShowDetailForLayout()
     {
@@ -337,6 +342,18 @@ public class PinchHudExperiment : MonoBehaviour
     }
     public void ShowHelp(){if(Feedback!=null)Feedback.ShowHelp();}
     public void SetFeedbackSound(bool enabled){if(Feedback!=null)Feedback.SetSoundEnabled(enabled);RefreshSettings(enabled?"确认提示音已开启":"确认提示音已关闭");}
+    public void SetGlassOpacityMode(AeroGlassOpacityMode mode)
+    {
+        if(GlassOpacity==null)return;
+        GlassOpacity.SetMode(mode);
+        RefreshSettings(mode==AeroGlassOpacityMode.Auto?"玻璃透明度已切换为自动":"玻璃透明度已切换为手动");
+    }
+    public void SetGlassTransparency(float value)
+    {
+        if(GlassOpacity==null)return;
+        GlassOpacity.SetManualTransparency(value);
+        RefreshSettings($"玻璃透明度已设为{Mathf.RoundToInt(GlassOpacity.EffectiveTransparency*100f)}%");
+    }
 
     public void OpenDataFromShortcut() { if(!IsCardOpen)OpenFromHand();hudView.ShowMap(false); }
 

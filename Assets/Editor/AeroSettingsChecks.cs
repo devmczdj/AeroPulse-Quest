@@ -28,6 +28,9 @@ public static class AeroSettingsChecks
         Click(s.TabButtons[0]);Click(s.SkyOptions[0]);Click(s.SkyOptions[0]);Require(!h.Sky.Visible&&h.IsCardOpen,"Explicit sky off cycled");
         Click(s.SkyOptions[1]);Click(s.SkyOptions[1]);Require(h.Sky.Visible,"Explicit sky on cycled");
         Require(s.WidgetLibraryButton.gameObject.activeInHierarchy&&!s.CompactOptions[2].gameObject.activeInHierarchy,"Layout settings shortcut is missing");
+        Click(s.GlassModeOptions[1]);Require(h.GlassOpacity.Mode==AeroGlassOpacityMode.Manual,"Manual glass mode did not respond");
+        h.SetGlassTransparency(.34f);Require(Mathf.Approximately(h.GlassOpacity.EffectiveTransparency,.34f),"Manual glass slider value not applied");
+        Click(s.GlassModeOptions[0]);Require(h.GlassOpacity.Mode==AeroGlassOpacityMode.Auto,"Automatic glass mode did not respond");
         Click(s.WidgetLibraryButton);Require(s.LayoutPage&&!h.Layout.Editing,"Display shortcut entered edit instead of opening layout settings");
         Click(s.TabButtons[1]);Click(s.EntryOptions[2]);Click(s.EntryOptions[2]);Require(!h.HandEntry.EnabledForEntry&&!h.Feedback.HandEntryEnabled,"Front entry state/help diverged");
         h.SetHandHeight(.045f);h.SetHandHeight(.045f);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
@@ -41,7 +44,7 @@ public static class AeroSettingsChecks
         Require(h.Follow.Mode==HudSoftFollow.FollowMode.Quick&&!h.HandEntry.EnabledForEntry&&!h.Sky.Visible,"Cancel reset altered settings");
         Click(s.ResetButton);Click(s.TabButtons[0]);Require(!s.ResetConfirmationOpen&&h.Follow.Mode==HudSoftFollow.FollowMode.Quick,"Tab cancel unexpectedly reset");
         Click(s.ResetButton);Click(s.ConfirmResetButton);
-        Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&Mathf.Approximately(h.Follow.Distance,.65f)&&h.HandEntry.EnabledForEntry&&Mathf.Approximately(h.HandEntry.HeightOffset,.035f)&&!h.FeedbackSoundEnabled&&h.Compact.Side==AeroCompactHud.Placement.Hidden,"Reset failed to restore declared scope");
+        Require(h.Follow.Mode==HudSoftFollow.FollowMode.Soft&&Mathf.Approximately(h.Follow.Distance,.65f)&&h.HandEntry.EnabledForEntry&&Mathf.Approximately(h.HandEntry.HeightOffset,.035f)&&h.FeedbackSoundEnabled&&h.Compact.Side==AeroCompactHud.Placement.Hidden&&h.GlassOpacity.Mode==AeroGlassOpacityMode.Auto,"Reset failed to restore declared scope");
         Require(!h.Sky.Visible&&v.Route.CurrentIndex==route,"HUD reset changed independent sky/route");
         // Place onto hand through actual ray. Hidden targets become visible only after hold threshold.
         Click(s.TabButtons[2]);var palm=c.transform.position+new Vector3(-.2f,-.3f,.5f);var rotation=Quaternion.Euler(-90,0,0);
@@ -61,10 +64,13 @@ public static class AeroSettingsChecks
     }
     public static void Feedback()
     {
+        bool hadPreference=PlayerPrefs.HasKey(AeroInteractionFeedback.SoundPreferenceKey);
+        int stored=PlayerPrefs.GetInt(AeroInteractionFeedback.SoundPreferenceKey,1);
+        PlayerPrefs.DeleteKey(AeroInteractionFeedback.SoundPreferenceKey);
         var camera=Camera.main;var f=AeroInteractionFeedback.Build(camera);
         try
         {
-            Require(f.Visible&&!f.SoundEnabled,"Intro/default sound invalid");
+            Require(f.Visible&&f.SoundEnabled,"Intro/default sound invalid");
             Require(f.GetComponentsInChildren<Collider>(true).Length==0&&f.GetComponent<UnityEngine.UI.GraphicRaycaster>()==null,"Guidance blocks rays");
             // Let first help complete with healthy tracking, then inject a genuine loss.
             for(int i=0;i<9;i++)f.Tick(true,true,true,true,.25f);
@@ -83,6 +89,12 @@ public static class AeroSettingsChecks
             v.gameObject.SetActive(false);
             Debug.Log("[AeroPulse Feedback016] PASS intro/help/loss/recovery/focus, entry-aware guidance, passive canvas, immediate confirmation and restore, action notices, Chinese text");
         }
-        finally{UnityEngine.Object.DestroyImmediate(f.gameObject);}
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(f.gameObject);
+            if(hadPreference)PlayerPrefs.SetInt(AeroInteractionFeedback.SoundPreferenceKey,stored);
+            else PlayerPrefs.DeleteKey(AeroInteractionFeedback.SoundPreferenceKey);
+            PlayerPrefs.Save();
+        }
     }
 }

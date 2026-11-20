@@ -127,6 +127,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     {
         var image=AeroHudView.AddPanelImage(parent,"Backing",Resources.Load<Sprite>("JetStyle/RoundedRect"),position,size,new Color(.04f,.07f,.08f,.96f));
         image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=8;
+        image.gameObject.AddComponent<AeroGlassSurface>().Initialize(image.color);
     }
     void HandleLabel(AeroDragHandle handle,string label)
     {

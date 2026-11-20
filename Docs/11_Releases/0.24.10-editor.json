@@ -1,0 +1,58 @@
+{
+  "version": "0.24.10",
+  "androidVersionCode": 49,
+  "unity": "6000.6.9f1",
+  "applicationEntry": "UnityPlayerActivity",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 7,
+    "apk": "Builds/AeroPulse-GlassLab-v0.24.10.apk",
+    "bytes": 50180925,
+    "sha256": "29c3fe6d9587d41f179cf9390ae72b468b971d0f6901980ddd1cae0c1db536a3",
+    "package": "com.three.aeropulsemvp.glass",
+    "signatureVerified": true,
+    "zipIntegrityVerified": true,
+    "zipAlignVerified": true
+  },
+  "editorChecks": {
+    "catalog023": "pass",
+    "profilesUi021": "pass",
+    "nativeKeyboard023": "pass",
+    "feedback024": "pass",
+    "glassOpacity026": "pass",
+    "settings016": "pass",
+    "editMode024": "pass",
+    "impeccableDetect": []
+  },
+  "glassOpacity": {
+    "autoSource": "AeroGlassPanorama environment cubemap luminance",
+    "passthroughCameraRead": false,
+    "autoRange": [0.06, 0.38],
+    "manualRange": [0.05, 0.60],
+    "manualDefault": 0.22,
+    "persistenceKeys": [
+      "AeroPulse.GlassOpacityMode",
+      "AeroPulse.GlassManualTransparency"
+    ]
+  },
+  "visualReview": {
+    "settingsDisplay": {
+      "path": "Docs/11_Releases/0.24.10-settings-display.png",
+      "sha256": "557987e1ce263430425d67b855b0516d1038728c6c40ec37173ae428e399f34e"
+    },
+    "keyboardOpening": {
+      "path": "Docs/11_Releases/0.24.10-keyboard-opening.png",
+      "sha256": "cc9029c2483229648eedb986d3a8dcfc8b1b2866c759bbc7c564519c88732328"
+    },
+    "components": {
+      "path": "Docs/11_Releases/0.24.10-catalog-components.png",
+      "sha256": "c1d7013e1d5df83710c89441ed910e295d9b126b34ba764bbc1bdc354baacd4f"
+    },
+    "profiles": {
+      "path": "Docs/11_Releases/0.24.10-catalog-profiles.png",
+      "sha256": "eed711f9f212c3f3162e267dd53133617cd15cc1125d3275365a50c15ed3222e"
+    }
+  },
+  "questInstall": "pending-device-disconnected"
+}

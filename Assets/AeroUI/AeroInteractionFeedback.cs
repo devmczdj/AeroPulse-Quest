@@ -57,8 +57,9 @@ public float AudioVolumeForChecks => source != null ? source.volume : 0f;
         var group = go.GetComponent<CanvasGroup>();
         group.interactable = false;
         group.blocksRaycasts = false;
-        AeroHudView.AddPanelImage(go.transform, "GuidanceBacking", AeroUiSprites.Pill,
+        var guidanceBacking=AeroHudView.AddPanelImage(go.transform, "GuidanceBacking", AeroUiSprites.Pill,
             Vector2.zero, new Vector2(680f, 104f), new Color(0.025f, 0.055f, 0.055f, 0.94f));
+        guidanceBacking.gameObject.AddComponent<AeroGlassSurface>().Initialize(guidanceBacking.color);
         var feedback = go.AddComponent<AeroInteractionFeedback>();
         feedback.feedbackCanvas = canvas;
         feedback.label = AeroHudView.Text(go.transform, "GuidanceMessage", TouchIntro,

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 // AeroUI is a small local component layer: tokens + primitives, not a new input stack.
 public class AeroHudView : MonoBehaviour
 {
+    public Image GlassSurface { get; private set; }
     public Button CloseButton { get; private set; }
 
     public Button MapButton { get; private set; }
@@ -200,6 +201,8 @@ public class AeroHudView : MonoBehaviour
         foreach(var name in new[]{"Shadow","Tint","Sheen","Stroke","CloseBorder"}){var decorative=card.transform.Find(name);if(decorative!=null)decorative.gameObject.SetActive(false);}
         foreach(var name in new[]{"Logo","ChipBorder","ChipFill","ChipDot","HeaderDivider","FooterDivider"}){var decorative=content.Find(name);if(decorative!=null)decorative.gameObject.SetActive(false);}
         glass.material=null;glass.color=new Color(.04f,.065f,.07f,.94f);
+        GlassSurface=glass;
+        glass.gameObject.AddComponent<AeroGlassSurface>().Initialize(glass.color);
         var word=content.Find("Wordmark").GetComponent<TextMeshProUGUI>();word.text="运动数据";word.font=AeroUiFonts.Interface;word.fontSize=26;word.characterSpacing=0;
         subline.gameObject.SetActive(false);sourceLabel.text="模拟数据";sourceLabel.font=AeroUiFonts.Interface;sourceLabel.characterSpacing=0;
         foreach(var t in dataBody.GetComponentsInChildren<TextMeshProUGUI>()){t.characterSpacing=0;if(t.fontSize>30)t.fontSize=48;else t.fontSize=22;var rt=(RectTransform)t.transform;rt.sizeDelta=new Vector2(rt.sizeDelta.x,Mathf.Max(rt.sizeDelta.y,t.fontSize>30?64:36));}

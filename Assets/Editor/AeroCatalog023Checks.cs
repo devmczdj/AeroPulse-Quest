@@ -59,8 +59,8 @@ public static class AeroCatalog023Checks
             Require(Mathf.Approximately(root.rect.width,540f),"Catalog width is not the compact target");
             var panelFill=root.Find("Backing").GetComponent<Image>().color.a;
             var sectionFill=header.Find("Backing").GetComponent<Image>().color.a;
-            Require(panelFill<0.9f&&panelFill>0.6f,"Catalog panel is not translucent enough");
-            Require(sectionFill<0.9f&&sectionFill>0.6f,"Catalog header is not translucent enough");
+            Require(panelFill<0.9f&&panelFill>0.25f,"Catalog panel opacity is outside the supported range");
+            Require(sectionFill<0.9f&&sectionFill>0.20f,"Catalog header opacity is outside the supported range");
             Require(move.GetComponent<Collider>()!=null,"Catalog move strip has no hit target");
             Require(depth.GetComponent<Collider>()!=null,"Catalog depth strip has no hit target");
             Require(scale.GetComponent<Collider>()!=null,"Catalog scale handle has no hit target");

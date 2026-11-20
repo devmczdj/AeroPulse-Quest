@@ -71,7 +71,7 @@ public static class AeroCatalogVisualRun
             {
                 Canvas.ForceUpdateCanvases();
                 Physics.SyncTransforms();
-                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.9-catalog-components.png"));
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-catalog-components.png"));
                 phase = 2;
                 phaseAt = EditorApplication.timeSinceStartup;
                 return;
@@ -88,7 +88,7 @@ public static class AeroCatalogVisualRun
                     widgets.SetPage(true);
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.9-catalog-profiles.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-catalog-profiles.png"));
                     UnityEngine.UI.Button rename = null;
                     foreach (var button in widgets.CatalogRoot.GetComponentsInChildren<UnityEngine.UI.Button>(true))
                         if (button.name == "RenameProfile") { rename = button; break; }
@@ -97,7 +97,7 @@ public static class AeroCatalogVisualRun
                     experiment.Profiles.BeginKeyboardOpeningForChecks();
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.9-keyboard-opening.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-keyboard-opening.png"));
                 }
                 if (File.Exists(storePath)) File.Delete(storePath);
                 phase = 3;
@@ -106,10 +106,40 @@ public static class AeroCatalogVisualRun
             }
             if (phase == 3)
             {
+                if (layout.Editing) layout.EndEdit();
+                layout.ResetAll();
+                var hud = experiment.Follow.GetComponent<AeroHudView>();
+                experiment.RestoreMainVisibility(true);
+                experiment.Sky.Hide();
+                hud.ShowMap(false);
+                if (!hud.IsSettingsOpen) hud.ToggleSettings();
+                hud.SettingsView.SelectTab(AeroHudSettingsView.SettingsTab.Display);
+                experiment.Recenter();
+                var cardGroup = hud.GetComponent<CanvasGroup>();
+                if (cardGroup != null) cardGroup.alpha = 1f;
+                if (!experiment.IsCardOpen || !experiment.IsCardVisible || !hud.gameObject.activeInHierarchy || !hud.IsSettingsOpen ||
+                    hud.SettingsView.CurrentTab != AeroHudSettingsView.SettingsTab.Display)
+                    throw new InvalidOperationException("Display settings page did not become visible for capture");
+                Canvas.ForceUpdateCanvases();
+                Physics.SyncTransforms();
+                Vector3 viewport = Camera.main.WorldToViewportPoint(hud.transform.position);
+                if (viewport.z <= 0f || viewport.x < .15f || viewport.x > .85f ||
+                    viewport.y < .15f || viewport.y > .85f)
+                    throw new InvalidOperationException("Display settings page is outside the capture viewport");
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-settings-display.png"));
+                phase = 4;
+                phaseAt = EditorApplication.timeSinceStartup;
+                return;
+            }
+            if (phase == 4)
+            {
                 AeroCatalog023Checks.Run();
                 AeroProfilesUi021Checks.Run();
                 AeroNativeKeyboard023Checks.Run();
                 AeroFeedback024Checks.Run();
+                AeroGlassOpacity026Checks.Run();
+                AeroSettingsChecks.Run();
+                AeroSettingsChecks.Feedback();
                 AeroEditMode024Checks.Run();
                 Debug.Log("[AeroPulse CatalogVisualRun] PASS captures and catalog/profile/edit checks");
                 SessionState.SetBool(ActiveKey, false);

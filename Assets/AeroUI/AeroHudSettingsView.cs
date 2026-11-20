@@ -10,9 +10,10 @@ public class AeroHudSettingsView : MonoBehaviour
     public bool LayoutPage => CurrentTab == SettingsTab.Layout;
     public bool ResetConfirmationOpen { get; private set; }
     public UnityEngine.UI.Button[] TabButtons, SkyOptions, CompactOptions, EntryOptions,
-        HeightOptions, ModeOptions, DistanceOptions, SoundOptions;
+        HeightOptions, ModeOptions, DistanceOptions, SoundOptions, GlassModeOptions;
     public AeroValueSlider HeightSlider { get; private set; }
     public AeroValueSlider DistanceSlider { get; private set; }
+    public AeroValueSlider GlassTransparencySlider { get; private set; }
     public UnityEngine.UI.Button WidgetLibraryButton, HelpButton, ConfirmResetButton, CancelResetButton;
     public TextMeshProUGUI CurrentModeLabel { get; private set; }
     // Aliases keep older Editor helpers compilable; the height/distance controls are sliders.
@@ -61,25 +62,32 @@ public class AeroHudSettingsView : MonoBehaviour
         foreach(var page in view.pages)page.anchoredPosition=new Vector2(212,0);
 
         var display=view.pages[0];
-        view.Heading(display,"SkyHeading","天空地图",84);
-        view.SkyOptions=view.Options(display,"SkyVisible",new[]{"关闭","开启"},84);
+        view.Heading(display,"SkyHeading","天空地图",112);
+        view.SkyOptions=view.Options(display,"SkyVisible",new[]{"关闭","开启"},112);
         view.SkyOptions[0].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetSkyVisible(false);view.Refresh();});
         view.SkyOptions[1].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetSkyVisible(true);view.Refresh();});
-        view.Heading(display,"CompactHeading","视野小读数",8);
-        view.CompactOptions=view.Options(display,"CompactPlacement",new[]{"隐藏","左侧","右侧"},8);
+        view.Heading(display,"CompactHeading","组件",40);
+        view.CompactOptions=view.Options(display,"CompactPlacement",new[]{"隐藏","左侧","右侧"},40);
         for(int i=0;i<3;i++)
         {
             int index=i;
             view.CompactOptions[i].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetCompactPlacement((AeroCompactHud.Placement)index);view.Refresh();});
         }
         foreach(var old in view.CompactOptions)old.gameObject.SetActive(false);
-        display.Find("CompactHeading").GetComponent<TextMeshProUGUI>().text="组件";
-        view.WidgetLibraryButton=view.Button(display,"WidgetLibrary","布局设置",new Vector2(-16,8),new Vector2(296,44));
+        view.WidgetLibraryButton=view.Button(display,"WidgetLibrary","布局设置",new Vector2(-126,40),new Vector2(296,42));
         AeroUiIcons.Label(view.WidgetLibraryButton,"picture-in-picture","布局设置");
         view.WidgetLibraryButton.onClick.AddListener(()=>view.SelectTab(SettingsTab.Layout));
-        view.Heading(display,"SkyRecallHeading","天空位置",-68);
-        view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(-16,-68),new Vector2(296,44));
+        view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(126,40),new Vector2(296,42));
+        AeroUiIcons.Label(view.EditSkyButton,"globe","召回天空");
         view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.RecenterSky();});
+        view.Heading(display,"GlassModeHeading","玻璃",-30);
+        view.GlassModeOptions=view.Options(display,"GlassMode",new[]{"自动","手动"},-30);
+        view.GlassModeOptions[0].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetGlassOpacityMode(AeroGlassOpacityMode.Auto);view.Refresh();});
+        view.GlassModeOptions[1].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetGlassOpacityMode(AeroGlassOpacityMode.Manual);view.Refresh();});
+        view.Text(display,"GlassTransparencyHeading","透明度",new Vector2(-344,-84),new Vector2(150,28),22,AeroUiTokens.Secondary);
+        view.GlassTransparencySlider=AeroValueSlider.Build(display,"GlassTransparencySlider",new Vector2(-80,-104),
+            new Vector2(560,54),.05f,.60f,.22f,.01f,value=>Mathf.RoundToInt(value*100)+"%",
+            value=>{if(view.owner!=null)view.owner.SetGlassTransparency(value);view.Refresh();});
 
         var input=view.pages[1];
         view.Heading(input,"EntryHeading","打开方式",84);
@@ -139,7 +147,6 @@ public class AeroHudSettingsView : MonoBehaviour
         view.HeightOptions=new[]{view.HeightButton};view.DistanceOptions=new[]{view.DistanceButton};
         AeroUiIcons.Label(view.RecenterButton,"crosshair","召回");
         AeroUiIcons.Label(view.EditCardButton,"grip-vertical","编辑布局");
-        AeroUiIcons.Apply(view.EditSkyButton,"globe",28);
         AeroUiIcons.Apply(view.ResetButton,"rotate-ccw",36);
         AeroUiIcons.Apply(view.CancelResetButton,"close",28);
         AeroUiIcons.Apply(view.ConfirmResetButton,"check",28);
@@ -215,6 +222,11 @@ public class AeroHudSettingsView : MonoBehaviour
             Select(EntryOptions,!owner.HandEntry.EnabledForEntry?2:owner.HandEntry.ShortcutsEnabled?1:0);
             HeightSlider.SetValueWithoutNotify(owner.HandEntry.HeightOffset);
             Select(SoundOptions,owner.FeedbackSoundEnabled?1:0);
+            if(owner.GlassOpacity!=null)
+            {
+                Select(GlassModeOptions,(int)owner.GlassOpacity.Mode);
+                GlassTransparencySlider.SetValueWithoutNotify(owner.GlassOpacity.EffectiveTransparency);
+            }
             bool attached=owner.Layout.MainAnchor==AeroWindowAnchor.Hand||owner.Layout.MainAnchor==AeroWindowAnchor.View;
             Select(ModeOptions,attached?-1:(int)owner.Follow.Mode);
             foreach(var mode in ModeOptions)mode.interactable=!attached;
@@ -224,6 +236,12 @@ public class AeroHudSettingsView : MonoBehaviour
                 owner.Layout.MainAnchor==AeroWindowAnchor.View?"随视野：用编辑中的远近调整。":"";
         }
         Paint();
+    }
+
+    void Update()
+    {
+        if(owner==null||owner.GlassOpacity==null||GlassTransparencySlider==null||CurrentTab!=SettingsTab.Display)return;
+        GlassTransparencySlider.SetValueWithoutNotify(owner.GlassOpacity.EffectiveTransparency);
     }
     public void SetHover(UnityEngine.UI.Button left,UnityEngine.UI.Button right)
     {

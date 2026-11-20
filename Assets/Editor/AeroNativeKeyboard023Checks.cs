@@ -39,7 +39,7 @@ public static class AeroNativeKeyboard023Checks
                 var edit=Find(w,"EditProfileName");var save=Find(w,"ConfirmProfileName");var cancel=Find(w,"CancelProfileName");
                 var keyboardHint=w.CatalogRoot.Find("ProfilesPage/ProfileNameDialog/KeyboardHint").GetComponent<TextMeshProUGUI>();
                 var modalBacking=w.CatalogRoot.Find("ProfilesPage/ProfileNameDialog/ModalBacking").GetComponent<Image>();
-                Require(modalBacking!=null&&modalBacking.color.a>=.6f&&modalBacking.color.a<.9f,
+                Require(modalBacking!=null&&modalBacking.color.a>=.24f&&modalBacking.color.a<.9f,
                     "Name dialog background is not translucent enough for the hand ray");
                 Require(keyboardHint!=null&&keyboardHint.text.Contains("系统键盘决定"),
                     "Keyboard hint incorrectly claims a language can be forced by the app");
