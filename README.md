@@ -2,7 +2,7 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前源码 v0.24.8（Android code 47）：确认提示音默认开启且持久化，并准确说明 Quest 系统键盘语言限制。** [上一版 v0.24.7 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.24.7) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前源码 v0.24.9（Android code 48）：名称弹窗改为半透明玻璃，手部射线可透过界面看到。** [上一版 v0.24.8 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.24.8) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![v0.22.1 日常查看预设读数，Unity 编辑器画面](Docs/11_Releases/0.22.1-normal.png)
 
@@ -117,3 +117,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [38_提示音与中文键盘](Docs/38_提示音与中文键盘.md) · [键盘等待态截图](Docs/11_Releases/0.24.7-keyboard-opening.png) · [0.24.7构建与检查](Docs/11_Releases/0.24.7-editor.json)
 
 [39_系统键盘语言说明](Docs/39_系统键盘语言说明.md) · [0.24.8构建与检查](Docs/11_Releases/0.24.8-editor.json)
+
+[40_名称弹窗透明度与射线](Docs/40_名称弹窗透明度与射线.md) · [0.24.9构建与检查](Docs/11_Releases/0.24.9-editor.json)

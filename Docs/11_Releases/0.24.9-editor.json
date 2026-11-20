@@ -1,0 +1,46 @@
+{
+  "version": "0.24.9",
+  "androidVersionCode": 48,
+  "unity": "6000.6.9f1",
+  "applicationEntry": "UnityPlayerActivity",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 7,
+    "apk": "Builds/AeroPulse-GlassLab-v0.24.9.apk",
+    "bytes": 50168825,
+    "sha256": "56babd7709ddd202a5f95676abc0b45d3d7fd22c7df2aa4f5fc8cfce59a61d1d",
+    "package": "com.three.aeropulsemvp.glass",
+    "signatureVerified": true,
+    "zipIntegrityVerified": true,
+    "zipAlignVerified": true
+  },
+  "editorChecks": {
+    "catalog023": "pass",
+    "profilesUi021": "pass",
+    "nativeKeyboard023": "pass",
+    "feedback024": "pass",
+    "editMode024": "pass",
+    "impeccableDetect": []
+  },
+  "modal": {
+    "sprite": "JetStyle/RoundedRect",
+    "fill": "AeroUiTokens.ToolPanelFill",
+    "alpha": 0.78
+  },
+  "visualReview": {
+    "keyboardOpening": {
+      "path": "Docs/11_Releases/0.24.9-keyboard-opening.png",
+      "sha256": "675f93b72dbfd805d73d291b366a8aedcedd6b6230b2aec92fcaf1a60168d9fc"
+    },
+    "components": {
+      "path": "Docs/11_Releases/0.24.9-catalog-components.png",
+      "sha256": "6c53d57a40d715822d523973b2e1c52d0bf76514582cd6f0898f1115428f72e4"
+    },
+    "profiles": {
+      "path": "Docs/11_Releases/0.24.9-catalog-profiles.png",
+      "sha256": "f4180945fd554c9948a969b386ea72b22f545a5c75c230d169028f745cf44976"
+    }
+  },
+  "questInstall": "pending-device-disconnected"
+}

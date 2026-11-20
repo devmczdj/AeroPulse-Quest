@@ -487,7 +487,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     static void Backing(Transform parent, Vector2 size)
     {
-        var image = AeroHudView.AddPanelImage(parent, "ModalBacking", AeroUiSprites.SolidPanel, Vector2.zero, size, new Color(.04f, .065f, .07f, 1));
+        var image = AeroHudView.AddPanelImage(parent, "ModalBacking",
+            Resources.Load<Sprite>("JetStyle/RoundedRect"), Vector2.zero, size, AeroUiTokens.ToolPanelFill);
         image.type = UnityEngine.UI.Image.Type.Sliced; image.pixelsPerUnitMultiplier = 4;
     }
 
