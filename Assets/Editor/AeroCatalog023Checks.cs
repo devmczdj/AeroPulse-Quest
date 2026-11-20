@@ -55,7 +55,7 @@ public static class AeroCatalog023Checks
             var firstRecall=(RectTransform)firstRow.Find("CatalogWidgetRecall_heart");
             var done=(RectTransform)catalog.DoneButton.transform;
             Canvas.ForceUpdateCanvases();
-            Require(root.rect.width>=560f,"Catalog width was not increased for inline widget actions");
+            Require(Mathf.Approximately(root.rect.width,540f),"Catalog width is not the compact target");
             var panelFill=root.Find("Backing").GetComponent<Image>().color.a;
             var sectionFill=header.Find("Backing").GetComponent<Image>().color.a;
             Require(panelFill<0.9f&&panelFill>0.6f,"Catalog panel is not translucent enough");
@@ -98,7 +98,11 @@ public static class AeroCatalog023Checks
             Require(!Overlaps(depthRect,closeRect),"Depth strip overlaps the close button");
             Require(!Overlaps(firstRect,firstCloseRect)&&!Overlaps(firstRect,firstRecallRect)&&
                 !Overlaps(firstCloseRect,firstRecallRect),"Inline widget actions overlap");
-            Require(firstCloseRect.xMin-firstStatusRect.xMax>=14f,"Add/Edit label was not moved left of close");
+            Require(firstRecallRect.xMin-firstStatusRect.xMax>=14f,"Add/Edit label was not moved left of recall");
+            Require(firstCloseRect.xMin>firstRecallRect.xMax+4f,"Icon-only close is not at the row's far right");
+            Require(firstCloseRect.width<=44f,"Icon-only close is wider than expected");
+            var closeLabel=firstClose.GetComponentInChildren<TextMeshProUGUI>(true);
+            Require(closeLabel==null||!closeLabel.enabled,"Icon-only close still shows its text label");
             Require(Contains(firstRowRect,firstRect)&&Contains(firstRowRect,firstCloseRect)&&Contains(firstRowRect,firstRecallRect),
                 "Inline widget actions escape their row");
             Require(!Overlaps(firstRect,doneRect)&&!Overlaps(firstCloseRect,doneRect)&&!Overlaps(firstRecallRect,doneRect),
