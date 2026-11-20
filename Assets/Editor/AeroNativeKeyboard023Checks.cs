@@ -3,6 +3,7 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR.Hands;
 
 // Injects keyboard responses into the production naming transaction; no OS keyboard is opened.
 public static class AeroNativeKeyboard023Checks
@@ -25,20 +26,49 @@ public static class AeroNativeKeyboard023Checks
         {
             try
             {
-                h.DirectInputForChecks=true;h.SendMessage("OnApplicationFocus",true);w.SetKeepOpen(true);
+                if(v.ModalOpen)v.EndEditing();
+                if(l.Dragging)l.CancelDrag("NativeKeyboard023 setup");
+                if(l.Editing)l.EndEdit();
+                w.SetModal(false);
+                h.DirectInputForChecks=true;h.SendMessage("OnApplicationFocus",true);
                 v.UseKeyboardStubForChecks=true;v.KeyboardAvailableForChecks=true;
-                l.BeginEdit(false);w.SetPage(true);
+                l.BeginEdit(false);w.SetKeepOpen(true);l.OpenTools();w.SetPage(true);
                 Require(!v.SaveCurrent()&&v.ModalOpen,"First save should ask for a name");
                 var edit=Find(w,"EditProfileName");var save=Find(w,"ConfirmProfileName");var cancel=Find(w,"CancelProfileName");
+                Require(v.enabled&&v.AppFocusedForChecks&&v.UseKeyboardStubForChecks&&edit.gameObject.activeInHierarchy&&
+                    edit.IsInteractable()&&v.AllowButton(edit),
+                    $"Keyboard edit entry state enabled={v.enabled} focused={v.AppFocusedForChecks} stub={v.UseKeyboardStubForChecks} active={edit.gameObject.activeInHierarchy} interactable={edit.IsInteractable()} allowed={v.AllowButton(edit)}");
                 h.ActivateButton(edit);
-                Require(v.KeyboardInputActive&&!save.IsInteractable()&&!v.AllowButton(cancel),"Keyboard does not isolate app input");
+                bool allowCancel=v.AllowButton(cancel),allowBackground=v.AllowButton(Find(w,"SaveNewProfile"));
+                Require(v.KeyboardInputActive&&!save.IsInteractable()&&allowCancel&&!allowBackground,
+                    $"Keyboard escape mismatch active={v.KeyboardInputActive} opening={v.KeyboardOpening} cancel={allowCancel} background={allowBackground} save={save.IsInteractable()}");
+                if(MetaAimHand.right==null)MetaAimHand.right=MetaAimHand.CreateHand(UnityEngine.XR.InputDeviceCharacteristics.Right);
+                var cancelPosition=cancel.transform.position;
+                AeroHandRayChecks.Frame(MetaAimHand.right,cancelPosition-cancel.transform.forward*.15f,
+                    Quaternion.LookRotation(cancel.transform.forward),false,Camera.main.transform.parent);
+                h.ProcessInput();
+                var rightRay=GameObject.Find("RightHandRay")?.GetComponent<LineRenderer>();
+                Require(rightRay!=null&&rightRay.enabled,"Keyboard hid the hand ray needed to cancel");
+                AeroHandRayChecks.Set(MetaAimHand.right,false,false,Vector3.zero,Quaternion.identity);h.ProcessInput();
+                v.KeyboardResultForChecks(TouchScreenKeyboard.Status.Canceled,"");
+                v.BeginKeyboardOpeningForChecks();
+                Require(v.KeyboardOpening&&!v.KeyboardInputActive&&v.AllowButton(cancel),"Pending keyboard locked app input");
+                v.TickKeyboardForChecks();
+                Require(v.KeyboardOpening&&v.AllowButton(cancel),"Pending keyboard lost its cancel path");
+                v.BeginKeyboardOpeningForChecks(3.1f);
+                v.TickKeyboardForChecks();
+                Require(!v.KeyboardEscapeMode&&v.AllowButton(cancel),"Keyboard timeout did not restore app input");
+                h.ActivateButton(edit);
                 Require(!v.SaveAs("NOT ALLOWED")&&v.Store.Data.profiles.Length==0,"Programmatic save bypasses keyboard session");
                 h.SendMessage("OnApplicationFocus",false);v.TickKeyboardForChecks();
-                Require(v.KeyboardInputActive&&v.ModalOpen,"Expected overlay focus loss discarded naming");
+                Require(v.KeyboardInputActive&&v.ModalOpen&&w.IsOpen&&save.gameObject.activeInHierarchy,
+                    "Keyboard focus loss hid the cancel/save panel");
                 h.SendMessage("OnApplicationFocus",true);
                 v.KeyboardResultForChecks(TouchScreenKeyboard.Status.Done,cjkName);
                 Require(!v.KeyboardInputActive&&v.DraftNameForChecks==cjkName&&v.Store.Data.profiles.Length==0,"Done must update draft, not save");
                 Require(AeroUiFonts.Interface.HasCharacters(v.DraftNameForChecks,out uint[] missing,true,true),"CJK name cannot render with fallback");
+                Require(save.gameObject.activeInHierarchy&&save.IsInteractable()&&v.AllowButton(save),
+                    $"Confirm save is unavailable active={save.gameObject.activeInHierarchy} interactable={save.IsInteractable()} allowed={v.AllowButton(save)} opening={v.KeyboardOpening} keyboard={v.KeyboardInputActive}");
                 h.ActivateButton(save);
                 Require(v.ActiveName==cjkName&&v.Store.Data.profiles.Length==1&&!v.ModalOpen,"Explicit confirmation did not save native name");
                 var savedBytes=File.ReadAllText(Path.Combine(dir,"profiles.json"));

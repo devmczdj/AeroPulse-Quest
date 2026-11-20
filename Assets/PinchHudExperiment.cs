@@ -139,7 +139,7 @@ public class PinchHudExperiment : MonoBehaviour
             SubsystemManager.GetSubsystems(handSubsystems);
             handSubsystem = handSubsystems.Find(x => x.running);
         }
-        bool keyboard=Profiles!=null&&Profiles.KeyboardInputActive;
+        bool keyboard=Profiles!=null&&Profiles.KeyboardEscapeMode;
         if(wasKeyboardActive!=keyboard){ClearPresses();wasKeyboardActive=keyboard;}
         Layout.PrepareFrame();
         TryRestoreProfile();
@@ -162,7 +162,13 @@ public class PinchHudExperiment : MonoBehaviour
         Profiles.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         HandEntry.SetShortcutHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
         ToolsEntry.SetHover(DirectTouch.HoverLeft??leftPointer.button,DirectTouch.HoverRight??rightPointer.button);
-        if(keyboard||ToolsEntry.ActivatedThisFrame){TickFeedback();return;}
+        if(keyboard)
+        {
+            if(leftSelect)Select(leftPointer,"left");
+            else if(rightSelect)Select(rightPointer,"right");
+            TickFeedback();return;
+        }
+        if(ToolsEntry.ActivatedThisFrame){TickFeedback();return;}
         if(Layout.NearDragging||Near.ConsumedThisSample){TickFeedback();return;}
         if(Layout.Dragging)
         {
@@ -194,7 +200,7 @@ public class PinchHudExperiment : MonoBehaviour
     {
         Feedback.HandEntryEnabled=HandEntry.EnabledForEntry;
         Feedback.RecoveryControlVisible=Compact.FallbackVisible;
-        Feedback.Tick(IsCardOpen||Layout.HasVisibleWidgets||Widgets.IsOpen,HandEntry.AnchorTracked,HasTrackedHand,focused&&!Profiles.KeyboardInputActive,Time.unscaledDeltaTime);
+        Feedback.Tick(IsCardOpen||Layout.HasVisibleWidgets||Widgets.IsOpen,HandEntry.AnchorTracked,HasTrackedHand,focused&&!Profiles.KeyboardEscapeMode,Time.unscaledDeltaTime);
     }
 
     void LateUpdate()
@@ -216,7 +222,7 @@ public class PinchHudExperiment : MonoBehaviour
         button.onClick.Invoke();ResetPresses();Feedback.Confirm(button);
     }
     bool JointAllowed(MetaAimHand hand)
-    {return focused&&(Profiles==null||!Profiles.KeyboardInputActive)&&(hand==null||!hand.added||(((MetaAimFlags)hand.aimFlags.ReadValue()&(MetaAimFlags.SystemGesture|MetaAimFlags.MenuPressed))==0));}
+    {return (focused||(Profiles!=null&&Profiles.KeyboardEscapeMode))&&(hand==null||!hand.added||(((MetaAimFlags)hand.aimFlags.ReadValue()&(MetaAimFlags.SystemGesture|MetaAimFlags.MenuPressed))==0));}
     void SampleDirectHands()
     {
         if(DirectTouch==null)return;
@@ -340,11 +346,13 @@ public class PinchHudExperiment : MonoBehaviour
     {
         bool near=(DirectTouch!=null&&(pointer==leftPointer?DirectTouch.NearLeft:DirectTouch.NearRight))
             ||(Near!=null&&(pointer==leftPointer?Near.NearLeft:Near.NearRight));
+        bool keyboardEscape=Profiles!=null&&Profiles.KeyboardEscapeMode;
+        bool inputFocus=focused||keyboardEscape;
         if(pointer.wasNear!=near){pointer.gate=default;pointer.pinch=default;pointer.pendingPress=false;pointer.wasNear=near;}
-        bool handValid=ReadHand(hand)&&focused&&!Profiles.KeyboardInputActive&&!near;
+        bool handValid=ReadHand(hand)&&inputFocus&&!near;
         Vector3 controlPos=default;Quaternion controlRot=Quaternion.identity;bool trigger=false;
         bool controller=!handValid&&ControllerRay(pointer==leftPointer,out controlPos,out controlRot,out trigger)&&
-            focused&&!Profiles.KeyboardInputActive&&!near;
+            inputFocus&&!near;
         valid = handValid||controller;
         if (pointer.wasValid != valid && Time.unscaledTime < diagnosticsUntil)
         {
@@ -404,13 +412,21 @@ public class PinchHudExperiment : MonoBehaviour
         pointer.hitDistance=hitSomething?hit.distance:maxDistance;
         if (hitSomething)
         {
-            if(Layout.Editing){pointer.handle=hit.collider.GetComponent<AeroDragHandle>();pointer.zone=hit.collider.GetComponent<AeroDockZone>();}
-            if (!IsCardOpen) pointer.target = hit.collider.GetComponent<GazeHotspot>();
             pointer.overCard = Layout.Owns(hit.collider.transform);
-            if (pointer.overCard || (Compact.FallbackVisible && hit.collider.gameObject == Compact.OpenButton.gameObject) || (HandEntry.ShortcutsVisible && hit.collider.transform.IsChildOf(HandEntry.ShortcutRoot)))
+            if(keyboardEscape)
             {
                 var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
-                if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button) || button==Compact.OpenButton || Layout.IsOwnPanel(button.transform))) pointer.button = button;
+                if(button!=null&&button.IsInteractable()&&Profiles.AllowButton(button))pointer.button=button;
+            }
+            else
+            {
+                if(Layout.Editing){pointer.handle=hit.collider.GetComponent<AeroDragHandle>();pointer.zone=hit.collider.GetComponent<AeroDockZone>();}
+                if (!IsCardOpen) pointer.target = hit.collider.GetComponent<GazeHotspot>();
+                if (pointer.overCard || (Compact.FallbackVisible && hit.collider.gameObject == Compact.OpenButton.gameObject) || (HandEntry.ShortcutsVisible && hit.collider.transform.IsChildOf(HandEntry.ShortcutRoot)))
+                {
+                    var button = hit.collider.GetComponent<UnityEngine.UI.Button>();
+                    if (button != null && button.IsInteractable() && (!Layout.Editing || Layout.ToolbarButton(button) || button==Compact.OpenButton || Layout.IsOwnPanel(button.transform))) pointer.button = button;
+                }
             }
         }
         // A cursor is meaningful only at a real surface, never at an arbitrary depth.
@@ -556,11 +572,13 @@ public class PinchHudExperiment : MonoBehaviour
     void OnApplicationFocus(bool hasFocus)
     {
         focused = hasFocus;
+        bool keyboardEscape=Profiles!=null&&Profiles.KeyboardEscapeMode;
         if(Profiles!=null)Profiles.SetAppFocused(hasFocus);if(ToolsEntry!=null)ToolsEntry.SetPaused(!hasFocus);
         if(Near!=null)Near.SetPaused(!hasFocus);
         if(!hasFocus)ClearPresses();
         if(!hasFocus&&Layout!=null&&Layout.Dragging)Layout.CancelDrag("APP PAUSED - RESTORED");
-        if(Compact!=null)Compact.SetPaused(!hasFocus);if(Layout!=null)Layout.SetPaused(!hasFocus);
+        if(Compact!=null)Compact.SetPaused(!hasFocus);
+        if(Layout!=null)Layout.SetPaused(!hasFocus&&!keyboardEscape);
         if(Sky!=null)Sky.SetPaused(!hasFocus);
         if(!hasFocus&&Feedback!=null)Feedback.Tick(IsCardOpen,false,false,false,0);
         if (leftPointer != null) { leftPointer.gate = default; leftPointer.pinch = default;leftPointer.pendingPress=false; }

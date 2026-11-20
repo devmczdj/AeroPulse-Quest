@@ -27,7 +27,7 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
 
     bool Blocked => paused || owner == null || !owner.isActiveAndEnabled || owner.Layout == null ||
         !owner.Layout.Editing || owner.Layout.Dragging || AeroValueSlider.Active != null ||
-        owner.Profiles != null && (owner.Profiles.ModalOpen || owner.Profiles.KeyboardInputActive);
+        owner.Profiles != null && (owner.Profiles.ModalOpen || owner.Profiles.KeyboardEscapeMode);
 
     public void Initialize(Camera camera, PinchHudExperiment hud)
     {

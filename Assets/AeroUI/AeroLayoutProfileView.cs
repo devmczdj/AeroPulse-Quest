@@ -12,6 +12,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     public bool ModalOpen => naming || confirming;
     public bool BlocksLayoutEdits => ModalOpen;
     public bool KeyboardInputActive { get; private set; }
+    public bool KeyboardOpening { get; private set; }
+    public bool KeyboardEscapeMode => KeyboardInputActive || KeyboardOpening;
     public AeroLayoutProfileStore Store { get; private set; }
     public Transform ActiveModalRoot => naming ? namePanel : confirming ? confirmPanel : null;
 
@@ -29,6 +31,9 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     bool naming, confirming, renaming, applying, restoreAttempted, appFocused = true;
     TouchScreenKeyboard keyboard;
     string nameBeforeKeyboard = "";
+    float keyboardOpeningStartedAt;
+    UnityEngine.UI.Button nameCancelButton;
+    const float KeyboardOpenTimeout = 3f;
 
     public static AeroLayoutProfileView Build(Camera camera, PinchHudExperiment owner, AeroWidgetCatalog catalog, string storagePath = null)
     {
@@ -74,7 +79,8 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 136), new Vector2(448, 40), 26);
         var input = Button(namePanel, "EditProfileName", "", new Vector2(0, 84), new Vector2(448, 52), OpenKeyboard);
         nameLabel = input.GetComponentInChildren<TextMeshProUGUI>(true); nameLabel.name = "NameValue";
-        nameLabel.enableAutoSizing = true; nameLabel.fontSizeMin = 16; nameLabel.fontSizeMax = 24;nameLabel.overflowMode=TextOverflowModes.Ellipsis;
+        nameLabel.enableAutoSizing = false; nameLabel.fontSize = 16; nameLabel.overflowMode = TextOverflowModes.Ellipsis;
+        nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
         Label(namePanel, "KeyboardHint", "点按名称，使用系统键盘", new Vector2(0, 46), new Vector2(448, 32), 20);
         string[] presets = { "日常", "运动", "演示" };
         for (int i = 0; i < presets.Length; i++)
@@ -84,7 +90,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         }
         nameHint = Label(namePanel, "NameHint", "", new Vector2(0, -44), new Vector2(448, 42), 20);
         Label(namePanel, "NameFallbackHint", "也可选择上方的预设名称", new Vector2(0, -84), new Vector2(448, 32), 20);
-        Button(namePanel, "CancelProfileName", "取消", new Vector2(-112, -132), new Vector2(208, 42), CancelModal);
+        nameCancelButton = Button(namePanel, "CancelProfileName", "取消", new Vector2(-112, -132), new Vector2(208, 42), CancelModal);
         nameSaveButton = Button(namePanel, "ConfirmProfileName", "保存", new Vector2(112, -132), new Vector2(208, 42), ConfirmName);
         namePanel.gameObject.SetActive(false);
     }
@@ -101,7 +107,9 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         confirmPanel.gameObject.SetActive(false);
     }
 
-    public bool AllowButton(UnityEngine.UI.Button button) => !KeyboardInputActive && (!ModalOpen || (button != null && ActiveModalRoot != null && button.transform.IsChildOf(ActiveModalRoot)));
+    public bool AllowButton(UnityEngine.UI.Button button) =>
+        (KeyboardEscapeMode ? button == nameCancelButton : !KeyboardEscapeMode) &&
+        (!ModalOpen || (button != null && ActiveModalRoot != null && button.transform.IsChildOf(ActiveModalRoot)));
 
     public void MarkChanged()
     {
@@ -128,7 +136,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public bool SaveCurrent()
     {
-        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardEscapeMode) return false;
         var profile = Store.Find(Store.Data.activeId);
         if (profile == null) { OpenName(false); return false; }
         if (!Store.TryReplace(profile.id, owner.Layout.CaptureLayout())) { Failure("保存失败；原档案保持"); return false; }
@@ -139,7 +147,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     public bool SaveAs(string name)
     {
-        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || owner.Layout.Dragging || KeyboardEscapeMode) return false;
         if (!NameValid(name, null, out string error)) { Failure(error); return false; }
         if (!Store.TryAdd(name, owner.Layout.CaptureLayout(), out var profile)) { Failure("保存失败；当前布局保持"); return false; }
         owner.MainVisibilityPreference = owner.PreferredMainVisibility;
@@ -150,7 +158,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     public bool RenameCurrent(string name)
     {
         var profile = Store.Find(Store.Data.activeId);
-        if (!owner.Layout.Editing || profile == null || owner.Layout.Dragging || KeyboardInputActive) return false;
+        if (!owner.Layout.Editing || profile == null || owner.Layout.Dragging || KeyboardEscapeMode) return false;
         if (!NameValid(name, profile.id, out string error)) { Failure(error); return false; }
         if (!Store.TryRename(profile.id, name)) { Failure("改名失败；原名称保持"); return false; }
         message = "名称已更新"; Refresh(); CompleteToolAction(); return true;
@@ -226,7 +234,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void ConfirmName()
     {
-        if (KeyboardInputActive) return;
+        if (KeyboardEscapeMode) return;
         bool ok = renaming ? RenameCurrent(draftName) : SaveAs(draftName);
         if (!ok) { nameHint.text = message; nameHint.color = AeroUiTokens.Amber; return; }
         naming = false; SetModalState();
@@ -239,7 +247,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     }
 
     void CompleteToolAction()
-    { if (!ModalOpen && !KeyboardInputActive) owner.Layout.ToolActionCompleted(); }
+    { if (!ModalOpen && !KeyboardEscapeMode) owner.Layout.ToolActionCompleted(); }
 
     public void EndEditing()=>CancelModal();
 
@@ -263,13 +271,13 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void OpenKeyboard()
     {
-        if (!naming || KeyboardInputActive || !appFocused) return;
+        if (!naming || KeyboardEscapeMode || !appFocused) return;
         nameBeforeKeyboard = draftName;
 #if UNITY_EDITOR
         if (UseKeyboardStubForChecks)
         {
             if (!KeyboardAvailableForChecks) { KeyboardUnavailable(); return; }
-            KeyboardInputActive = true; owner.ClearPresses(); RefreshName(); return;
+            KeyboardOpening = false; KeyboardInputActive = true; owner.ClearPresses(); RefreshName(); return;
         }
 #endif
         if (!TouchScreenKeyboard.isSupported) { KeyboardUnavailable(); return; }
@@ -278,7 +286,12 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
             keyboard = TouchScreenKeyboard.Open(draftName, TouchScreenKeyboardType.Default,
                 false, false, false, false, "档案名称", AeroLayoutProfileStore.MaxNameLength);
             if (keyboard == null) { KeyboardUnavailable(); return; }
-            KeyboardInputActive = true; owner.ClearPresses(); RefreshName();
+            KeyboardInputActive = false;
+            KeyboardOpening = true;
+            keyboardOpeningStartedAt = Time.unscaledTime;
+            owner.ClearPresses();
+            RefreshName();
+            Debug.Log("[AeroPulse Keyboard] OPEN requested");
         }
         catch (Exception exception)
         {
@@ -289,12 +302,18 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void KeyboardUnavailable()
     {
-        RefreshName(); nameHint.text = "系统键盘不可用，可使用预设名称";
+        KeyboardOpening = false;
+        RefreshName(); nameHint.text = "系统键盘不可用；射线已恢复，可使用预设名称";
         nameHint.color = AeroUiTokens.Amber;
     }
 
     void Update()
     {
+        if (KeyboardOpening)
+        {
+            TickKeyboardOpening();
+            return;
+        }
         if (!KeyboardInputActive) return;
         // The system overlay itself can remove app focus; its result ends this session.
         if (!naming || catalog == null || !catalog.IsOpen && appFocused)
@@ -302,9 +321,47 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         if (keyboard != null) ApplyKeyboardResult(keyboard.status, keyboard.text);
     }
 
+    void TickKeyboardOpening()
+    {
+        if (keyboard == null)
+        {
+            if (Time.unscaledTime - keyboardOpeningStartedAt >= KeyboardOpenTimeout)
+                AbortKeyboardOpening("系统键盘未显示；射线已恢复，可重试或选择预设名称");
+            return;
+        }
+        var status = keyboard.status;
+        if (status == TouchScreenKeyboard.Status.Visible || TouchScreenKeyboard.visible)
+        {
+            KeyboardOpening = false;
+            KeyboardInputActive = true;
+            owner.ClearPresses();
+            RefreshName();
+            Debug.Log("[AeroPulse Keyboard] OPEN visible status=" + status + " visible=" + TouchScreenKeyboard.visible);
+            return;
+        }
+        if (status == TouchScreenKeyboard.Status.Done || status == TouchScreenKeyboard.Status.Canceled ||
+            status == TouchScreenKeyboard.Status.LostFocus)
+        {
+            ApplyKeyboardResult(status, keyboard.text);
+            return;
+        }
+        if (Time.unscaledTime - keyboardOpeningStartedAt >= KeyboardOpenTimeout)
+            AbortKeyboardOpening("系统键盘未显示；射线已恢复，可重试或选择预设名称");
+    }
+
+    void AbortKeyboardOpening(string message)
+    {
+        Debug.LogWarning("[AeroPulse Keyboard] OPEN timeout; input restored");
+        CloseKeyboard();
+        RefreshName();
+        nameHint.text = message;
+        nameHint.color = AeroUiTokens.Amber;
+        owner.ClearPresses();
+    }
+
     void ApplyKeyboardResult(TouchScreenKeyboard.Status status, string text)
     {
-        if (!KeyboardInputActive || status == TouchScreenKeyboard.Status.Visible) return;
+        if ((!KeyboardInputActive && !KeyboardOpening) || status == TouchScreenKeyboard.Status.Visible) return;
         draftName = status == TouchScreenKeyboard.Status.Done ? text ?? "" : nameBeforeKeyboard;
         CloseKeyboard();
         if (naming) RefreshName();
@@ -313,6 +370,7 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void CloseKeyboard()
     {
+        KeyboardOpening = false;
         KeyboardInputActive = false;
         var previous = keyboard; keyboard = null;
         if (previous != null) previous.active = false;
@@ -322,8 +380,10 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
     {
         nameLabel.text = draftName;
         bool valid = NameValid(draftName, renaming ? Store.Data.activeId : null, out string error);
-        nameSaveButton.interactable = valid && !KeyboardInputActive;
-        nameHint.text = KeyboardInputActive ? "请在系统键盘中完成或取消" : valid ? "最多 24 字，点击保存后生效" : error;
+        nameSaveButton.interactable = valid && !KeyboardEscapeMode;
+        nameHint.text = KeyboardOpening ? "正在打开系统键盘；射线仍可点取消"
+            : KeyboardInputActive ? "请在系统键盘中完成或取消"
+            : valid ? "最多 24 字，点击保存后生效" : error;
         nameHint.color = valid ? AeroUiTokens.Secondary : AeroUiTokens.Amber;
         Paint();
     }
@@ -433,7 +493,17 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
 #if UNITY_EDITOR
     public bool UseKeyboardStubForChecks, KeyboardAvailableForChecks = true;
+    public bool AppFocusedForChecks => appFocused;
     public string DraftNameForChecks => draftName;
+    public void BeginKeyboardOpeningForChecks(float elapsed = 0f)
+    {
+        keyboard = null;
+        KeyboardInputActive = false;
+        KeyboardOpening = true;
+        keyboardOpeningStartedAt = Time.unscaledTime - Mathf.Max(0f, elapsed);
+        owner.ClearPresses();
+        RefreshName();
+    }
     public void TickKeyboardForChecks() => Update();
     public void KeyboardResultForChecks(TouchScreenKeyboard.Status status, string text)
     {
