@@ -266,6 +266,21 @@ public class PinchHudExperiment : MonoBehaviour
         Layout.Recall();Physics.SyncTransforms();RefreshSettings("主卡已移到面前");
     }
     public void RecenterSky() { if(Sky!=null)Sky.Recall();RefreshSettings("天空地图已回到前上方"); }
+    public void RecallMainFromHand()
+    {
+        if (!IsCardOpen) OpenFromHand();
+        Layout.Recall();
+        Physics.SyncTransforms();
+        if(Feedback!=null)Feedback.Notify("主卡已回到面前");
+    }
+    public void RecallToolsFromHand()
+    {
+        if (!Layout.Editing) Layout.BeginEdit(false);
+        Layout.OpenTools();
+        Widgets.RecallPlacement();
+        Physics.SyncTransforms();
+        if(Feedback!=null)Feedback.Notify("设置面板已回到面前");
+    }
     public void ToggleSkyMap() => SetSkyVisible(!Sky.Visible);
     public void ResetViewOptions()
     {
@@ -400,7 +415,7 @@ public class PinchHudExperiment : MonoBehaviour
         }
         // A cursor is meaningful only at a real surface, never at an arbitrary depth.
         pointer.tip.gameObject.SetActive(hitSomething && showRay);
-        Vector3 end = hitSomething ? hit.point : ray.GetPoint(maxDistance);
+        Vector3 end = hitSomething ? hit.point - ray.direction * .015f : ray.GetPoint(maxDistance);
         if (Debug.isDebugBuild && Time.unscaledTime < diagnosticsUntil && Time.unscaledTime - pointer.lastDiagnostic >= 1f)
         {
             pointer.lastDiagnostic = Time.unscaledTime;

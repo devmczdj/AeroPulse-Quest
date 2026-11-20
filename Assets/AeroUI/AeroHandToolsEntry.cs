@@ -19,6 +19,7 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
     XRHandSubsystem subsystem;
     readonly List<XRHandSubsystem> subsystems = new List<XRHandSubsystem>();
     HandBackTouchGate gate;
+    float holdTime;
     UnityEngine.UI.Image fill;
     bool paused, touchHover;
     UnityEngine.UI.Button hoverLeft;
@@ -94,8 +95,18 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
         var local = Quaternion.Inverse(Surface.rotation) * (tip - Surface.position);
         bool inside = Mathf.Abs(local.x) <= .038f && Mathf.Abs(local.y) <= .020f;
         float depth = Vector3.Dot(tip - Surface.position, normal);
+        bool touching = show && leftValid && inside && depth <= .018f;
+        if (!touching) holdTime = 0f;
+        else holdTime += dt;
         touchHover = show && leftValid && inside && depth >= -.006f && depth <= .035f;
         if (gate.Step(show && leftValid, inside, depth, dt)) Activate();
+        if (holdTime >= .7f)
+        {
+            holdTime = 0f;
+            gate = default;
+            activatedFrame = Time.frameCount;
+            owner.RecallToolsFromHand();
+        }
         Paint();
     }
 
@@ -116,7 +127,7 @@ public sealed class AeroHandToolsEntry : MonoBehaviour
         if(show)Root.SetPositionAndRotation(Surface.position,Surface.rotation);
         RequireRelease();Paint();
     }
-    public void RequireRelease() { gate = default; touchHover = false; }
+    public void RequireRelease() { gate = default; holdTime = 0f; touchHover = false; }
     public void SetPaused(bool value)
     {
         paused = value; RequireRelease(); hoverLeft = null;

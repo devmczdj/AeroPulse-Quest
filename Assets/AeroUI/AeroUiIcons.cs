@@ -28,7 +28,8 @@ public static class AeroUiIcons
         ((RectTransform)button.transform.Find("ActionIcon")).anchoredPosition=new Vector2(-width/2+26,0);
         var label=button.GetComponentInChildren<TextMeshProUGUI>(true);label.enabled=true;label.text=text;
         label.font=AeroUiFonts.Interface;label.fontSize=22;label.characterSpacing=0;label.alignment=TextAlignmentOptions.Left;
-        label.rectTransform.anchoredPosition=new Vector2(20,0);label.rectTransform.sizeDelta=new Vector2(width-58,44);
+        label.rectTransform.anchoredPosition=new Vector2(-width/2+46,0);
+        label.rectTransform.sizeDelta=new Vector2(Mathf.Max(32,width-64),44);
     }
     public static void Set(Button button,string name)
     {var t=button.transform.Find("ActionIcon");if(t==null)Apply(button,name);else t.GetComponent<Image>().sprite=Get(name);}

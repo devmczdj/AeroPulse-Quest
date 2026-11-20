@@ -22,7 +22,7 @@ public class HandBackHudEntry : MonoBehaviour
     public Pose ContactSurface { get; private set; }
     public float HeightOffset { get; private set; } = 0.035f;
     TextMeshProUGUI caption;
-    public void RequireRelease() => gate = default;
+    public void RequireRelease() { gate = default; holdTime = 0f; }
     public void SetHeight(float value) { HeightOffset=Mathf.Clamp(value,.025f,.045f);RequireRelease(); }
     public void CycleHeight() { HeightOffset = HeightOffset < 0.03f ? 0.035f : HeightOffset < 0.04f ? 0.045f : 0.025f; RequireRelease(); }
     public void ResetHeight() { HeightOffset = 0.035f; RequireRelease(); }
@@ -33,6 +33,7 @@ public class HandBackHudEntry : MonoBehaviour
     GameObject tile;
     UnityEngine.UI.Image fill,entryIcon;
     HandBackTouchGate gate;
+    float holdTime;
     bool focused = true;
 
     public void Initialize(Camera camera, PinchHudExperiment owner)
@@ -116,13 +117,22 @@ public class HandBackHudEntry : MonoBehaviour
         Vector3 local = Quaternion.Inverse(Surface.rotation) * (tip - touchCenter);
         float height = Vector3.Dot(tip - touchCenter, normal);
         bool inside = Mathf.Abs(local.x) <= 0.029f && Mathf.Abs(local.y) <= 0.019f;
-        bool touch = gate.Step(show && rightValid && (hud.Layout==null || !hud.Layout.Dragging), inside, height, dt);
+    bool contact = show && rightValid && inside && height <= 0.018f && (hud.Layout==null || !hud.Layout.Dragging);
+    if (!contact) holdTime = 0f;
+    else holdTime += dt;
+    bool touch = gate.Step(show && rightValid && (hud.Layout==null || !hud.Layout.Dragging), inside, height, dt);
         fill.color = show && rightValid && inside && height >= -0.006f && height <= 0.035f
             ? AeroUiTokens.ButtonHover : AeroUiTokens.ButtonFill;
         if (touch)
         {
             Debug.Log("[AeroPulse HandBack] TOUCH TOGGLE");
             hud.ToggleFromHand();
+        }
+        if (holdTime >= .7f)
+        {
+            holdTime = 0f;
+            gate = default;
+            hud.RecallMainFromHand();
         }
         var label=hud.IsCardVisible ? "HIDE" : "HUD";
         if(caption.text!=label){caption.text=label;entryIcon.sprite=AeroUiIcons.Get(hud.IsCardVisible?"eye-off":"browser");}

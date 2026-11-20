@@ -56,10 +56,11 @@ public class AeroWindowLayout : MonoBehaviour
     Collider[] toolbarColliders;
     readonly List<Button> buttons=new List<Button>();
     string dragOwner;float holdTime,startProjection,startRadius,minRadius,maxRadius;
-    bool resizing,depthMoving,handPlane,creating,wasVisible,paused,catalogMoving;Pose catalogMoveBefore;Vector3 catalogMoveHit;Plane catalogMovePlane;Snapshot catalogBefore;Pose catalogSpawn;Panel creatingPanel;float handHeight;Vector3 handNormal;Vector3 pivot,diagonal,orbitCenter,radial,startOrigin,orbitHit;Plane resizePlane,orbitPlane;Snapshot before;
+    bool resizing,depthMoving,handPlane,creating,wasVisible,paused,catalogMoving;Pose catalogMoveBefore;Vector3 catalogMoveHit;Vector3 catalogMoveScale;Plane catalogMovePlane;Vector3 catalogMoveCenter;float catalogMoveRadius;Vector3 catalogMoveStartOrigin;Snapshot catalogBefore;Pose catalogSpawn;Panel creatingPanel;float handHeight;Vector3 handNormal;Vector3 pivot,diagonal,orbitCenter,radial,startOrigin,orbitHit;Plane resizePlane,orbitPlane;Snapshot before;
     readonly RaycastHit[] hits=new RaycastHit[64];
     Button hoverLeft,hoverRight;
     bool nearDragging,suppressChanges;
+    AeroCompactHud.Placement smallSideBeforeHide=AeroCompactHud.Placement.Hidden;
     Vector3 nearDirection;
     void Changed(){if(!suppressChanges&&owner.Profiles!=null)owner.Profiles.MarkChanged();}
     bool NeedsRecallFor(Panel p)=>p.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked||Vector3.Angle(eye.transform.forward,p.Root.position-eye.transform.position)>70;
@@ -85,6 +86,8 @@ public class AeroWindowLayout : MonoBehaviour
         var mainClose=(RectTransform)main.Close.transform;mainClose.anchoredPosition=new Vector2(348,184);mainClose.sizeDelta=new Vector2(44,44);main.Close.GetComponent<BoxCollider>().size=new Vector3(52,52,8);AeroUiIcons.Apply(main.Close,"close",28);
         owner.Widgets.Requested=AddWidget;owner.Widgets.Finished=EndEdit;
         owner.Widgets.Hidden=HideTools;
+        owner.Widgets.CloseSmallRequested=CloseSmallHud;
+        owner.Widgets.RecallSmallRequested=RecallSmallHud;
         owner.Widgets.LayerRequested=ToggleLayer;owner.Widgets.RecallRequested=RecallCatalog;
 owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;ResizeHandle=main.Resize;CompactHandle=small.Move;CompactResizeHandle=small.Resize;DepthHandle=main.Depth;CompactDepthHandle=small.Depth;
         WorldZone=LegacyZone(AeroWindowAnchor.World);ViewZone=LegacyZone(AeroWindowAnchor.View);HandZone=LegacyZone(AeroWindowAnchor.Hand);
@@ -315,6 +318,30 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     public void StartDrag(string hand,AeroDragHandle handle,Ray ray,float distance)
     {
         if(!Editing||Dragging||AeroValueSlider.Active!=null||handle==null||handle.Sky||owner.Profiles!=null&&owner.Profiles.ModalOpen)return;
+        if(handle.CatalogMove)
+        {
+            var root=owner.Widgets.CatalogRoot;
+            catalogMoveBefore=new Pose(root.position,root.rotation);
+            catalogMoveScale=root.localScale;
+            catalogMoveCenter=eye.transform.position;
+            catalogMoveRadius=Mathf.Max(.35f,Vector3.Distance(root.position,catalogMoveCenter));
+            catalogMoveStartOrigin=ray.origin;
+            Vector3 radial=(root.position-catalogMoveCenter).normalized;
+            catalogMovePlane=new Plane(handle.Depth?radial:root.forward,root.position);
+            if(!catalogMovePlane.Raycast(ray,out float catalogHit)||catalogHit<=0)return;
+            if(handle.Resize)
+            {
+                var catalogRect=(RectTransform)root;
+                Vector3 catalogCorner=root.TransformPoint(new Vector3(catalogRect.rect.xMax,catalogRect.rect.yMin,0));
+                pivot=root.TransformPoint(new Vector3(catalogRect.rect.xMin,catalogRect.rect.yMax,0));
+                diagonal=(catalogCorner-pivot).normalized;
+                resizePlane=new Plane(root.forward,root.position);
+                if(!resizePlane.Raycast(ray,out float d))return;
+                startProjection=Vector3.Dot(ray.GetPoint(d)-pivot,diagonal);
+                if(startProjection<=.001f)return;
+            }
+            catalogMoveHit=ray.GetPoint(catalogHit);catalogMoving=true;resizing=handle.Resize;depthMoving=handle.Depth;dragOwner=hand;holdTime=.15f;return;
+        }
         nearDragging=false;toolsBeforeDrag=toolsRequested;
         if(!string.IsNullOrEmpty(handle.CatalogId))
         {
@@ -346,8 +373,30 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         if(catalogMoving)
         {
             if(!valid){CancelDrag("");return;}
-            if(!pressed){catalogMoving=false;dragOwner=null;owner.Widgets.FixPlacement();owner.Widgets.SetOpen(true,false);sizeLabel.gameObject.SetActive(false);RefreshEditor();owner.ClearPresses();return;}
-            if(catalogMovePlane.Raycast(ray,out float hit)&&hit>0)owner.Widgets.CatalogRoot.position=catalogMoveBefore.position+ray.GetPoint(hit)-catalogMoveHit;
+            if(!pressed){catalogMoving=false;resizing=false;depthMoving=false;dragOwner=null;owner.Widgets.FixPlacement();owner.Widgets.SetOpen(true,false);sizeLabel.gameObject.SetActive(false);RefreshEditor();owner.ClearPresses();return;}
+            if(catalogMovePlane.Raycast(ray,out float hit)&&hit>0)
+            {
+                if(resizing)
+                {
+                    if(resizePlane.Raycast(ray,out float d)&&d>0)
+                    {
+                        float ratio=Mathf.Clamp(Vector3.Dot(ray.GetPoint(d)-pivot,diagonal)/startProjection,.8f,1.5f);
+                        owner.Widgets.CatalogRoot.localScale=catalogMoveScale*ratio;
+                    }
+                }
+                else if(depthMoving)
+                {
+                    Vector3 radial=(catalogMoveBefore.position-catalogMoveCenter).normalized;
+                    float radius=Mathf.Clamp(catalogMoveRadius+Vector3.Dot(ray.origin-catalogMoveStartOrigin,radial),.55f,2.2f);
+                    owner.Widgets.CatalogRoot.position=catalogMoveCenter+radial*radius;
+                }
+                else
+                {
+                    Vector3 candidate=catalogMoveBefore.position+ray.GetPoint(hit)-catalogMoveHit;
+                    Vector3 direction=(candidate-catalogMoveCenter).normalized;
+                    if(direction.sqrMagnitude>.5f)owner.Widgets.CatalogRoot.position=catalogMoveCenter+direction*catalogMoveRadius;
+                }
+            }
             return;
         }
         if(!valid||selected.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked){CancelDrag("");return;}
@@ -392,7 +441,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         }
         Physics.SyncTransforms();
     }
-    public void CancelDrag(string reason){if(!Dragging)return;if(catalogMoving){catalogMoving=false;dragOwner=null;owner.Widgets.SetOpen(true,false);return;}if(!SurfacesAvailable){AbandonForTeardown();return;}dragOwner=null;nearDragging=false;Restore(selected,creating?catalogBefore:before);if(creating&&!wasVisible)owner.Widgets.SetItemVisible(creatingPanel.Key,false);creating=false;toolsRequested=toolsBeforeDrag;RefreshTools();sizeLabel.gameObject.SetActive(false);SetEditUI(Editing);}
+    public void CancelDrag(string reason){if(!Dragging)return;if(catalogMoving){if(resizing)owner.Widgets.CatalogRoot.localScale=catalogMoveScale;catalogMoving=false;resizing=false;depthMoving=false;dragOwner=null;owner.Widgets.SetOpen(true,false);return;}if(!SurfacesAvailable){AbandonForTeardown();return;}dragOwner=null;nearDragging=false;Restore(selected,creating?catalogBefore:before);if(creating&&!wasVisible)owner.Widgets.SetItemVisible(creatingPanel.Key,false);creating=false;toolsRequested=toolsBeforeDrag;RefreshTools();sizeLabel.gameObject.SetActive(false);SetEditUI(Editing);}
     public void Undo(){if(!Editing)return;if(Dragging)CancelDrag("");if(!selected.HasUndo)return;Restore(selected,selected.Undo);selected.HasUndo=false;owner.ClearPresses();RefreshEditor();owner.RefreshSettings();Physics.SyncTransforms();Changed();}
     public void ResetSelected(){if(!Editing)return;if(Dragging)CancelDrag("");SaveUndo(selected);ResetPanel(selected);SetEditUI(Editing);owner.ClearPresses();owner.RefreshSettings();Changed();}
     void ResetPanel(Panel p){p.Pinned=false;p.Speed=HudSoftFollow.FollowMode.Soft;p.HasSaved=new bool[4];p.Follow.SetUserScale(1);if(p==main){p.Anchor=AeroWindowAnchor.Follow;p.Follow.ResetOptions();}else if(p==small){p.Anchor=AeroWindowAnchor.View;p.Follow.ConfigureScale(.0009f/1.05f,1.05f);p.Follow.SetUserScale(1);p.Local=new Pose(new Vector3(owner.Compact.Side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(p);}else{p.Anchor=AeroWindowAnchor.Follow;p.Follow.ConfigureScale(.00075f/.85f,.85f);p.Follow.SetUserScale(1);p.Follow.SetMode(HudSoftFollow.FollowMode.Soft);p.Follow.SnapToView();}SetRendering(p,true);}
@@ -477,7 +526,26 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     public void PlaceOpenedCard(){PrepareFrame();main.Follow.SyncView();}
     public void RecalledSky(){}
     public void InvalidateMainUndo(){main.HasUndo=false;}
-    public void CompactPreset(AeroCompactHud.Placement side){if(side==AeroCompactHud.Placement.Hidden)return;small.HasUndo=false;small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(small);SetRendering(small,true);}
+    public void CompactPreset(AeroCompactHud.Placement side){if(side==AeroCompactHud.Placement.Hidden)return;smallSideBeforeHide=side;small.HasUndo=false;small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(small);SetRendering(small,true);}
+    public void CloseSmallHud()
+    {
+        if(!Editing)return;
+        if(owner.Compact.Side!=AeroCompactHud.Placement.Hidden)smallSideBeforeHide=owner.Compact.Side;
+        owner.Compact.SetPlacement(AeroCompactHud.Placement.Hidden);
+        if(selected==small){selected=main;SetEditUI(Editing);}
+        owner.ClearPresses();
+    }
+    public void RecallSmallHud()
+    {
+        if(!Editing)return;
+        var side=smallSideBeforeHide==AeroCompactHud.Placement.Hidden?AeroCompactHud.Placement.Left:smallSideBeforeHide;
+        owner.Compact.SetPlacement(side);
+        ResetPanel(small);
+        selected=small;
+        SetEditUI(Editing);
+        owner.ClearPresses();
+        owner.Feedback?.Notify("小窗已回到面前");
+    }
     public void Recall()
     {
         bool editWidgets=Editing;if(Editing)EndEdit();ReleaseToFollow();main.Follow.SetDistance(Mathf.Clamp(main.Follow.Distance,.65f,2.2f));main.Follow.SnapToView();

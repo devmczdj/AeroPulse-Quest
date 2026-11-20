@@ -18,6 +18,8 @@ public static class AeroUiTokens
     public static readonly Color ChipStroke = new Color(1f, 1f, 1f, 0.18f);
     public static readonly Color ButtonFill = new Color(0.07f, 0.11f, 0.12f, 0.9f);
     public static readonly Color ButtonHover = new Color(0.48f, 0.91f, 0.77f, 0.22f);
+    public static readonly Color ToolPanelFill = new Color(0.04f, 0.065f, 0.07f, 0.78f);
+    public static readonly Color ToolSectionFill = new Color(0.04f, 0.065f, 0.07f, 0.68f);
 
     static Color Hex(string value)
     {

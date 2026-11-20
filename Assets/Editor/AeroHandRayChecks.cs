@@ -103,6 +103,8 @@ public static class AeroHandRayChecks
                     "Hand ray snapped away from actual hand aim");
             Require(line.transform.Find("LeftHandRayTip").gameObject.activeSelf == inside,
                     "Cursor visibility does not match real hit");
+            if (inside) Require(Vector3.Distance(line.GetPosition(1), target.transform.position) < Vector3.Distance(line.GetPosition(0), target.transform.position),
+                    "Visible ray endpoint did not stop in front of the hit surface");
             if (!inside) Require(Mathf.Abs(Vector3.Distance(line.GetPosition(0), line.GetPosition(1)) - 30f) < 0.01f,
                                  "Miss beam still ends at an arbitrary near depth");
             Frame(left, origin, aim, false, camera.transform.parent, 0.7f); hud.ProcessInput();

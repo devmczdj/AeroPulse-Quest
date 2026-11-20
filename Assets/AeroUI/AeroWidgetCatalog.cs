@@ -31,6 +31,11 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     public bool PlacementFixed { get; private set; }
     public Transform LayerControls { get; private set; }
     public UnityEngine.UI.Button CloseButton { get; private set; }
+    public UnityEngine.UI.Button CloseSmallButton { get; private set; }
+    public UnityEngine.UI.Button RecallSmallButton { get; private set; }
+    public AeroDragHandle CatalogMoveHandle { get; private set; }
+    public AeroDragHandle CatalogDepthHandle { get; private set; }
+    public AeroDragHandle CatalogScaleHandle { get; private set; }
     public Action<AeroEditLayer> LayerRequested;
     public Action RecallRequested;
     public Action PageChanged;
@@ -41,6 +46,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
     public Action<string> Requested;
     public Action Finished;
     public Action Hidden;
+    public Action CloseSmallRequested;
+    public Action RecallSmallRequested;
 
     readonly List<Item> items = new List<Item>();
     Camera viewCamera;
@@ -65,21 +72,24 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     void Create()
     {
-        CatalogRoot = CreateCanvas("WidgetCatalog", new Vector2(420, 620), .00075f);
+        CatalogRoot = CreateCanvas("WidgetCatalog", new Vector2(480, 620), .00075f);
         catalogCanvas=CatalogRoot.GetComponent<Canvas>();catalogCanvas.sortingOrder=100;
-        CatalogRoot.gameObject.AddComponent<BoxCollider>().size=new Vector3(420,620,3);
-        Backing(CatalogRoot, new Vector2(420, 620),true);
-        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(188, 286),
+        CatalogRoot.gameObject.AddComponent<BoxCollider>().size=new Vector3(480,620,3);
+        Backing(CatalogRoot, new Vector2(480, 620),true);
+        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(218, 286),
             new Vector2(36, 36), new Vector3(44, 44, 8));
         AeroUiIcons.Apply(CloseButton, "close", 28);
         CloseButton.onClick.AddListener(() => { if (!modal) Hidden?.Invoke(); });
         CreateLayerControls();
-        ComponentsTab = Tab("ComponentsTab", "组件", -90, false);
-        ProfilesTab = Tab("ProfilesTab", "档案", 90, true);
-        ComponentsPage = AeroHudView.NewRect("ComponentsPage", CatalogRoot, new Vector2(0,-70), new Vector2(400, 330));
-        ProfilesPage = AeroHudView.NewRect("ProfilesPage", CatalogRoot, new Vector2(0,-70), new Vector2(400, 330));
+        CatalogMoveHandle = ToolHandle("CatalogMove", new Vector2(-112, 342), new Vector2(174, 44), "grip-vertical", "环绕", false, false);
+        CatalogDepthHandle = ToolHandle("CatalogDepth", new Vector2(112, 342), new Vector2(174, 44), "crosshair", "远近", true, false);
+        ToolHandle("CatalogScale", new Vector2(272, -342), new Vector2(56, 56), "move-diagonal", "", false, true);
+        ComponentsTab = Tab("ComponentsTab", "组件", -105, false);
+        ProfilesTab = Tab("ProfilesTab", "档案", 105, true);
+        ComponentsPage = AeroHudView.NewRect("ComponentsPage", CatalogRoot, new Vector2(0,-70), new Vector2(460, 330));
+        ProfilesPage = AeroHudView.NewRect("ProfilesPage", CatalogRoot, new Vector2(0,-70), new Vector2(460, 330));
         ProfilesPage.gameObject.SetActive(false);
-        catalogHint=Label(ComponentsPage, "CatalogHint", "点按添加，捏合拖出", new Vector2(-172, 136), new Vector2(344, 24), 18, AeroUiTokens.Secondary);
+        catalogHint=Label(ComponentsPage, "CatalogHint", "点按添加，捏合拖出", new Vector2(-202, 136), new Vector2(400, 24), 18, AeroUiTokens.Secondary);
 
         AddItem("heart", "心率", "heart-pulse", "142", "BPM · 模拟数据");
         AddItem("pace", "配速", "fast-forward", "5:20", "/km · 模拟数据");
@@ -88,37 +98,35 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         nextValue.fontSize = 30;
         timerValue = AddItem("timer", "会话计时", "rotate-ccw", "00:00", "应用运行时长");
 
-        DoneButton = AeroHudView.ActionButton(CatalogRoot, "CatalogDone", "完成编辑",
-            new Vector2(0, -276), new Vector2(352, 46), new Vector3(352, 52, 8));
-        var doneLabel = DoneButton.GetComponentInChildren<TextMeshProUGUI>(true);
-        doneLabel.font = AeroUiFonts.Interface;
-        doneLabel.characterSpacing = 0;
-        DoneButton.onClick.AddListener(() => Finished?.Invoke());
+        CloseSmallButton = FooterButton("CatalogCloseSmall", "关闭", "close", new Vector2(-174, -276), new Vector2(112, 46),
+            () => CloseSmallRequested?.Invoke());
+        RecallSmallButton = FooterButton("CatalogRecallSmall", "召回", "rotate-ccw", new Vector2(-52, -276), new Vector2(112, 46),
+            () => RecallSmallRequested?.Invoke());
+        DoneButton = FooterButton("CatalogDone", "完成编辑", "check", new Vector2(116, -276), new Vector2(208, 46),
+            () => Finished?.Invoke());
         RefreshTabs(null, null);
     }
 
     void CreateLayerControls()
     {
-        LayerControls = AeroHudView.NewRect("EditorToolsHeader", CatalogRoot, new Vector2(-20, 220), new Vector2(360, 112));
-        Backing(LayerControls, new Vector2(360, 112),true);
-        LayerControls.gameObject.AddComponent<BoxCollider>().size=new Vector3(360,112,3);
-        var handleImage=AeroHudView.AddPanelImage(LayerControls,"CatalogMove",AeroUiSprites.Pill,new Vector2(0,44),new Vector2(120,12),AeroUiTokens.ButtonHover);
-        handleImage.gameObject.AddComponent<BoxCollider>().size=new Vector3(128,20,8);
-        var move=handleImage.gameObject.AddComponent<AeroDragHandle>();move.CatalogMove=true;move.gameObject.SetActive(true);
+        LayerControls = AeroHudView.NewRect("EditorToolsHeader", CatalogRoot, Vector2.zero, new Vector2(440, 112));
+        Backing(LayerControls, new Vector2(440, 112),true);
+        LayerControls.gameObject.AddComponent<BoxCollider>().size=new Vector3(440,112,3);
         LayerButtons = new UnityEngine.UI.Button[3];
         string[] names = { "环境", "手部", "面前" }, icons = { "cube", "hand-open", "vr-headset" };
         for (int i = 0; i < LayerButtons.Length; i++)
         {
             var layer = (AeroEditLayer)i;
-            LayerButtons[i] = ToolButton("EditLayer" + layer, names[i], new Vector2((i - 1) * 108, 12), new Vector2(96, 40),
+            LayerButtons[i] = ToolButton("EditLayer" + layer, names[i], new Vector2((i - 1) * 144, 24), new Vector2(128, 40),
                 () => { if (!modal) LayerRequested?.Invoke(layer); });
-            AeroUiIcons.Label(LayerButtons[i], icons[i], names[i], 26);
+            AeroUiIcons.Label(LayerButtons[i], icons[i], names[i], 22);
         }
-        RecallButton = ToolButton("RecallCatalog", "回到面前", new Vector2(-88, -30), new Vector2(166, 40),
+        RecallButton = ToolButton("RecallCatalog", "回到面前", new Vector2(-108, -28), new Vector2(204, 40),
             () => { if (!modal) RecallRequested?.Invoke(); });
-        KeepOpenButton = ToolButton("KeepToolsOpen", "保持打开", new Vector2(88, -30), new Vector2(166, 40),
+        AeroUiIcons.Label(RecallButton, "crosshair", "回到面前", 22);
+        KeepOpenButton = ToolButton("KeepToolsOpen", "保持打开", new Vector2(108, -28), new Vector2(204, 40),
             () => { if (!modal) SetKeepOpen(!KeepOpen); });
-        AeroUiIcons.Label(KeepOpenButton, "pushpin-off", "保持打开", 26);
+        AeroUiIcons.Label(KeepOpenButton, "pushpin-off", "保持打开", 22);
     }
 
     UnityEngine.UI.Button ToolButton(string name, string title, Vector2 position, Vector2 size, Action action)
@@ -128,6 +136,29 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         text.font = AeroUiFonts.Interface; text.characterSpacing = 0; text.fontSize = 22;
         button.onClick.AddListener(() => action());
         return button;
+    }
+
+    UnityEngine.UI.Button FooterButton(string name, string label, string icon, Vector2 position, Vector2 size, Action action)
+    {
+        var button = AeroHudView.ActionButton(CatalogRoot, name, label, position, size, new Vector3(size.x, size.y + 6, 8));
+        AeroUiIcons.Label(button, icon, label, 22);
+        button.onClick.AddListener(() => action());
+        return button;
+    }
+
+    AeroDragHandle ToolHandle(string name, Vector2 position, Vector2 size, string icon, string caption, bool depth, bool resize)
+    {
+        var image = AeroHudView.AddPanelImage(CatalogRoot, name, AeroUiSprites.Pill, position, size, AeroUiTokens.ButtonFill);
+        image.gameObject.AddComponent<BoxCollider>().size = new Vector3(size.x + 8, size.y + 8, 8);
+        AeroHudView.AddPanelImage(image.transform, "Icon", AeroUiIcons.Get(icon),
+            new Vector2(resize ? 0 : -50, 0), new Vector2(resize ? 24 : 22, resize ? 24 : 22), AeroUiTokens.Ink);
+        if (!resize)
+            AeroHudView.Text(image.transform, "Caption", caption, new Vector2(18, 0), new Vector2(110, 36),
+                20, AeroUiFonts.Interface, AeroUiTokens.Ink, TextAlignmentOptions.Left, 0, 0, true);
+        var handle = image.gameObject.AddComponent<AeroDragHandle>();
+        handle.CatalogMove = true; handle.Depth = depth; handle.Resize = resize;
+        if (resize) CatalogScaleHandle = handle;
+        return handle;
     }
 
     public void SetEditingView(int mask)
@@ -150,7 +181,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     UnityEngine.UI.Button Tab(string name, string title, float x, bool profiles)
     {
-        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 118), new Vector2(172, 44), new Vector3(172, 48, 8));
+        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 118), new Vector2(190, 44), new Vector3(190, 48, 8));
         var text = button.GetComponentInChildren<TextMeshProUGUI>(true);
         text.font = AeroUiFonts.Interface; text.characterSpacing = 0;
         button.onClick.AddListener(() => SetPage(profiles));
@@ -174,6 +205,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         ComponentsTab.interactable = ProfilesTab.interactable = DoneButton.interactable = !value;
         ComponentsTab.gameObject.SetActive(!value);ProfilesTab.gameObject.SetActive(!value);
         DoneButton.gameObject.SetActive(!value);
+        CloseSmallButton.interactable = RecallSmallButton.interactable = !value;
+        CloseSmallButton.gameObject.SetActive(!value);RecallSmallButton.gameObject.SetActive(!value);
         LayerControls.gameObject.SetActive(!value);
         foreach (var button in LayerButtons) button.interactable = !value;
         RecallButton.interactable = KeepOpenButton.interactable = !value;
@@ -185,6 +218,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         PaintButton(ComponentsTab, !ShowingProfiles, left, right);
         PaintButton(ProfilesTab, ShowingProfiles, left, right);
         PaintButton(DoneButton, false, left, right);
+        PaintButton(CloseSmallButton, false, left, right);
+        PaintButton(RecallSmallButton, false, left, right);
         if (LayerButtons == null) return;
         for (int i = 0; i < LayerButtons.Length; i++)
             PaintButton(LayerButtons[i], (LayerMask & (1 << i)) != 0, left, right);
@@ -216,7 +251,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         Label(root, "Disclosure", disclosure, new Vector2(-120, -46), new Vector2(240, 30), 18, AeroUiTokens.Secondary);
 
         var entry = AeroHudView.ActionButton(ComponentsPage, "CatalogEntry_" + id, title,
-            new Vector2(0, 92 - items.Count * 58), new Vector2(352, 50), new Vector3(352, 56, 8));
+            new Vector2(0, 92 - items.Count * 58), new Vector2(420, 50), new Vector3(420, 56, 8));
         var titleLabel = entry.GetComponentInChildren<TextMeshProUGUI>(true);
         titleLabel.font = AeroUiFonts.Interface;
         titleLabel.fontSize = 24;
@@ -251,8 +286,8 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     static void Backing(Transform parent, Vector2 size,bool opaque=false)
     {
-        var backing = AeroHudView.AddPanelImage(parent, "Backing", opaque?AeroUiSprites.SolidPanel:Resources.Load<Sprite>("JetStyle/RoundedRect"),
-            Vector2.zero, size, new Color(.04f, .065f, .07f, opaque?1f:.94f));
+        var backing = AeroHudView.AddPanelImage(parent, "Backing", Resources.Load<Sprite>("JetStyle/RoundedRect"),
+            Vector2.zero, size, opaque?AeroUiTokens.ToolPanelFill:AeroUiTokens.ToolSectionFill);
         backing.type = UnityEngine.UI.Image.Type.Sliced;
         backing.pixelsPerUnitMultiplier = 4;
     }
@@ -309,7 +344,12 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         Physics.SyncTransforms();
     }
 
-    void Update() => UpdateTimer();
+    void Update()
+    {
+        UpdateTimer();
+        if (!IsOpen || viewCamera == null || CatalogRoot == null) return;
+        CatalogRoot.rotation = viewCamera.transform.rotation;
+    }
 
     void UpdateTimer()
     {
