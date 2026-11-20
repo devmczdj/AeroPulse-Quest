@@ -17,6 +17,8 @@ public static class AeroNativeKeyboard023Checks
     public static void Run()
     {
         Require(Application.isPlaying,"Play Mode required");
+        Require(UnityEditor.PlayerSettings.Android.applicationEntry==UnityEditor.AndroidApplicationEntry.Activity,
+            "Quest system keyboard workaround requires the Activity entry point");
         var h=UnityEngine.Object.FindAnyObjectByType<PinchHudExperiment>();var l=h.Layout;var v=h.Profiles;var w=h.Widgets;
         string cjkName=new string(new[]{(char)0x5C71,(char)0x8DEF,(char)0x6668,(char)0x8DD1});
         var layout=l.CaptureLayout();bool editing=l.Editing,open=w.IsOpen,page=w.ShowingProfiles,keep=w.KeepOpen;

@@ -17,6 +17,7 @@ public static class AeroKeyboardSetup
         var quest=settings.GetFeature<MetaQuestFeature>();
         if(quest==null||!quest.enabled)throw new InvalidOperationException("Meta Quest OpenXR feature must be enabled");
         quest.enableSystemKeyboard=true;EditorUtility.SetDirty(quest);
+        PlayerSettings.Android.applicationEntry=AndroidApplicationEntry.Activity;
         ConfigureFontFallback(AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Resources/AeroUI/Fonts/AeroPulseSC_SDF.asset"));
         AssetDatabase.SaveAssets();
     }

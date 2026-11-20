@@ -1,3 +1,11 @@
+## v0.24.6 — 2026-11-20（Android code 45，GameActivity键盘兼容修复）
+
+- 根据Quest OS 2.7 + Unity 6的已复现兼容问题，将Android入口从GameActivity切换到UnityPlayerActivity。
+- 构建和键盘配置脚本强制Activity入口，NativeKeyboard回归新增入口断言。
+- APK Manifest确认使用`com.unity3d.player.UnityPlayerActivity`。
+- 保留键盘等待超时、取消路径、失焦面板恢复和射线可用逻辑。
+- Android构建成功：0错误/4个既有Editor警告，APK SHA-256 `ed238ff1247ed74ebb7e687e1a4624e6322b18eeda788d8dda526e834accb5b9`；签名、ZIP与zipalign通过。已安装并启动Quest 2，系统键盘显示待人工确认。
+
 ## v0.24.5 — 2026-11-20（Android code 44，系统键盘恢复路径）
 
 - 键盘请求拆为Opening与Active阶段；确认系统键盘可见后才接管输入。
