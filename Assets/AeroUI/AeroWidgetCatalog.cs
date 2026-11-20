@@ -79,7 +79,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         catalogCanvas=CatalogRoot.GetComponent<Canvas>();catalogCanvas.sortingOrder=100;
         CatalogRoot.gameObject.AddComponent<BoxCollider>().size=new Vector3(PanelWidth,PanelHeight,3);
         Backing(CatalogRoot, new Vector2(PanelWidth, PanelHeight),true);
-        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(252, 318),
+        CloseButton = AeroHudView.ActionButton(CatalogRoot, "CatalogClose", "关闭", new Vector2(260, 318),
             new Vector2(40, 40), new Vector3(48, 48, 8));
         AeroUiIcons.Apply(CloseButton, "close", 28);
         CloseButton.onClick.AddListener(() => { if (!modal) Hidden?.Invoke(); });
@@ -89,10 +89,10 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         ToolHandle("CatalogScale", new Vector2(306, -384), new Vector2(56, 56), "move-diagonal", "", false, true);
         ComponentsTab = Tab("ComponentsTab", "组件", -112, false);
         ProfilesTab = Tab("ProfilesTab", "档案", 112, true);
-        ComponentsPage = AeroHudView.NewRect("ComponentsPage", CatalogRoot, new Vector2(0,-45), new Vector2(520, 320));
-        ProfilesPage = AeroHudView.NewRect("ProfilesPage", CatalogRoot, new Vector2(0,-45), new Vector2(520, 320));
+        ComponentsPage = AeroHudView.NewRect("ComponentsPage", CatalogRoot, new Vector2(0,-55), new Vector2(520, 320));
+        ProfilesPage = AeroHudView.NewRect("ProfilesPage", CatalogRoot, new Vector2(0,-55), new Vector2(520, 320));
         ProfilesPage.gameObject.SetActive(false);
-        catalogHint=Label(ComponentsPage, "CatalogHint", "左侧选择组件；右侧可关闭或召回", new Vector2(-236, 137), new Vector2(470, 24), 18, AeroUiTokens.Secondary);
+        catalogHint=Label(ComponentsPage, "CatalogHint", "左侧选择组件；右侧可关闭或召回", new Vector2(-236, 140), new Vector2(470, 24), 18, AeroUiTokens.Secondary);
 
         AddItem("heart", "心率", "heart-pulse", "142", "BPM · 模拟数据");
         AddItem("pace", "配速", "fast-forward", "5:20", "/km · 模拟数据");
@@ -108,15 +108,15 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     void CreateLayerControls()
     {
-        LayerControls = AeroHudView.NewRect("EditorToolsHeader", CatalogRoot, new Vector2(0, 208), new Vector2(506, 116));
-        Backing(LayerControls, new Vector2(506, 116),true);
-        LayerControls.gameObject.AddComponent<BoxCollider>().size=new Vector3(506,116,3);
+        LayerControls = AeroHudView.NewRect("EditorToolsHeader", CatalogRoot, new Vector2(0, 252), new Vector2(480, 112));
+        Backing(LayerControls, new Vector2(480, 112),true);
+        LayerControls.gameObject.AddComponent<BoxCollider>().size=new Vector3(480,112,3);
         LayerButtons = new UnityEngine.UI.Button[3];
         string[] names = { "环境", "手部", "面前" }, icons = { "cube", "hand-open", "vr-headset" };
         for (int i = 0; i < LayerButtons.Length; i++)
         {
             var layer = (AeroEditLayer)i;
-            LayerButtons[i] = ToolButton("EditLayer" + layer, names[i], new Vector2((i - 1) * 160, 30), new Vector2(144, 40),
+            LayerButtons[i] = ToolButton("EditLayer" + layer, names[i], new Vector2((i - 1) * 160, 28), new Vector2(144, 40),
                 () => { if (!modal) LayerRequested?.Invoke(layer); });
             AeroUiIcons.Label(LayerButtons[i], icons[i], names[i], 22);
         }
@@ -180,7 +180,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
 
     UnityEngine.UI.Button Tab(string name, string title, float x, bool profiles)
     {
-        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 292), new Vector2(210, 44), new Vector3(210, 48, 8));
+        var button = AeroHudView.ActionButton(CatalogRoot, name, title, new Vector2(x, 168), new Vector2(210, 44), new Vector3(210, 48, 8));
         var text = button.GetComponentInChildren<TextMeshProUGUI>(true);
         text.font = AeroUiFonts.Interface; text.characterSpacing = 0;
         button.onClick.AddListener(() => SetPage(profiles));
@@ -251,7 +251,7 @@ public sealed class AeroWidgetCatalog : MonoBehaviour
         Label(root, "Disclosure", disclosure, new Vector2(-120, -46), new Vector2(240, 30), 18, AeroUiTokens.Secondary);
 
         var row = AeroHudView.NewRect("CatalogRow_" + id, ComponentsPage,
-            new Vector2(0, 92 - items.Count * 56), new Vector2(520, 52));
+            new Vector2(0, 100 - items.Count * 56), new Vector2(520, 52));
         var rowBacking = AeroHudView.AddPanelImage(row, "RowBacking", Resources.Load<Sprite>("JetStyle/RoundedRect"),
             Vector2.zero, new Vector2(520, 52), AeroUiTokens.ToolSectionFill);
         rowBacking.type = UnityEngine.UI.Image.Type.Sliced;

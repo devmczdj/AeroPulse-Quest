@@ -78,6 +78,13 @@ public static class AeroCatalog023Checks
                 var text=(RectTransform)button.transform.Find(button.name+"Label");
                 Require(text != null && parent.rect.xMax-text.anchoredPosition.x>=10f,
                     "Tool button label crowds the right edge: "+button.name);
+                var icon=(RectTransform)button.transform.Find("ActionIcon");
+                var buttonRect=LocalRect(parent,root);
+                var iconRect=LocalRect(icon,root);
+                var textRect=LocalRect(text,root);
+                float groupCenter=(Mathf.Min(iconRect.xMin,textRect.xMin)+Mathf.Max(iconRect.xMax,textRect.xMax))*.5f;
+                float buttonCenter=(buttonRect.xMin+buttonRect.xMax)*.5f;
+                Require(Mathf.Abs(groupCenter-buttonCenter)<=3f,"Tool button icon and label are not centered: "+button.name);
             }
             Require(!Overlaps(hintRect,tabsRect),"Catalog hint overlaps component tabs");
             Require(!Overlaps(hintRect,headerRect),"Catalog hint overlaps layer controls");
@@ -97,7 +104,10 @@ public static class AeroCatalog023Checks
             Require(!Overlaps(firstRect,doneRect)&&!Overlaps(firstCloseRect,doneRect)&&!Overlaps(firstRecallRect,doneRect),
                 "Component row overlaps the done footer");
             Require(!Overlaps(headerRect,tabsRect),"Layer controls overlap the tab row");
+            Require(headerRect.yMin>=tabsRect.yMax-1f,"Component tabs should sit below the layer controls");
+            Require(tabsRect.yMax<=headerRect.yMin+1f,"Component tabs should follow the five layer controls");
             Require(!Overlaps(closeRect,tabsRect),"Close button overlaps the tab row");
+            Require(!Overlaps(closeRect,headerRect),"Close button overlaps the layer controls");
             foreach(var text in catalog.CatalogRoot.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
                 text.ForceMeshUpdate();

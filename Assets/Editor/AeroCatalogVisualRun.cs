@@ -71,7 +71,7 @@ public static class AeroCatalogVisualRun
             {
                 Canvas.ForceUpdateCanvases();
                 Physics.SyncTransforms();
-                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.1-catalog-components.png"));
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.2-catalog-components.png"));
                 phase = 2;
                 phaseAt = EditorApplication.timeSinceStartup;
                 return;
@@ -88,7 +88,7 @@ public static class AeroCatalogVisualRun
                     widgets.SetPage(true);
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.1-catalog-profiles.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.2-catalog-profiles.png"));
                 }
                 if (File.Exists(storePath)) File.Delete(storePath);
                 phase = 3;

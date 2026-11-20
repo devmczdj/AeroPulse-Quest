@@ -2,7 +2,7 @@
 
 AeroPulse Ultra课程概念的Meta Quest 2交互原型：手背轻触调出运动HUD、查看示意路线，并调整面板跟随方式。
 
-**当前源码 v0.24.1（Android code 40）：重排组件页与档案页，并把每个组件的“关闭/召回”放进对应行内。** [上一版 v0.24.0 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.24.0) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
+**当前源码 v0.24.2（Android code 41）：层控制位于页签上方，按钮图标与文字整体居中，内容列表分区显示。** [上一版 v0.24.1 下载](https://github.com/devmczdj/AeroPulse-Quest/releases/tag/v0.24.1) · [操作与构建](Docs/01_运行与验证.md) · [计划](Docs/02_分步计划.md)
 
 ![v0.22.1 日常查看预设读数，Unity 编辑器画面](Docs/11_Releases/0.22.1-normal.png)
 
@@ -103,3 +103,5 @@ main保存可构建代码；每个修复使用短期分支及可审阅差异；I
 [31_历史APK补归档](Docs/31_历史APK补归档.md)：v0.22.2–v0.24.0 共16个原始APK的版本、源码对应关系、SHA-256与远程下载核验。
 
 [32_组件页布局与行内恢复](Docs/32_组件页布局与行内恢复.md) · [组件页截图](Docs/11_Releases/0.24.1-catalog-components.png) · [档案页截图](Docs/11_Releases/0.24.1-catalog-profiles.png) · [0.24.1构建与检查](Docs/11_Releases/0.24.1-editor.json)
+
+[33_控制区顺序与按钮居中](Docs/33_控制区顺序与按钮居中.md) · [组件页截图](Docs/11_Releases/0.24.2-catalog-components.png) · [档案页截图](Docs/11_Releases/0.24.2-catalog-profiles.png) · [0.24.2构建与检查](Docs/11_Releases/0.24.2-editor.json)

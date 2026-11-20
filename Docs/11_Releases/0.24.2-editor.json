@@ -1,0 +1,35 @@
+{
+  "version": "0.24.2",
+  "androidVersionCode": 41,
+  "unity": "6000.6.9f1",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 6,
+    "apk": "Builds/AeroPulse-GlassLab-v0.24.2.apk",
+    "bytes": 57252524,
+    "sha256": "42b14e958adc726ea644c58bcba88c886b9ea4ecea1cbb7bf29a73c50f80047f",
+    "package": "com.three.aeropulsemvp.glass",
+    "signatureVerified": true,
+    "zipIntegrityVerified": true,
+    "zipAlignVerified": true
+  },
+  "editorChecks": {
+    "packagesRegistered": 64,
+    "catalog023": "pass",
+    "profilesUi021": "pass",
+    "editMode024": "pass",
+    "impeccableDetect": []
+  },
+  "visualReview": {
+    "components": {
+      "path": "Docs/11_Releases/0.24.2-catalog-components.png",
+      "sha256": "947b5facb5673720b041bdbbff0529595d7d2c4700ca60ff5207c4ead691177a"
+    },
+    "profiles": {
+      "path": "Docs/11_Releases/0.24.2-catalog-profiles.png",
+      "sha256": "ae66200993a336f9ff4e194fca10ee4d3199c2f7111a13dcebe7d0c7dc0f588b"
+    }
+  },
+  "questValidation": "pending"
+}

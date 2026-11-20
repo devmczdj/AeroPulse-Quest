@@ -25,11 +25,17 @@ public static class AeroUiIcons
     public static void Label(Button button,string name,string text,float size=28)
     {
         Apply(button,name,size);float width=((RectTransform)button.transform).rect.width;
-        ((RectTransform)button.transform.Find("ActionIcon")).anchoredPosition=new Vector2(-width/2+26,0);
+        var icon=(RectTransform)button.transform.Find("ActionIcon");
         var label=button.GetComponentInChildren<TextMeshProUGUI>(true);label.enabled=true;label.text=text;
         label.font=AeroUiFonts.Interface;label.fontSize=22;label.characterSpacing=0;label.alignment=TextAlignmentOptions.Left;
-        label.rectTransform.anchoredPosition=new Vector2(-width/2+46,0);
-        label.rectTransform.sizeDelta=new Vector2(Mathf.Max(32,width-64),44);
+        label.ForceMeshUpdate();
+        float iconWidth=icon.rect.width;
+        float textWidth=Mathf.Clamp(label.preferredWidth,32f,Mathf.Max(32f,width-iconWidth-24f));
+        float gap=8f,groupWidth=iconWidth+gap+textWidth,start=-groupWidth*.5f;
+        icon.anchoredPosition=new Vector2(start+iconWidth*.5f,0);
+        label.rectTransform.pivot=new Vector2(0f,.5f);
+        label.rectTransform.anchoredPosition=new Vector2(start+iconWidth+gap,0);
+        label.rectTransform.sizeDelta=new Vector2(textWidth,44);
     }
     public static void Set(Button button,string name)
     {var t=button.transform.Find("ActionIcon");if(t==null)Apply(button,name);else t.GetComponent<Image>().sprite=Get(name);}
