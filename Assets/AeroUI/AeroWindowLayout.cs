@@ -60,7 +60,6 @@ public class AeroWindowLayout : MonoBehaviour
     readonly RaycastHit[] hits=new RaycastHit[64];
     Button hoverLeft,hoverRight;
     bool nearDragging,suppressChanges;
-    AeroCompactHud.Placement smallSideBeforeHide=AeroCompactHud.Placement.Hidden;
     Vector3 nearDirection;
     void Changed(){if(!suppressChanges&&owner.Profiles!=null)owner.Profiles.MarkChanged();}
     bool NeedsRecallFor(Panel p)=>p.Anchor==AeroWindowAnchor.Hand&&!owner.HandEntry.AnchorTracked||Vector3.Angle(eye.transform.forward,p.Root.position-eye.transform.position)>70;
@@ -86,8 +85,8 @@ public class AeroWindowLayout : MonoBehaviour
         var mainClose=(RectTransform)main.Close.transform;mainClose.anchoredPosition=new Vector2(348,184);mainClose.sizeDelta=new Vector2(44,44);main.Close.GetComponent<BoxCollider>().size=new Vector3(52,52,8);AeroUiIcons.Apply(main.Close,"close",28);
         owner.Widgets.Requested=AddWidget;owner.Widgets.Finished=EndEdit;
         owner.Widgets.Hidden=HideTools;
-        owner.Widgets.CloseSmallRequested=CloseSmallHud;
-        owner.Widgets.RecallSmallRequested=RecallSmallHud;
+        owner.Widgets.WidgetCloseRequested=CloseWidget;
+        owner.Widgets.WidgetRecallRequested=RecallWidget;
         owner.Widgets.LayerRequested=ToggleLayer;owner.Widgets.RecallRequested=RecallCatalog;
 owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;ResizeHandle=main.Resize;CompactHandle=small.Move;CompactResizeHandle=small.Resize;DepthHandle=main.Depth;CompactDepthHandle=small.Depth;
         WorldZone=LegacyZone(AeroWindowAnchor.World);ViewZone=LegacyZone(AeroWindowAnchor.View);HandZone=LegacyZone(AeroWindowAnchor.Hand);
@@ -212,6 +211,20 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
         owner.Widgets.SetItemVisible(key,false);
         if(selected==p){EnsureSelection();SetEditUI(Editing);}
         owner.ClearPresses();owner.Widgets.Refresh();Changed();
+    }
+    public void RecallWidget(string key)
+    {
+        if(!Editing||Dragging)return;
+        var p=FindPanel(key);if(p==null||p==main||p==small)return;
+        int viewMask=LayerMask|(1<<(int)AeroEditLayer.View);
+        if(viewMask!=LayerMask)SetLayerMask(viewMask);
+        if(!p.Root.gameObject.activeSelf)owner.Widgets.SetItemVisible(key,true);
+        int index=System.Array.IndexOf(panels,p)-2;
+        p.Anchor=AeroWindowAnchor.View;p.Pinned=false;p.Follow.SetMode(p.Speed);
+        p.Local=new Pose(new Vector3(index%2==0?.30f:.62f,Mathf.Max(-.10f,.16f-(index/2)*.18f),.9f),Quaternion.identity);
+        ApplyAttached(p);p.Placed=true;Remember(p);
+        selected=p;SetRendering(p,true);SetEditUI(true);owner.ClearPresses();Changed();
+        owner.Widgets.Refresh();Physics.SyncTransforms();
     }
     public void MainHidden()
     {if(!Editing)return;if(Dragging&&selected==main)CancelDrag("");EnsureSelection();SetEditUI(true);}
@@ -526,26 +539,7 @@ owner.Compact.PlacementChanged=CompactPreset;selected=main;CardHandle=main.Move;
     public void PlaceOpenedCard(){PrepareFrame();main.Follow.SyncView();}
     public void RecalledSky(){}
     public void InvalidateMainUndo(){main.HasUndo=false;}
-    public void CompactPreset(AeroCompactHud.Placement side){if(side==AeroCompactHud.Placement.Hidden)return;smallSideBeforeHide=side;small.HasUndo=false;small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(small);SetRendering(small,true);}
-    public void CloseSmallHud()
-    {
-        if(!Editing)return;
-        if(owner.Compact.Side!=AeroCompactHud.Placement.Hidden)smallSideBeforeHide=owner.Compact.Side;
-        owner.Compact.SetPlacement(AeroCompactHud.Placement.Hidden);
-        if(selected==small){selected=main;SetEditUI(Editing);}
-        owner.ClearPresses();
-    }
-    public void RecallSmallHud()
-    {
-        if(!Editing)return;
-        var side=smallSideBeforeHide==AeroCompactHud.Placement.Hidden?AeroCompactHud.Placement.Left:smallSideBeforeHide;
-        owner.Compact.SetPlacement(side);
-        ResetPanel(small);
-        selected=small;
-        SetEditUI(Editing);
-        owner.ClearPresses();
-        owner.Feedback?.Notify("小窗已回到面前");
-    }
+    public void CompactPreset(AeroCompactHud.Placement side){if(side==AeroCompactHud.Placement.Hidden)return;small.HasUndo=false;small.Anchor=AeroWindowAnchor.View;small.Local=new Pose(new Vector3(side==AeroCompactHud.Placement.Right?.42f:-.42f,-.14f,1.05f),Quaternion.identity);ApplyAttached(small);SetRendering(small,true);}
     public void Recall()
     {
         bool editWidgets=Editing;if(Editing)EndEdit();ReleaseToFollow();main.Follow.SetDistance(Mathf.Clamp(main.Follow.Distance,.65f,2.2f));main.Follow.SnapToView();

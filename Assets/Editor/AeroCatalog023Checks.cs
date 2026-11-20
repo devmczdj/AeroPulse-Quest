@@ -24,6 +24,9 @@ public static class AeroCatalog023Checks
     static bool Overlaps(Rect a, Rect b) =>
         a.xMin < b.xMax - 1f && a.xMax > b.xMin + 1f &&
         a.yMin < b.yMax - 1f && a.yMax > b.yMin + 1f;
+    static bool Contains(Rect outer, Rect inner) =>
+        inner.xMin >= outer.xMin - 1f && inner.xMax <= outer.xMax + 1f &&
+        inner.yMin >= outer.yMin - 1f && inner.yMax <= outer.yMax + 1f;
 
     public static void Run()
     {
@@ -45,11 +48,14 @@ public static class AeroCatalog023Checks
             var depth=(RectTransform)catalog.CatalogRoot.Find("CatalogDepth");
             var scale=(RectTransform)catalog.CatalogRoot.Find("CatalogScale");
             var close=(RectTransform)catalog.CloseButton.transform;
-            var closeSmall=(RectTransform)catalog.CloseSmallButton.transform;
-            var recallSmall=(RectTransform)catalog.RecallSmallButton.transform;
-            var firstEntry=(RectTransform)catalog.CatalogRoot.Find("ComponentsPage/CatalogEntry_heart");
+            var firstRow=(RectTransform)catalog.CatalogRoot.Find("ComponentsPage/CatalogRow_heart");
+            var firstEntry=(RectTransform)firstRow.Find("CatalogEntry_heart");
+            var firstStatus=(RectTransform)firstEntry.Find("EntryStatus");
+            var firstClose=(RectTransform)firstRow.Find("CatalogWidgetClose_heart");
+            var firstRecall=(RectTransform)firstRow.Find("CatalogWidgetRecall_heart");
+            var done=(RectTransform)catalog.DoneButton.transform;
             Canvas.ForceUpdateCanvases();
-            Require(root.rect.width>=480f,"Catalog width was not increased");
+            Require(root.rect.width>=560f,"Catalog width was not increased for inline widget actions");
             var panelFill=root.Find("Backing").GetComponent<Image>().color.a;
             var sectionFill=header.Find("Backing").GetComponent<Image>().color.a;
             Require(panelFill<0.9f&&panelFill>0.6f,"Catalog panel is not translucent enough");
@@ -63,7 +69,9 @@ public static class AeroCatalog023Checks
             var headerRect=LocalRect(header,root);var moveRect=LocalRect(move,root);
             var depthRect=LocalRect(depth,root);
             var closeRect=LocalRect(close,root);var firstRect=LocalRect(firstEntry,root);
-            var closeSmallRect=LocalRect(closeSmall,root);var recallSmallRect=LocalRect(recallSmall,root);
+            var firstRowRect=LocalRect(firstRow,root);var firstStatusRect=LocalRect(firstStatus,root);
+            var firstCloseRect=LocalRect(firstClose,root);var firstRecallRect=LocalRect(firstRecall,root);
+            var doneRect=LocalRect(done,root);
             foreach (var button in new[]{catalog.LayerButtons[0],catalog.LayerButtons[1],catalog.LayerButtons[2],catalog.RecallButton,catalog.KeepOpenButton})
             {
                 var parent=(RectTransform)button.transform;
@@ -72,14 +80,22 @@ public static class AeroCatalog023Checks
                     "Tool button label crowds the right edge: "+button.name);
             }
             Require(!Overlaps(hintRect,tabsRect),"Catalog hint overlaps component tabs");
+            Require(!Overlaps(hintRect,headerRect),"Catalog hint overlaps layer controls");
             Require(!Overlaps(hintRect,firstRect),"Catalog hint overlaps the first component");
+            Require(!Overlaps(firstRect,headerRect),"First component row overlaps layer controls");
+            Require(!Overlaps(firstCloseRect,headerRect)&&!Overlaps(firstRecallRect,headerRect),
+                "Inline widget actions overlap layer controls");
             Require(!Overlaps(moveRect,headerRect),"Move strip overlaps layer controls");
             Require(!Overlaps(moveRect,closeRect),"Move strip overlaps the close button");
             Require(!Overlaps(depthRect,headerRect),"Depth strip overlaps layer controls");
             Require(!Overlaps(depthRect,closeRect),"Depth strip overlaps the close button");
-            Require(!Overlaps(closeSmallRect,recallSmallRect),"Small-HUD footer buttons overlap");
-            Require(closeSmallRect.yMax<root.rect.yMin+120f&&recallSmallRect.yMax<root.rect.yMin+120f,
-                "Small-HUD controls are not in the lower panel");
+            Require(!Overlaps(firstRect,firstCloseRect)&&!Overlaps(firstRect,firstRecallRect)&&
+                !Overlaps(firstCloseRect,firstRecallRect),"Inline widget actions overlap");
+            Require(firstCloseRect.xMin-firstStatusRect.xMax>=14f,"Add/Edit label was not moved left of close");
+            Require(Contains(firstRowRect,firstRect)&&Contains(firstRowRect,firstCloseRect)&&Contains(firstRowRect,firstRecallRect),
+                "Inline widget actions escape their row");
+            Require(!Overlaps(firstRect,doneRect)&&!Overlaps(firstCloseRect,doneRect)&&!Overlaps(firstRecallRect,doneRect),
+                "Component row overlaps the done footer");
             Require(!Overlaps(headerRect,tabsRect),"Layer controls overlap the tab row");
             Require(!Overlaps(closeRect,tabsRect),"Close button overlaps the tab row");
             foreach(var text in catalog.CatalogRoot.GetComponentsInChildren<TextMeshProUGUI>(true))
@@ -176,18 +192,15 @@ public static class AeroCatalog023Checks
                 owner.Layout.StepDrag(true,false,scaleRay,null,.02f);
                 Require(Vector3.Distance(owner.Widgets.CatalogRoot.localScale,beforeScale)>.00001f,
                     "Catalog scale drag did not change size");
-                var previousSide=owner.Compact.Side;
-                owner.Compact.SetPlacement(AeroCompactHud.Placement.Left);
-                owner.Widgets.CloseSmallRequested?.Invoke();
-                Require(!owner.Compact.gameObject.activeSelf,"Small HUD close button did not hide the compact HUD");
-                owner.Widgets.RecallSmallRequested?.Invoke();
-                Require(owner.Compact.gameObject.activeSelf&&owner.Layout.SelectedId=="legacy",
-                    "Small HUD recall button did not restore and select the compact HUD");
-                owner.Compact.SetPlacement(previousSide==AeroCompactHud.Placement.Hidden
-                    ?AeroCompactHud.Placement.Hidden:previousSide);
+                var heartAction=owner.Widgets.Items[0];
+                heartAction.CloseButton.onClick.Invoke();
+                Require(!heartAction.Root.gameObject.activeSelf,"Inline widget close did not hide the component");
+                heartAction.RecallButton.onClick.Invoke();
+                Require(heartAction.Root.gameObject.activeSelf&&owner.Layout.SelectedId=="heart",
+                    "Inline widget recall did not restore and select the component");
                 owner.Layout.EndEdit();
             }
-            Debug.Log("[AeroPulse Catalog023] PASS closed default, single/continuous setting, stable open pose, explicit recall, layer/preview callbacks, modal isolation and widget independence. Quest readability remains pending.");
+            Debug.Log("[AeroPulse Catalog023] PASS closed default, separated header/page/footer geometry, inline component close/recall, layer/preview callbacks, modal isolation and widget independence. Quest readability remains pending.");
         }
         finally
         {

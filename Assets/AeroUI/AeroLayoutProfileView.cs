@@ -45,59 +45,59 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
 
     void Create()
     {
-        listPanel = AeroHudView.NewRect("ProfileList", catalog.ProfilesPage, Vector2.zero, new Vector2(400, 430));
-        activeLabel = Label(listPanel, "ActiveProfile", "", new Vector2(0, 192), new Vector2(348, 34), 23);
-        stateLabel = Label(listPanel, "ProfileStatus", "", new Vector2(0, 156), new Vector2(348, 34), 19);
+        listPanel = AeroHudView.NewRect("ProfileList", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 320));
+        activeLabel = Label(listPanel, "ActiveProfile", "", new Vector2(0, 132), new Vector2(448, 32), 23);
+        stateLabel = Label(listPanel, "ProfileStatus", "", new Vector2(0, 100), new Vector2(448, 30), 19);
         for (int i = 0; i < rows.Length; i++)
         {
             int row = i;
-            rows[i] = Button(listPanel, "ProfileRow" + i, "", new Vector2(0, 96 - i * 56), new Vector2(352, 48), () => ActivateRow(row));
+            rows[i] = Button(listPanel, "ProfileRow" + i, "", new Vector2(0, 70 - i * 46), new Vector2(448, 40), () => ActivateRow(row));
             rows[i].GetComponentInChildren<TextMeshProUGUI>(true).enabled = false;
-            rowNames[i] = Label(rows[i].transform, "Name", "", new Vector2(-46, 0), new Vector2(238, 38), 22);
+            rowNames[i] = Label(rows[i].transform, "Name", "", new Vector2(-70, 0), new Vector2(286, 38), 22);
             rowNames[i].alignment = TextAlignmentOptions.Left;
             rowStates[i] = Label(rows[i].transform, "State", "", new Vector2(130, 0), new Vector2(80, 38), 19);
         }
-        saveButton = Button(listPanel, "SaveCurrentProfile", "保存", new Vector2(-120, -136), new Vector2(112, 48), () => SaveCurrent());
-        newButton = Button(listPanel, "SaveNewProfile", "另存", new Vector2(0, -136), new Vector2(112, 48), () => OpenName(false));
-        renameButton = Button(listPanel, "RenameProfile", "改名", new Vector2(120, -136), new Vector2(112, 48), () => OpenName(true));
-        previousButton = Button(listPanel, "PreviousProfilePage", "上一页", new Vector2(-118, -192), new Vector2(116, 44), () => { page--; Refresh(); });
-        nextButton = Button(listPanel, "NextProfilePage", "下一页", new Vector2(118, -192), new Vector2(116, 44), () => { page++; Refresh(); });
-        pageLabel = Label(listPanel, "ProfilePageNumber", "", new Vector2(0, -192), new Vector2(100, 40), 20);
+        saveButton = Button(listPanel, "SaveCurrentProfile", "保存", new Vector2(-142, -108), new Vector2(132, 42), () => SaveCurrent());
+        newButton = Button(listPanel, "SaveNewProfile", "另存", new Vector2(0, -108), new Vector2(132, 42), () => OpenName(false));
+        renameButton = Button(listPanel, "RenameProfile", "改名", new Vector2(142, -108), new Vector2(132, 42), () => OpenName(true));
+        previousButton = Button(listPanel, "PreviousProfilePage", "上一页", new Vector2(-124, -150), new Vector2(132, 38), () => { page--; Refresh(); });
+        nextButton = Button(listPanel, "NextProfilePage", "下一页", new Vector2(124, -150), new Vector2(132, 38), () => { page++; Refresh(); });
+        pageLabel = Label(listPanel, "ProfilePageNumber", "", new Vector2(0, -150), new Vector2(100, 36), 20);
         CreateNaming();
         CreateConfirmation();
     }
 
     void CreateNaming()
     {
-        namePanel = AeroHudView.NewRect("ProfileNameDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(400, 560));
-        Backing(namePanel);
-        nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 196), new Vector2(352, 40), 26);
-        var input = Button(namePanel, "EditProfileName", "", new Vector2(0, 126), new Vector2(352, 56), OpenKeyboard);
+        namePanel = AeroHudView.NewRect("ProfileNameDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 360));
+        Backing(namePanel, new Vector2(500, 360));
+        nameTitle = Label(namePanel, "NameTitle", "另存档案", new Vector2(0, 136), new Vector2(448, 40), 26);
+        var input = Button(namePanel, "EditProfileName", "", new Vector2(0, 84), new Vector2(448, 52), OpenKeyboard);
         nameLabel = input.GetComponentInChildren<TextMeshProUGUI>(true); nameLabel.name = "NameValue";
         nameLabel.enableAutoSizing = true; nameLabel.fontSizeMin = 16; nameLabel.fontSizeMax = 24;nameLabel.overflowMode=TextOverflowModes.Ellipsis;
-        Label(namePanel, "KeyboardHint", "点按名称，使用系统键盘", new Vector2(0, 76), new Vector2(352, 36), 20);
+        Label(namePanel, "KeyboardHint", "点按名称，使用系统键盘", new Vector2(0, 46), new Vector2(448, 32), 20);
         string[] presets = { "日常", "运动", "演示" };
         for (int i = 0; i < presets.Length; i++)
         {
             string preset = presets[i];
-            Button(namePanel, "NamePreset" + i, preset, new Vector2((i - 1) * 120, 0), new Vector2(112, 48), () => { draftName = UniqueName(preset); RefreshName(); });
+            Button(namePanel, "NamePreset" + i, preset, new Vector2((i - 1) * 142, 4), new Vector2(132, 42), () => { draftName = UniqueName(preset); RefreshName(); });
         }
-        nameHint = Label(namePanel, "NameHint", "", new Vector2(0, -62), new Vector2(352, 64), 20);
-        Label(namePanel, "NameFallbackHint", "也可选择上方的预设名称", new Vector2(0, -126), new Vector2(352, 36), 20);
-        Button(namePanel, "CancelProfileName", "取消", new Vector2(-90, -204), new Vector2(172, 48), CancelModal);
-        nameSaveButton = Button(namePanel, "ConfirmProfileName", "保存", new Vector2(90, -204), new Vector2(172, 48), ConfirmName);
+        nameHint = Label(namePanel, "NameHint", "", new Vector2(0, -44), new Vector2(448, 42), 20);
+        Label(namePanel, "NameFallbackHint", "也可选择上方的预设名称", new Vector2(0, -84), new Vector2(448, 32), 20);
+        Button(namePanel, "CancelProfileName", "取消", new Vector2(-112, -132), new Vector2(208, 42), CancelModal);
+        nameSaveButton = Button(namePanel, "ConfirmProfileName", "保存", new Vector2(112, -132), new Vector2(208, 42), ConfirmName);
         namePanel.gameObject.SetActive(false);
     }
 
     void CreateConfirmation()
     {
-        confirmPanel = AeroHudView.NewRect("UnsavedProfileDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(400, 560));
-        Backing(confirmPanel);
-        Label(confirmPanel, "UnsavedTitle", "当前布局未保存", new Vector2(0, 154), new Vector2(352, 44), 27);
-        confirmLabel = Label(confirmPanel, "SwitchTarget", "", new Vector2(0, 92), new Vector2(352, 42), 22);
-        Button(confirmPanel, "SaveThenSwitch", "保存并切换", new Vector2(0, 10), new Vector2(352, 52), () => ResolveSwitch(true));
-        Button(confirmPanel, "DiscardThenSwitch", "放弃并切换", new Vector2(0, -58), new Vector2(352, 52), () => ResolveSwitch(false));
-        Button(confirmPanel, "CancelProfileSwitch", "取消", new Vector2(0, -126), new Vector2(352, 52), () => ResolveSwitch(false, true));
+        confirmPanel = AeroHudView.NewRect("UnsavedProfileDialog", catalog.ProfilesPage, Vector2.zero, new Vector2(500, 320));
+        Backing(confirmPanel, new Vector2(500, 320));
+        Label(confirmPanel, "UnsavedTitle", "当前布局未保存", new Vector2(0, 106), new Vector2(448, 42), 27);
+        confirmLabel = Label(confirmPanel, "SwitchTarget", "", new Vector2(0, 58), new Vector2(448, 38), 22);
+        Button(confirmPanel, "SaveThenSwitch", "保存并切换", new Vector2(0, 4), new Vector2(448, 46), () => ResolveSwitch(true));
+        Button(confirmPanel, "DiscardThenSwitch", "放弃并切换", new Vector2(0, -54), new Vector2(448, 46), () => ResolveSwitch(false));
+        Button(confirmPanel, "CancelProfileSwitch", "取消", new Vector2(0, -112), new Vector2(448, 46), () => ResolveSwitch(false, true));
         confirmPanel.gameObject.SetActive(false);
     }
 
@@ -425,9 +425,9 @@ public sealed class AeroLayoutProfileView : MonoBehaviour
         return label;
     }
 
-    static void Backing(Transform parent)
+    static void Backing(Transform parent, Vector2 size)
     {
-        var image = AeroHudView.AddPanelImage(parent, "ModalBacking", AeroUiSprites.SolidPanel, Vector2.zero, new Vector2(400, 560), new Color(.04f, .065f, .07f, 1));
+        var image = AeroHudView.AddPanelImage(parent, "ModalBacking", AeroUiSprites.SolidPanel, Vector2.zero, size, new Color(.04f, .065f, .07f, 1));
         image.type = UnityEngine.UI.Image.Type.Sliced; image.pixelsPerUnitMultiplier = 4;
     }
 

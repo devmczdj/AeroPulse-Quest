@@ -9,6 +9,24 @@ using UnityEngine.XR.Hands;
 public static class AeroProfilesUi021Checks
 {
     static void Require(bool ok, string message) { if (!ok) throw new InvalidOperationException("ProfilesUI021: " + message); }
+    static Rect LocalRect(RectTransform target, RectTransform root)
+    {
+        var corners = new Vector3[4]; target.GetWorldCorners(corners);
+        Vector3 min = root.InverseTransformPoint(corners[0]);
+        Vector3 max = min;
+        for (int i = 1; i < corners.Length; i++)
+        {
+            Vector3 point = root.InverseTransformPoint(corners[i]);
+            min = Vector3.Min(min, point); max = Vector3.Max(max, point);
+        }
+        return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+    }
+    static bool Overlaps(Rect a, Rect b) =>
+        a.xMin < b.xMax - 1f && a.xMax > b.xMin + 1f &&
+        a.yMin < b.yMax - 1f && a.yMax > b.yMin + 1f;
+    static bool Contains(Rect outer, Rect inner) =>
+        inner.xMin >= outer.xMin - 1f && inner.xMax <= outer.xMax + 1f &&
+        inner.yMin >= outer.yMin - 1f && inner.yMax <= outer.yMax + 1f;
     static Button Find(AeroWidgetCatalog catalog, string name)
     {
         foreach (var button in catalog.CatalogRoot.GetComponentsInChildren<Button>(true)) if (button.name == name) return button;
@@ -53,13 +71,35 @@ public static class AeroProfilesUi021Checks
         {
             try
             {
-                l.ResetAll(); l.BeginEdit(false); l.AddWidget("heart");
+                if (l.Dragging) l.CancelDrag("ProfilesUI021 setup");
+                if (l.Editing) l.EndEdit();
+                l.ResetAll(); l.BeginEdit(false); w.SetKeepOpen(true); l.AddWidget("heart"); l.OpenTools();
+                Require(w.IsOpen && w.ComponentsTab.gameObject.activeInHierarchy && w.ComponentsTab.IsInteractable(),
+                    "Profile test could not open an interactive catalog");
                 Click(h, w.ProfilesTab);
                 Require(w.ShowingProfiles && w.ProfilesPage.gameObject.activeInHierarchy && !w.ComponentsPage.gameObject.activeInHierarchy, "Tabs did not switch page");
+                Canvas.ForceUpdateCanvases();
+                var rootRect = (RectTransform)w.CatalogRoot;
+                var listRect = LocalRect((RectTransform)w.ProfilesPage.Find("ProfileList"), rootRect);
+                var tabsRect = LocalRect((RectTransform)w.ComponentsTab.transform, rootRect);
+                var headerRect = LocalRect((RectTransform)w.CatalogRoot.Find("EditorToolsHeader"), rootRect);
+                var doneRect = LocalRect((RectTransform)w.DoneButton.transform, rootRect);
+                Require(!Overlaps(listRect, tabsRect) && !Overlaps(listRect, headerRect) && !Overlaps(listRect, doneRect),
+                    "Profile content overlaps page chrome");
+                var saveRect = LocalRect((RectTransform)Find(w, "SaveCurrentProfile").transform, rootRect);
+                var newRect = LocalRect((RectTransform)Find(w, "SaveNewProfile").transform, rootRect);
+                var renameRect = LocalRect((RectTransform)Find(w, "RenameProfile").transform, rootRect);
+                Require(!Overlaps(saveRect, newRect) && !Overlaps(newRect, renameRect) && !Overlaps(saveRect, renameRect),
+                    "Profile actions overlap");
+                Require(Contains(listRect, saveRect) && Contains(listRect, newRect) && Contains(listRect, renameRect),
+                    "Profile actions escape their content area");
                 Click(h, Find(w, "SaveCurrentProfile"));
                 Require(v.ModalOpen && !w.DoneButton.gameObject.activeInHierarchy && !w.ComponentsTab.interactable, "Naming dialog leaves background controls active");
                 Click(h, Find(w, "NamePreset0")); Click(h, Find(w, "ConfirmProfileName"));
                 Require(v.Store.Data.profiles.Length == 1 && v.ActiveName == "日常 1" && !v.IsDirty && !v.ModalOpen, "First GUI save failed");
+                Canvas.ForceUpdateCanvases();
+                var rowRect = LocalRect((RectTransform)Find(w, "ProfileRow0").transform, rootRect);
+                Require(Contains(listRect, rowRect), "Profile row escapes its content area");
                 string first = v.Store.Data.activeId;
                 l.CloseWidget("heart"); l.AddWidget("pace");
                 Require(v.IsDirty, "Widget changes did not mark dirty");
