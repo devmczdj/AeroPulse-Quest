@@ -37,11 +37,12 @@ public static class AeroSettingsChecks
             foreach(var corner in corners)
             {
                 Vector3 local=root.InverseTransformPoint(corner);
-                Require(local.x>=root.rect.xMin+8&&local.x<=root.rect.xMax-8&&
+                Require(local.x>=root.rect.xMin+32&&local.x<=root.rect.xMax-32&&
                     local.y>=root.rect.yMin+8&&local.y<=root.rect.yMax-8,"Display control escaped card boundary: "+label);
             }
         }
         Canvas.ForceUpdateCanvases();
+        foreach(var tab in s.TabButtons)InsideCard(tab.transform,"navigation tab");
         foreach(var option in s.SkyOptions)InsideCard(option.transform,"sky option");
         InsideCard(s.EditSkyButton.transform,"recall sky");
         foreach(var option in s.GlassModeOptions)InsideCard(option.transform,"glass mode");

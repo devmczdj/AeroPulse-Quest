@@ -1,0 +1,56 @@
+{
+  "version": "0.24.12",
+  "androidVersionCode": 51,
+  "unity": "6000.6.9f1",
+  "applicationEntry": "UnityPlayerActivity",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 7,
+    "apk": "Builds/AeroPulse-GlassLab-v0.24.12.apk",
+    "bytes": 50180549,
+    "sha256": "fa65cdc1fbd887b1461dfb1fe0938db41ac7457facb0e928846ec3749d8fc547",
+    "package": "com.three.aeropulsemvp.glass",
+    "signatureVerified": true,
+    "zipIntegrityVerified": true,
+    "zipAlignVerified": true
+  },
+  "editorChecks": {
+    "catalog023": "pass",
+    "profilesUi021": "pass",
+    "nativeKeyboard023": "pass",
+    "feedback024": "pass",
+    "glassOpacity026": "pass",
+    "settings016": "pass",
+    "editMode024": "pass",
+    "impeccableDetect": []
+  },
+  "displaySettings": {
+    "horizontalSafeInset": 32,
+    "visualSideInset": 36,
+    "verticalSafeInset": 8,
+    "glassSliderWidth": 400,
+    "glassSliderHeight": 40,
+    "glassHeadingVerticalMove": -10,
+    "allDisplayControlsInsideCard": true
+  },
+  "visualReview": {
+    "settingsDisplay": {
+      "path": "Docs/11_Releases/0.24.12-settings-display.png",
+      "sha256": "e5665237f3d002b350f30eaefdb0fcfaf205d86d5a2ebd99926cb93a81532ea0"
+    },
+    "keyboardOpening": {
+      "path": "Docs/11_Releases/0.24.12-keyboard-opening.png",
+      "sha256": "cc9029c2483229648eedb986d3a8dcfc8b1b2866c759bbc7c564519c88732328"
+    },
+    "components": {
+      "path": "Docs/11_Releases/0.24.12-catalog-components.png",
+      "sha256": "c1d7013e1d5df83710c89441ed910e295d9b126b34ba764bbc1bdc354baacd4f"
+    },
+    "profiles": {
+      "path": "Docs/11_Releases/0.24.12-catalog-profiles.png",
+      "sha256": "eed711f9f212c3f3162e267dd53133617cd15cc1125d3275365a50c15ed3222e"
+    }
+  },
+  "questInstall": "pending-device-disconnected"
+}

@@ -75,16 +75,16 @@ public class AeroHudSettingsView : MonoBehaviour
         }
         foreach(var old in view.CompactOptions)old.gameObject.SetActive(false);
         display.Find("CompactHeading").GetComponent<TextMeshProUGUI>().text="天空位置";
-        view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(14,40),new Vector2(280,42));
+        view.EditSkyButton=view.Button(display,"RecallSky","召回天空",new Vector2(-8,40),new Vector2(280,42));
         AeroUiIcons.Label(view.EditSkyButton,"globe","召回天空");
         view.EditSkyButton.onClick.AddListener(()=>{if(view.owner!=null)view.owner.RecenterSky();});
         view.Heading(display,"GlassModeHeading","玻璃",-30);
         view.GlassModeOptions=view.Options(display,"GlassMode",new[]{"自动","手动"},-30);
         view.GlassModeOptions[0].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetGlassOpacityMode(AeroGlassOpacityMode.Auto);view.Refresh();});
         view.GlassModeOptions[1].onClick.AddListener(()=>{if(view.owner!=null)view.owner.SetGlassOpacityMode(AeroGlassOpacityMode.Manual);view.Refresh();});
-        view.Text(display,"GlassTransparencyHeading","透明度",new Vector2(-344,-84),new Vector2(150,28),22,AeroUiTokens.Secondary);
-        view.GlassTransparencySlider=AeroValueSlider.Build(display,"GlassTransparencySlider",new Vector2(-62,-104),
-            new Vector2(440,54),.05f,.60f,.22f,.01f,value=>Mathf.RoundToInt(value*100)+"%",
+        view.Text(display,"GlassTransparencyHeading","透明度",new Vector2(-344,-94),new Vector2(150,28),22,AeroUiTokens.Secondary);
+        view.GlassTransparencySlider=AeroValueSlider.Build(display,"GlassTransparencySlider",new Vector2(-68,-114),
+            new Vector2(400,40),.05f,.60f,.22f,.01f,value=>Mathf.RoundToInt(value*100)+"%",
             value=>{if(view.owner!=null)view.owner.SetGlassTransparency(value);view.Refresh();});
 
         var input=view.pages[1];
