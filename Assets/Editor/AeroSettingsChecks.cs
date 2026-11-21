@@ -27,11 +27,29 @@ public static class AeroSettingsChecks
         Click(v.SettingsButton);Require(v.IsMapOpen&&v.Route.CurrentIndex==route,"Return lost previous route page");Click(v.SettingsButton);
         Click(s.TabButtons[0]);Click(s.SkyOptions[0]);Click(s.SkyOptions[0]);Require(!h.Sky.Visible&&h.IsCardOpen,"Explicit sky off cycled");
         Click(s.SkyOptions[1]);Click(s.SkyOptions[1]);Require(h.Sky.Visible,"Explicit sky on cycled");
-        Require(s.WidgetLibraryButton.gameObject.activeInHierarchy&&!s.CompactOptions[2].gameObject.activeInHierarchy,"Layout settings shortcut is missing");
+        Require(s.WidgetLibraryButton==null&&s.SkyOptions[0].transform.parent.Find("WidgetLibrary")==null&&
+            s.SkyOptions[0].transform.parent.Find("CompactHeading").GetComponent<TextMeshProUGUI>().text=="天空位置",
+            "Display page still duplicates the layout shortcut");
+        void InsideCard(Transform target,string label)
+        {
+            var root=(RectTransform)s.transform;var rect=(RectTransform)target;
+            Vector3[] corners=new Vector3[4];rect.GetWorldCorners(corners);
+            foreach(var corner in corners)
+            {
+                Vector3 local=root.InverseTransformPoint(corner);
+                Require(local.x>=root.rect.xMin+8&&local.x<=root.rect.xMax-8&&
+                    local.y>=root.rect.yMin+8&&local.y<=root.rect.yMax-8,"Display control escaped card boundary: "+label);
+            }
+        }
+        Canvas.ForceUpdateCanvases();
+        foreach(var option in s.SkyOptions)InsideCard(option.transform,"sky option");
+        InsideCard(s.EditSkyButton.transform,"recall sky");
+        foreach(var option in s.GlassModeOptions)InsideCard(option.transform,"glass mode");
+        InsideCard(s.GlassTransparencySlider.transform,"glass slider");
         Click(s.GlassModeOptions[1]);Require(h.GlassOpacity.Mode==AeroGlassOpacityMode.Manual,"Manual glass mode did not respond");
         h.SetGlassTransparency(.34f);Require(Mathf.Approximately(h.GlassOpacity.EffectiveTransparency,.34f),"Manual glass slider value not applied");
         Click(s.GlassModeOptions[0]);Require(h.GlassOpacity.Mode==AeroGlassOpacityMode.Auto,"Automatic glass mode did not respond");
-        Click(s.WidgetLibraryButton);Require(s.LayoutPage&&!h.Layout.Editing,"Display shortcut entered edit instead of opening layout settings");
+        Click(s.TabButtons[2]);Require(s.LayoutPage&&!h.Layout.Editing,"Layout tab did not open layout settings");
         Click(s.TabButtons[1]);Click(s.EntryOptions[2]);Click(s.EntryOptions[2]);Require(!h.HandEntry.EnabledForEntry&&!h.Feedback.HandEntryEnabled,"Front entry state/help diverged");
         h.SetHandHeight(.045f);h.SetHandHeight(.045f);Require(Mathf.Approximately(h.HandEntry.HeightOffset,.045f),"Height selection cycled");
         Click(s.SoundOptions[1]);Require(h.Feedback.SoundEnabled,"Sound selection not bound");Click(s.HelpButton);Require(h.Feedback.Visible&&h.Feedback.Message.Contains("前方"),"Front help teaches hidden hand entry");

@@ -71,7 +71,7 @@ public static class AeroCatalogVisualRun
             {
                 Canvas.ForceUpdateCanvases();
                 Physics.SyncTransforms();
-                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-catalog-components.png"));
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.11-catalog-components.png"));
                 phase = 2;
                 phaseAt = EditorApplication.timeSinceStartup;
                 return;
@@ -88,7 +88,7 @@ public static class AeroCatalogVisualRun
                     widgets.SetPage(true);
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-catalog-profiles.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.11-catalog-profiles.png"));
                     UnityEngine.UI.Button rename = null;
                     foreach (var button in widgets.CatalogRoot.GetComponentsInChildren<UnityEngine.UI.Button>(true))
                         if (button.name == "RenameProfile") { rename = button; break; }
@@ -97,7 +97,7 @@ public static class AeroCatalogVisualRun
                     experiment.Profiles.BeginKeyboardOpeningForChecks();
                     Canvas.ForceUpdateCanvases();
                     Physics.SyncTransforms();
-                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-keyboard-opening.png"));
+                    AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.11-keyboard-opening.png"));
                 }
                 if (File.Exists(storePath)) File.Delete(storePath);
                 phase = 3;
@@ -126,7 +126,7 @@ public static class AeroCatalogVisualRun
                 if (viewport.z <= 0f || viewport.x < .15f || viewport.x > .85f ||
                     viewport.y < .15f || viewport.y > .85f)
                     throw new InvalidOperationException("Display settings page is outside the capture viewport");
-                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.10-settings-display.png"));
+                AeroJourneyCapture.Save(Path.Combine(outputDirectory, "0.24.11-settings-display.png"));
                 phase = 4;
                 phaseAt = EditorApplication.timeSinceStartup;
                 return;
