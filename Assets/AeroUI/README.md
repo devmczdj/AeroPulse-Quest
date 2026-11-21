@@ -19,8 +19,9 @@ Glass base: JetStyle Apple Vision Pro UI Kit, MIT (see
 `Resources/JetStyle/LICENSE.md`).
 
 The glass is a static panorama-cubemap approximation, not live scene or
-passthrough blur. `AeroGlassOpacityController` samples that cubemap's
-luminance for Automatic mode and applies one alpha multiplier to registered
-`AeroGlassSurface` images; Manual mode stores a 5%–60% choice in PlayerPrefs.
+passthrough blur. `AeroGlassOpacityController` combines a highlight-biased
+7×5 gaze sample with gamma-correct white-text contrast, then applies one
+alpha multiplier to registered `AeroGlassSurface` images. Manual mode stores
+a 5%–60% choice in PlayerPrefs.
 
 MAP uses the existing real hand ray and fresh-pinch gate. HIDE/reopen and DATA/MAP switching retain the route position; restart resets it. No GPS, map service or real-world registration is connected.

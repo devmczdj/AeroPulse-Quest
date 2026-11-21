@@ -1,0 +1,62 @@
+{
+  "version": "0.24.13",
+  "androidVersionCode": 52,
+  "unity": "6000.6.9f1",
+  "applicationEntry": "UnityPlayerActivity",
+  "build": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 7,
+    "apk": "Builds/AeroPulse-GlassLab-v0.24.13.apk",
+    "bytes": 50181017,
+    "sha256": "b28e6bea830e402cc90c4ed55ce8a79b0f8482deab95c742978c3d6167a0fd52",
+    "package": "com.three.aeropulsemvp.glass",
+    "signatureVerified": true,
+    "zipIntegrityVerified": true,
+    "zipAlignVerified": true
+  },
+  "editorChecks": {
+    "catalog023": "pass",
+    "profilesUi021": "pass",
+    "nativeKeyboard023": "pass",
+    "feedback024": "pass",
+    "glassOpacity026": "pass",
+    "settings016": "pass",
+    "editMode024": "pass",
+    "impeccableDetect": []
+  },
+  "glassOpacity": {
+    "autoSource": "AeroGlassPanorama gaze-region relative luminance and white-text WCAG contrast",
+    "passthroughCameraRead": false,
+    "sampleGrid": [7, 5],
+    "highlightWeight": 0.40,
+    "sampleIntervalSeconds": 0.35,
+    "autoTransparencyRange": [0.04, 0.55],
+    "lowContrastThreshold": 3,
+    "highContrastThreshold": 7,
+    "testView": {
+      "relativeLuminance": 0.161,
+      "whiteTextContrast": 4.714,
+      "transparency": 0.241
+    }
+  },
+  "visualReview": {
+    "settingsDisplay": {
+      "path": "Docs/11_Releases/0.24.13-settings-display.png",
+      "sha256": "0ca70f15bb90685252afcd0e27119d899a138316f0ca7d1d3521b48026b4f112"
+    },
+    "keyboardOpening": {
+      "path": "Docs/11_Releases/0.24.13-keyboard-opening.png",
+      "sha256": "18185377ccb36dcce6c9cbd62c361917c054f04431ad0d8d6a5c60b1b0874514"
+    },
+    "components": {
+      "path": "Docs/11_Releases/0.24.13-catalog-components.png",
+      "sha256": "39fcb78ed52cb828da0f199025d180be721cc4c8553bec00d079c0081a3c1eab"
+    },
+    "profiles": {
+      "path": "Docs/11_Releases/0.24.13-catalog-profiles.png",
+      "sha256": "c5e5f938c4d8de3a55f633321d4a7d7ddb66308708d419d0fd10bd89a3b65785"
+    }
+  },
+  "questInstall": "pending-device-disconnected"
+}

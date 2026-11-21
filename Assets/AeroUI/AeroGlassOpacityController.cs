@@ -6,7 +6,7 @@ public enum AeroGlassOpacityMode
     Manual
 }
 
-// Samples the readable environment cubemap and applies one alpha multiplier to registered glass.
+// Samples the readable environment cubemap, then uses white-text contrast to choose glass opacity.
 public sealed class AeroGlassOpacityController : MonoBehaviour
 {
     const string ModeKey = "AeroPulse.GlassOpacityMode";
@@ -14,14 +14,22 @@ public sealed class AeroGlassOpacityController : MonoBehaviour
     const float DefaultManual = .22f;
     const float MinimumTransparency = .05f;
     const float MaximumTransparency = .60f;
-    const float AutoMinimum = .06f;
-    const float AutoMaximum = .38f;
-    const float SampleInterval = .5f;
+    const float AutoOpaqueTransparency = .04f;
+    const float AutoClearTransparency = .55f;
+    const float LowContrast = 3f;
+    const float HighContrast = 7f;
+    const float SampleInterval = .35f;
+    const float HighlightWeight = .4f;
+    const int HorizontalSamples = 7;
+    const int VerticalSamples = 5;
+    const float HorizontalHalfSpan = .32f;
+    const float VerticalHalfSpan = .18f;
 
     public AeroGlassOpacityMode Mode { get; private set; }
     public float ManualTransparency { get; private set; }
     public float EffectiveTransparency { get; private set; }
     public float BackgroundLuminance { get; private set; } = .5f;
+    public float BackgroundContrast { get; private set; } = 1f;
     public float CurrentAlphaScale => 1f - EffectiveTransparency;
     public bool Ready { get; private set; }
     public static float SharedAlphaScale { get; private set; } = 1f;
@@ -99,25 +107,76 @@ public sealed class AeroGlassOpacityController : MonoBehaviour
         {
             Vector3 forward = eye.transform.forward;
             Vector3 right = eye.transform.right;
-            Vector3 down = -eye.transform.up;
-            float sum = Luminance(forward) + Luminance((forward - right * .22f + down * .15f).normalized) +
-                Luminance((forward + right * .22f + down * .15f).normalized) +
-                Luminance((forward + down * .3f).normalized);
-            BackgroundLuminance = sum * .25f;
+            Vector3 up = eye.transform.up;
+            float weightedSum = 0f;
+            float weightSum = 0f;
+            float brightest = 0f;
+            for (int y = 0; y < VerticalSamples; y++)
+            {
+                float normalizedY = VerticalSamples == 1 ? 0f : y / (VerticalSamples - 1f) * 2f - 1f;
+                for (int x = 0; x < HorizontalSamples; x++)
+                {
+                    float normalizedX = x / (HorizontalSamples - 1f) * 2f - 1f;
+                    Vector3 direction = (forward + right * (normalizedX * HorizontalHalfSpan) +
+                        up * (normalizedY * VerticalHalfSpan)).normalized;
+                    float luminance = Luminance(direction);
+                    float weight = (1f - Mathf.Abs(normalizedX) * .25f) *
+                        (1f - Mathf.Abs(normalizedY) * .35f);
+                    weightedSum += luminance * weight;
+                    weightSum += weight;
+                    brightest = Mathf.Max(brightest, luminance);
+                }
+            }
+            float average = weightedSum / Mathf.Max(.001f, weightSum);
+            BackgroundLuminance = Mathf.Lerp(average, brightest, HighlightWeight);
         }
+        BackgroundContrast = ContrastRatio(RelativeLuminance(AeroUiTokens.Ink), BackgroundLuminance);
         if (Mode == AeroGlassOpacityMode.Auto)
         {
-            float t = Mathf.InverseLerp(.22f, .82f, BackgroundLuminance);
-            float target = Mathf.Lerp(AutoMaximum, AutoMinimum, t);
+            float target = TargetTransparencyForLuminance(BackgroundLuminance);
             EffectiveTransparency = Mathf.MoveTowards(EffectiveTransparency, target,
-                Mathf.Max(.06f, Time.unscaledDeltaTime * .35f));
+                Mathf.Max(.08f, Time.unscaledDeltaTime * .5f));
         }
     }
 
     float Luminance(Vector3 direction)
     {
-        var color = Sample(direction);
-        return color.r * .2126f + color.g * .7152f + color.b * .0722f;
+        return RelativeLuminance(Sample(direction));
+    }
+
+    public static float TargetTransparencyForLuminance(float backgroundLuminance)
+    {
+        float contrast = ContrastRatio(RelativeLuminance(AeroUiTokens.Ink), backgroundLuminance);
+        float t = SmoothStep01(Mathf.InverseLerp(LowContrast, HighContrast, contrast));
+        return Mathf.Lerp(AutoOpaqueTransparency, AutoClearTransparency, t);
+    }
+
+    static float ContrastRatio(float first, float second)
+    {
+        float lighter = Mathf.Max(first, second);
+        float darker = Mathf.Min(first, second);
+        return (lighter + .05f) / (darker + .05f);
+    }
+
+    static float SmoothStep01(float value)
+    {
+        value = Mathf.Clamp01(value);
+        return value * value * (3f - 2f * value);
+    }
+
+    static float RelativeLuminance(Color color)
+    {
+        return LinearChannel(color.r) * .2126f +
+            LinearChannel(color.g) * .7152f +
+            LinearChannel(color.b) * .0722f;
+    }
+
+    static float LinearChannel(float value)
+    {
+        value = Mathf.Clamp01(value);
+        return value <= .04045f
+            ? value / 12.92f
+            : Mathf.Pow((value + .055f) / 1.055f, 2.4f);
     }
 
     Color Sample(Vector3 direction)
@@ -165,7 +224,7 @@ public sealed class AeroGlassOpacityController : MonoBehaviour
         SampleEnvironment();
         EffectiveTransparency = Mode == AeroGlassOpacityMode.Manual
             ? ManualTransparency
-            : Mathf.Lerp(AutoMaximum, AutoMinimum, Mathf.InverseLerp(.22f, .82f, BackgroundLuminance));
+            : TargetTransparencyForLuminance(BackgroundLuminance);
         Apply();
     }
 #endif

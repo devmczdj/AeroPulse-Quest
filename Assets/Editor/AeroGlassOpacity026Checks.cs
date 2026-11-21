@@ -37,9 +37,21 @@ public static class AeroGlassOpacity026Checks
             controller.RefreshForChecks();
             Require(controller.BackgroundLuminance >= 0f && controller.BackgroundLuminance <= 1f,
                 "Environment luminance is outside 0..1");
-            Require(controller.EffectiveTransparency >= .059f && controller.EffectiveTransparency <= .381f,
+            Require(controller.BackgroundContrast >= 1f,
+                "White-text contrast ratio is outside the valid range");
+            Require(controller.EffectiveTransparency >= .039f && controller.EffectiveTransparency <= .551f,
                 "Automatic transparency is outside the intended range");
-            Debug.Log("[AeroPulse GlassOpacity026] PASS persistent auto/manual glass opacity and environment sampling.");
+            float darkTarget = AeroGlassOpacityController.TargetTransparencyForLuminance(.02f);
+            float midTarget = AeroGlassOpacityController.TargetTransparencyForLuminance(.18f);
+            float whiteTarget = AeroGlassOpacityController.TargetTransparencyForLuminance(.98f);
+            Require(darkTarget > midTarget + .15f && midTarget > whiteTarget + .05f,
+                "Contrast policy did not make dark backgrounds clearer than light backgrounds");
+            Require(darkTarget >= .54f && whiteTarget <= .041f,
+                "Contrast policy did not reach the opaque/clear endpoints");
+            Debug.Log("[AeroPulse GlassOpacity026] luminance=" + controller.BackgroundLuminance.ToString("F3") +
+                " contrast=" + controller.BackgroundContrast.ToString("F3") +
+                " transparency=" + controller.EffectiveTransparency.ToString("F3"));
+            Debug.Log("[AeroPulse GlassOpacity026] PASS manual mode, white-text contrast policy, dark/light response and environment sampling.");
         }
         finally
         {
